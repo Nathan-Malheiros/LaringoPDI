@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections import Counter
 from datetime import datetime
@@ -370,11 +371,24 @@ def build_cache(cfg: dict, exp: str, n_jobs: int = -1, force: bool = False) -> d
         return {"exp": exp, "skipped": True}
     fr = load_frames(cfg)
     raw, size, ws = C.path(cfg, "raw"), cfg["data"]["image_size"], cfg["data"]["work_size"]
-    res = Parallel(n_jobs=n_jobs, batch_size=16)(
-        delayed(_process_one)(raw / p, raw / s if s else None, e["pipeline"], e.get("params"), size, ws)
-        for p, s in zip(fr["path"], fr["seg_path"]))
-    X = np.stack([r[0] for r in res])
-    np.save(cp["x"], X)
+    # grava em blocos direto num memmap: o pico de RAM fica em ~1 bloco (antes: o array inteiro, 2×)
+    n, X, quals, packed, extras = len(fr), None, [], [], []
+    tmp = cp["x"].with_suffix(".tmp.npy")
+    for s in range(0, n, 256):
+        chunk = fr.iloc[s:s + 256]
+        res = Parallel(n_jobs=n_jobs, batch_size=8)(
+            delayed(_process_one)(raw / p, raw / sg if sg else None, e["pipeline"], e.get("params"), size, ws)
+            for p, sg in zip(chunk["path"], chunk["seg_path"]))
+        if X is None:
+            X = np.lib.format.open_memmap(tmp, mode="w+", dtype=np.uint8, shape=(n,) + res[0][0].shape)
+        for j, r in enumerate(res):
+            X[s + j] = r[0]
+        quals += [r[1] for r in res]; packed += [r[2] for r in res]; extras += [r[3] for r in res]
+        del res
+    shape = list(X.shape)
+    X.flush(); del X
+    os.replace(tmp, cp["x"])
+    res = list(zip([None] * n, quals, packed, extras))
     mkeys = sorted({k for r in res for k in r[2]})
     empty = np.packbits(np.zeros((size, size), bool))
     np.savez_compressed(cp["masks"], **{k: np.stack([r[2].get(k, empty) for r in res]) for k in mkeys})
@@ -385,10 +399,10 @@ def build_cache(cfg: dict, exp: str, n_jobs: int = -1, force: bool = False) -> d
     q.to_csv(qpath, index=False)
     C.write_json(cp["meta"], {"exp": exp, "pipeline": e["pipeline"],
                               "params": resolve_params(e["pipeline"], e.get("params")), "hash": cp["hash"],
-                              "shape": list(X.shape), "paths": fr["path"].tolist(),
+                              "shape": shape, "paths": fr["path"].tolist(),
                               "video_ids": fr["video_id"].tolist(), "mask_keys": mkeys,
                               "extra": [r[3] for r in res], "git_sha": C.git_sha()})
-    return {"exp": exp, "shape": list(X.shape), "skipped": False}
+    return {"exp": exp, "shape": shape, "skipped": False}
 
 
 def quality_summary(cfg: dict) -> pd.DataFrame:

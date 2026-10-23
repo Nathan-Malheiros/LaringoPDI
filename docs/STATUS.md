@@ -1,5 +1,7 @@
 # Estado do projeto — 2026-10-23
 
+> Relatório técnico: `docs/relatorio_tecnico.pdf` (público). **Próximo passo executável: `docs/PROXIMOS_PASSOS.md`.**
+
 ## Concluído
 - **Passo 0:** BAGLS (Zenodo 3762320) validado por md5 e extraído em `data/raw/bagls/{training,test}`: 59.250 frames, 640 vídeos.
 - **Rótulos:** `configs/label_map.yaml` (texto livre → família). Vídeos: saudável 377 · funcional 156 · estrutural 54 · excluídos 53.

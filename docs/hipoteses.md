@@ -1,6 +1,6 @@
 # Hipóteses — estado da evidência
 
-Gerado por `python -m laringopdi report` (git ff34af4). Não edite à mão. Modelos com resultados: probe. Hipóteses pré-registradas em DECISIONS.md (2026-10-22).
+Gerado por `python -m laringopdi report` (git 9f32f70). Não edite à mão. Modelos com resultados: probe, simplecnn_fast. Hipóteses pré-registradas em DECISIONS.md (2026-10-22).
 
 ## H1 — `spec` mantém/melhora o F1 e reduz a atenção nos reflexos
 - Probe (E01 vs E00): A ΔF1=+0.004 [IC -0.038; +0.049], neutra; B ΔF1=+0.025 [IC -0.032; +0.076], neutra.

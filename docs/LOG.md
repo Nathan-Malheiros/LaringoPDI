@@ -78,3 +78,9 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 ## Telemetria do treino + bug de AMP (2026-10-23)
 - `live.py`: telemetria só de observação para o painel LaringoMonitor: lote atual, Grad-CAM com a caixa da glote, ativação e ‖ΔW‖/‖W‖ por camada, filtros, mapas de ativação e PDI passo a passo. Liga só com `results/live/enabled`.
 - A telemetria revelou augmentation corrompida sob AMP (DECISIONS.md). Corrigido, com teste de regressão; os 22 runs afetados foram para quarentena; o Estágio 1 foi reiniciado.
+
+## Estágio 1 na GPU + relatório técnico (2026-10-23)
+- Estágio 1 refeito após a correção de AMP: 140 jobs da SimpleCNN rápida (RTX 3060, ~80 s/job). Top-4 pela validação: E04 `homo`, E11 `lbp`, E05 `bilat`, E10 `edges`.
+- `report`: probe e SimpleCNN somam **52/52 vereditos neutros** (nenhuma técnica muda o F1 por vídeo de forma significativa no Estágio 1).
+- 1ª tentativa do Estágio 2 encerrada por falta de RAM, ainda na busca gulosa do E14 (nada foi gravado). `build_cache` agora grava em blocos (memmap).
+- Relatório técnico em PDF (`tools/relatorio_pdf.py`): 16 p. na versão pública (Git) e 19 p. na completa (Área de Trabalho). Próximo passo em `docs/PROXIMOS_PASSOS.md`.
