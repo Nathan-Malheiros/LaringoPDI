@@ -54,8 +54,8 @@ def main(argv: list[str] | None = None) -> None:
         from laringopdi.report import eda
         _print(eda(cfg))
     elif a.command == "gallery":
-        from laringopdi.report import gallery
-        _print(gallery(cfg))
+        from laringopdi.report import gallery, pdi_doc
+        _print({**gallery(cfg), "doc": pdi_doc(cfg)})
     elif a.command == "seg-study":
         from laringopdi.evaluate import seg_study
         _print(seg_study(cfg, a.jobs, a.force))

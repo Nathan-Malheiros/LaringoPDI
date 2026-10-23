@@ -32,3 +32,9 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - Folds (StratifiedGroupKFold por vídeo, estratificados por C): teste com ~118 vídeos por fold (75–76 saudáveis / 31–32 funcionais / 10–11 estruturais); validação interna com ~67 vídeos.
 - O teste de vazamento nos splits reais passa. `dataset_report.md` regenerado com figuras e com a tabela status → família.
 - Histórico do Git limpo de arquivos do BAGLS (filter-repo + force push, aprovado).
+
+## Fase 3 — Segmentação clássica (2026-10-23)
+- `seg-study`: 5 métodos × 4 pré-processamentos × grade de parâmetros em 5.870 frames; ajuste no treino de cada fold, avaliação no teste.
+- Melhor: crescimento de região + CLAHE (Dice 0,614 · falha 2,1% · HD95 9,7 px), seguido de crescimento de região sobre o `raw` (0,467) e sobre a homomórfica (0,440). O Otsu global é linha de base (Dice 0,02).
+- Watershed corrigido (núcleos por componente) antes da escolha final; o vencedor não mudou (DECISIONS.md).
+- Saídas: `results/tables/segmentation.csv`, `segmentation_summary.csv`, `segmentation_best.json`; a figura `segmentation_examples.png` (local, não versionada) vai para a revisão de Marcos Mendes e Tales.

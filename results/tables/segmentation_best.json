@@ -1,0 +1,10 @@
+{
+  "method": "region_grow",
+  "preprocess": "clahe",
+  "params": {
+    "tol": 20
+  },
+  "train_dice": 0.623213405755617,
+  "selected_on": "treino+val do fold 0 (só máscaras de glote)",
+  "git_sha": "da17496"
+}

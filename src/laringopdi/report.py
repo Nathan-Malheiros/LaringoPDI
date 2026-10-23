@@ -215,3 +215,51 @@ def gallery(cfg: dict) -> dict:
             a.imshow(im, cmap="gray"); a.set_title(t, fontsize=8); a.axis("off")
     fig.tight_layout(); fig.savefig(figs / "gallery_roi.png", dpi=110); plt.close(fig)
     return {"figures": ["gallery_grid.png", "gallery_spec_steps.png", "gallery_homo.png", "gallery_roi.png"]}
+
+
+# ----------------------------------------------------------------------------- doc das técnicas
+def pdi_doc(cfg: dict) -> str:
+    """Gera docs/pdi_tecnicas.md a partir das docstrings (fonte única) e da matriz de experimentos."""
+    import inspect
+    import re
+
+    from laringopdi.pdi import TECHNIQUES, resolve_params
+    from laringopdi.pdi.segmentation import PARAM_GRID, SEGMENTERS, best_config
+
+    def parts(f):
+        d = inspect.getdoc(f) or ""
+        keys = ["O que faz", "Por que importa", "Parâmetros padrão", "Referência"]
+        out = {}
+        for i, k in enumerate(keys):
+            nxt = "|".join(re.escape(x) for x in keys[i + 1:]) or "$^"
+            m = re.search(rf"{re.escape(k)}:\s*(.*?)(?=\n?(?:{nxt}):|\Z)", d, re.S)
+            out[k] = " ".join(m.group(1).split()) if m else ""
+        return out
+
+    md = ["# Técnicas de PDI — LaringoPDI (BAGLS, escala de cinza)", "",
+          f"Gerado por `python -m laringopdi gallery` a partir das docstrings (git {C.git_sha()}). Não edite à mão.", "",
+          "Toda imagem é convertida para cinza e reduzida a lado maior ≤ "
+          f"{cfg['data']['work_size']} px antes do PDI; ao final, letterbox {cfg['data']['image_size']}×"
+          f"{cfg['data']['image_size']} e replicação para 3 canais. Parâmetros vêm da literatura, nunca do classificador.", "",
+          "## Matriz de experimentos", "", "| ID | Pipeline | Descrição |", "|---|---|---|",
+          *[f"| {e} | `{v['pipeline']}` | {v['desc']} |" for e, v in cfg["experiments"].items()], "",
+          "## Técnicas", ""]
+    for name, f in TECHNIQUES.items():
+        p = parts(f)
+        md += [f"### `{name}`", "", f"- **O que faz:** {p['O que faz']}", f"- **Por que importa na laringoscopia:** {p['Por que importa']}",
+               f"- **Parâmetros padrão:** {p['Parâmetros padrão']}", f"- **Referência:** {p['Referência']}", ""]
+    b = best_config()
+    md += ["## Segmentação clássica da glote (Fase 3)", "",
+           f"Melhor configuração atual (usada por `roi` e `m2`): **{b['method']}** sobre **{b.get('preprocess', 'raw')}**, "
+           f"parâmetros `{json.dumps(b['params'])}`" + (f" — {b['selected_on']}." if b.get("selected_on") else " (padrão, antes da Fase 3)."), ""]
+    for name, f in SEGMENTERS.items():
+        p = parts(f)
+        md += [f"### `{name}`", "", f"- **O que faz:** {p['O que faz']}", f"- **Por que importa na laringoscopia:** {p['Por que importa']}",
+               f"- **Parâmetros padrão:** {p['Parâmetros padrão']} · grade de ajuste: `{json.dumps(PARAM_GRID[name])}`",
+               f"- **Referência:** {p['Referência']}", ""]
+    md += ["## Figuras para revisão (Marcos Vinicius; segmentação: Marcos Mendes e Tales)", "",
+           "Geradas localmente em `docs/figures/` e **não versionadas** (contêm frames do BAGLS): "
+           "`gallery_grid.png`, `gallery_spec_steps.png`, `gallery_homo.png`, `gallery_roi.png`, `segmentation_examples.png`.", ""]
+    out = C.path(cfg, "docs") / "pdi_tecnicas.md"
+    out.write_text("\n".join(md), encoding="utf-8")
+    return str(out)

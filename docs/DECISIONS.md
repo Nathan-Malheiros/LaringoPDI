@@ -46,3 +46,12 @@ Registro cronológico. Cada decisão: data, contexto, decisão, motivo.
 ## 2026-10-23 — Tarefa B ampliada (decisão do usuário)
 - Com a lista original, a família estrutural tinha 47 vídeos (< 50). Por decisão do usuário, entraram nela os 7 vídeos de alterações estruturais benignas da lâmina própria: cicatriz, sulco/vergeture, rigidez/fibrose e irregularidade de mucosa. Antes ficavam em "outros" e eram excluídos. Total: **54 vídeos**. A família "outros" fica vazia no BAGLS.
 - Higiene do repositório: `eda_samples.png` (frames reais) e `data/index.csv` foram commitados por engano. Saíram de todo o histórico (git filter-repo + force push, com aprovação do usuário). O `.gitignore` agora barra figuras com frames reais e tabelas por frame.
+
+## 2026-10-23 — Fase 3: segmentação clássica (método fixado para `roi`/`m2`)
+- **Correção de implementação no watershed (antes da escolha final):** na 1ª rodada, o núcleo dos marcadores era `dist > 0,5 × máximo global`, então só a maior região escura (fundo/canto) recebia semente e a glote nunca. Resultado: Dice ≈ 0,005 em todos os pré-processamentos (tabela preservada em `results/tables/segmentation_summary_v1_watershed_bug.csv`). Agora o núcleo usa o máximo **de cada componente**. Isso corrige um defeito, não ajusta a métrica, e o vencedor não mudou entre as rodadas.
+- **Escolhido (treino+val do fold 0, só máscaras):** crescimento de região sobre CLAHE, `tol=20`. Dice de treino 0,623; no teste dos 5 folds, Dice 0,614, falha 2,1% e HD95 mediano 9,7 px. Fica em `results/tables/segmentation_best.json` e passa a ser usado por `roi` (E08, E09) e `m2` (E13).
+- **Leitura para H4 (realce melhora a segmentação):**
+  - CLAHE eleva o crescimento de região de 0,467 para 0,614 de Dice e reduz a falha de 19,8% para 2,1%.
+  - A homomórfica melhora o Otsu+morfologia (0,324 → 0,408) e o watershed (0,334 → 0,437).
+  - Em métodos globais (Otsu, adaptativo), o realce não ajuda ou piora.
+  - O teste estatístico formal fica para o `report`.

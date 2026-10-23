@@ -103,7 +103,11 @@ def seg_watershed(g: np.ndarray, blur: int = 5, fg_frac: float = 0.5) -> np.ndar
         return np.zeros(g.shape, bool)
     bg = cv2.dilate(dark, np.ones((3, 3), np.uint8), iterations=3)
     dist = cv2.distanceTransform(dark, cv2.DIST_L2, 5)
-    fg = (dist > fg_frac * dist.max()).astype(np.uint8)
+    # núcleo por componente (dist > fg_frac × máximo DO PRÓPRIO componente): cada região escura,
+    # inclusive a glote, ganha um marcador — com o máximo global só a maior região era semeada.
+    n, comp = cv2.connectedComponents(dark)
+    cmax = np.asarray(ndi.maximum(dist, comp, index=np.arange(n)))
+    fg = ((comp > 0) & (dist > fg_frac * cmax[comp])).astype(np.uint8)
     _, markers = cv2.connectedComponents(fg)
     markers = markers + 1
     markers[(bg > 0) & (fg == 0)] = 0
