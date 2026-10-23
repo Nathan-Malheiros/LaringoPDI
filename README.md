@@ -17,34 +17,36 @@ uv pip install -p .venv -r requirements.txt
 uv pip install -p .venv -e .
 ```
 
-## Dados (download manual)
+## Dados (download manual) — BAGLS
 
-1. Baixe o Laryngoscope8 pelo link do repositório oficial (https://github.com/greenyin/Laryngoscope8;
-   Baidu Pan, senha `soda`).
-2. Extraia em `data/raw/laryngoscope8/`, mantendo as subpastas por classe (nomes em inglês, chinês ou
-   numeradas de 1 a 8 na ordem do README são reconhecidos).
+1. Baixe o BAGLS (Gómez et al., Scientific Data, 2020; CC BY-NC-SA 4.0) por bagls.org, Zenodo ou Kaggle.
+2. Extraia em `data/raw/bagls/`, mantendo as pastas `training/` e `test/` com `<id>.png`,
+   `<id>_seg.png` e os metadados por frame.
+
+Cite: Gómez, P. et al. *BAGLS, a multihospital Benchmark for Automatic Glottis Segmentation*. Sci Data 7, 186 (2020).
 
 ## Fluxo
 
 ```powershell
-.venv\Scripts\python -m laringopdi index     > logs\index.log 2>&1   # data/index.csv
-.venv\Scripts\python -m laringopdi splits    > logs\splits.log 2>&1  # dedup + data/splits/folds.json (uma vez)
-.venv\Scripts\python -m laringopdi eda       > logs\eda.log 2>&1     # docs/dataset_report.md
-.venv\Scripts\python -m laringopdi gallery   > logs\gallery.log 2>&1 # docs/figures/gallery_*.png
-.venv\Scripts\python -m laringopdi cache --exp stage1                 # data/processed/cache + results/pdi_quality.csv
+.venv\Scripts\python -m laringopdi index     > logs\index.log 2>&1     # data/index.csv
+.venv\Scripts\python -m laringopdi splits    > logs\splits.log 2>&1    # frames.json + grupos + folds.json (uma vez)
+.venv\Scripts\python -m laringopdi eda       > logs\eda.log 2>&1       # docs/dataset_report.md
+.venv\Scripts\python -m laringopdi seg-study > logs\seg.log 2>&1       # results/tables/segmentation*.csv
+.venv\Scripts\python -m laringopdi gallery   > logs\gallery.log 2>&1   # docs/figures/gallery_*.png
+.venv\Scripts\python -m laringopdi cache --exp stage1                   # data/processed/cache + results/pdi_quality.csv
 .venv\Scripts\python -m pytest -q --no-header -x
 ```
 
-Os próximos comandos (`annotate`, `eval-roi`, `probe`, `train`, `shards`, `classic`, `gradcam`,
-`summary`, `report`) entram nas fases seguintes. A matriz de experimentos é definida em
-`configs/experiments.yaml`; os parâmetros fixos, em `configs/base.yaml`.
+Os comandos `probe`, `train`, `shards`, `classic`, `gradcam`, `summary` e `report` entram nas fases
+seguintes. A matriz de experimentos fica em `configs/experiments.yaml`; os parâmetros fixos, em
+`configs/base.yaml`.
 
 ## Estrutura
 
 ```
-src/laringopdi/   cli, config, data, pdi/ (registry + técnicas + quality), report
+src/laringopdi/   cli, config, data, evaluate, report, pdi/ (registry, técnicas, segmentation, quality)
 configs/          base.yaml, experiments.yaml
-data/             raw/ (ignorado), index.csv, groups.csv, splits/
+data/             raw/ (ignorado), index.csv, groups.csv, splits/ (frames.json, folds.json)
 docs/             DECISIONS.md, LOG.md, dataset_report.md, figures/
 results/          runs/ (ignorado), pdi_quality.csv, tabelas
 ```

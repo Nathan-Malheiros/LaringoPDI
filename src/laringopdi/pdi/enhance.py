@@ -1,4 +1,4 @@
-"""Realce de intensidade: reflexo especular, HE, CLAHE e filtragem homomórfica."""
+"""Realce de intensidade em cinza: reflexo especular, HE, CLAHE e filtragem homomórfica."""
 from __future__ import annotations
 
 import cv2
@@ -7,27 +7,31 @@ import numpy as np
 from laringopdi.pdi.registry import register
 
 
-def _on_L(img: np.ndarray, fn) -> np.ndarray:
-    lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
-    lab[..., 0] = fn(lab[..., 0])
-    return cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+def specular_mask(g: np.ndarray, pct: float = 90, v_min: int = 200, max_frac: float = 0.05) -> np.ndarray:
+    """Pixels muito claros: limiar = max(Otsu sobre a cauda acima do percentil `pct`, `v_min`)."""
+    if g.ndim == 3:
+        g = cv2.cvtColor(g[..., :3], cv2.COLOR_RGB2GRAY)
+    tail = g[g >= np.percentile(g, pct)]
+    if tail.size < 16 or tail.min() == tail.max():
+        t = max(int(tail.max()) if tail.size else 255, v_min)
+    else:
+        t, _ = cv2.threshold(tail.reshape(-1, 1), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        t = max(int(t), v_min)
+    m = g > t if (g >= t).mean() > max_frac else g >= t
+    return m
 
 
-def specular_mask(img: np.ndarray, v_min: int = 220, s_max: int = 40) -> np.ndarray:
-    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    return (hsv[..., 2] >= v_min) & (hsv[..., 1] <= s_max)
-
-
-@register("spec", v_min=220, s_max=40, dilate=3, radius=5)
-def spec(img: np.ndarray, ctx: dict, v_min: int = 220, s_max: int = 40, dilate: int = 3,
-         radius: int = 5) -> np.ndarray:
-    """O que faz: detecta reflexos especulares (V alto e S baixo no HSV), dilata a máscara
-    e preenche por inpainting de Telea (marcha rápida).
-    Por que importa: a mucosa úmida da laringe reflete a luz branca; os brilhos saturados
-    escondem a textura e lembram leucoplasia (placa branca), podendo confundir a rede.
-    Parâmetros padrão: V ≥ 220, S ≤ 40 (escala 0–255), dilatação 3 px, raio de inpaint 5.
-    Referência: Arnold et al., 2010 (reflexos especulares em endoscopia); Telea, 2004."""
-    m = specular_mask(img, v_min, s_max).astype(np.uint8)
+@register("spec", pct=90, v_min=200, max_frac=0.05, dilate=2, radius=5)
+def spec(img: np.ndarray, ctx: dict, pct: float = 90, v_min: int = 200, max_frac: float = 0.05,
+         dilate: int = 2, radius: int = 5) -> np.ndarray:
+    """O que faz: detecta reflexos especulares por limiar de intensidade (Otsu sobre a cauda do
+    histograma acima do percentil 90, com piso 200), dilata a máscara e preenche por inpainting
+    de Telea.
+    Por que importa: a mucosa úmida das pregas reflete a luz do endoscópio; os brilhos saturados
+    escondem a borda livre e podem ser confundidos com lesões esbranquiçadas.
+    Parâmetros padrão: percentil 90, piso 200, dilatação 2 px, raio de inpaint 5.
+    Referência: Arnold et al., 2010 (reflexos em endoscopia); Telea, 2004."""
+    m = specular_mask(img, pct, v_min, max_frac).astype(np.uint8)
     if dilate:
         m = cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * dilate + 1,) * 2))
     ctx["spec_mask"] = m.astype(bool)
@@ -37,23 +41,22 @@ def spec(img: np.ndarray, ctx: dict, v_min: int = 220, s_max: int = 40, dilate: 
 
 @register("he")
 def he(img: np.ndarray, ctx: dict) -> np.ndarray:
-    """O que faz: equalização global do histograma no canal L do LAB (cor preservada).
-    Por que importa: corrige subexposição global, mas amplifica ruído e satura regiões
-    já claras (reflexos); serve de contraste para H2 (CLAHE/homomórfica > HE).
+    """O que faz: equalização global do histograma.
+    Por que importa: corrige subexposição global, mas amplifica ruído e satura os reflexos;
+    serve de contraste para H2 (CLAHE/homomórfica > HE).
     Parâmetros padrão: nenhum.
     Referência: Gonzalez & Woods, Digital Image Processing, cap. 3."""
-    return _on_L(img, cv2.equalizeHist)
+    return cv2.equalizeHist(img)
 
 
 @register("clahe", clip=2.0, tiles=8)
 def clahe(img: np.ndarray, ctx: dict, clip: float = 2.0, tiles: int = 8) -> np.ndarray:
-    """O que faz: equalização adaptativa por blocos com limite de contraste (CLAHE) no canal L.
-    Por que importa: a iluminação do laringoscópio é central e decai para as bordas;
-    o CLAHE realça contraste local (borda livre das pregas, vasos) sem estourar o centro.
-    Parâmetros padrão: clip 2.0, grade 8×8.
+    """O que faz: equalização adaptativa por blocos com limite de contraste (CLAHE).
+    Por que importa: a iluminação do endoscópio é central e decai para as bordas; o CLAHE
+    realça o contraste local (borda livre das pregas, contorno da glote) sem estourar o centro.
+    Parâmetros padrão: clip 2,0, grade 8×8.
     Referência: Zuiderveld, 1994; Pizer et al., 1987."""
-    op = cv2.createCLAHE(clipLimit=clip, tileGridSize=(tiles, tiles))
-    return _on_L(img, op.apply)
+    return cv2.createCLAHE(clipLimit=clip, tileGridSize=(tiles, tiles)).apply(img)
 
 
 def homo_transfer(shape: tuple[int, int], gl: float = 0.5, gh: float = 1.75, d0: float = 30,
@@ -66,27 +69,18 @@ def homo_transfer(shape: tuple[int, int], gl: float = 0.5, gh: float = 1.75, d0:
     return (gh - gl) * (1 - np.exp(-c * D2 / d0 ** 2)) + gl
 
 
-def homomorphic(channel: np.ndarray, gl: float = 0.5, gh: float = 1.75, d0: float = 30,
-                c: float = 1.0) -> np.ndarray:
-    z = np.log1p(channel.astype(np.float64))
+@register("homo", gl=0.5, gh=1.75, d0=30, c=1.0)
+def homo(img: np.ndarray, ctx: dict, gl: float = 0.5, gh: float = 1.75, d0: float = 30,
+         c: float = 1.0) -> np.ndarray:
+    """O que faz: filtragem homomórfica — log → FFT → filtro gaussiano de alta ênfase
+    H(u,v) = (γH−γL)(1−e^{−cD²/D0²})+γL → IFFT → exp → reescala pelos percentis 0,5–99,5.
+    Por que importa: separa a iluminação (baixa frequência, atenuada por γL) da refletância
+    (alta frequência, realçada por γH); compensa o vinhetamento da fonte de luz pontual.
+    Parâmetros padrão: γL=0,5; γH=1,75; D0=30 (lado maior ≤ 512); c=1.
+    Referência: Gonzalez & Woods, Digital Image Processing, seção 4.9."""
+    z = np.log1p(img.astype(np.float64))
     Z = np.fft.fftshift(np.fft.fft2(z))
     s = np.real(np.fft.ifft2(np.fft.ifftshift(Z * homo_transfer(z.shape, gl, gh, d0, c))))
     out = np.expm1(s)
     lo, hi = np.percentile(out, [0.5, 99.5])
     return np.clip((out - lo) / max(hi - lo, 1e-9) * 255, 0, 255).astype(np.uint8)
-
-
-@register("homo", gl=0.5, gh=1.75, d0=30, c=1.0)
-def homo(img: np.ndarray, ctx: dict, gl: float = 0.5, gh: float = 1.75, d0: float = 30,
-         c: float = 1.0) -> np.ndarray:
-    """O que faz: filtragem homomórfica no canal L — log → FFT → filtro passa-altas gaussiano
-    de alta ênfase H(u,v) = (γH−γL)(1−e^{−cD²/D0²})+γL → IFFT → exp → reescala por percentis.
-    Por que importa: separa iluminação (baixa frequência, γL atenua) de refletância
-    (alta frequência, γH realça); compensa o vinhetamento da fonte de luz pontual.
-    Parâmetros padrão: γL=0,5; γH=1,75; D0=30 (em imagens com lado maior 512); c=1.
-    Referência: Gonzalez & Woods, Digital Image Processing, seção 4.9."""
-    fov_mask = ctx.get("fov_mask")
-    out = _on_L(img, lambda L: homomorphic(L, gl, gh, d0, c))
-    if fov_mask is not None and fov_mask.shape == img.shape[:2]:
-        out[~fov_mask] = 0
-    return out

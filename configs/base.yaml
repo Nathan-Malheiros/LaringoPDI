@@ -1,38 +1,51 @@
 # Configuração base do LaringoPDI. Caminhos relativos à raiz do repositório.
 paths:
-  raw: data/raw/laryngoscope8
+  raw: data/raw/bagls
   index: data/index.csv
   groups: data/groups.csv
   splits: data/splits
   cache: data/processed/cache
   runs: results/runs
   results: results
+  tables: results/tables
   docs: docs
   figures: docs/figures
-  annotations: annotations
   logs: logs
 
+dataset: bagls            # bagls | laryngoscope8 (stub)
+
 data:
-  # Ordem do README do Laryngoscope8 (pastas numeradas 1..8 seguem esta ordem).
-  classes: [reinke_edema, glottic_cancer, granuloma, leukoplakia, cyst, nodules, polyps, normal]
-  # Regex aplicada ao nome do arquivo para extrair o ID do paciente (grupo 1). null = não há ID.
-  patient_id_regex: null
-  min_class_count: 50
+  min_class_count: 50     # em vídeos
   image_size: 224
   # Lado maior máximo antes do PDI (padroniza a escala dos parâmetros; ver DECISIONS.md).
   work_size: 512
+  frames_per_video: 10
   n_folds: 5
   split_seed: 42
   inner_val_frac: 0.15
-  dedup:
-    phash_max_dist: 8      # distância de Hamming máxima (64 bits) para virar candidato
-    ssim_min: 0.85         # SSIM mínimo (cinza 128x128) para confirmar quase-duplicata
+  dedup:                  # vídeos quase-duplicados (frame central)
+    phash_max_dist: 6
+    ssim_min: 0.85
     thumb: 128
 
+# Mapeamento do status do distúrbio (palavras-chave, minúsculas) para as famílias.
+disorders:
+  healthy: [healthy, normal]
+  structural: [edema, reinke, nodule, polyp, cyst, granuloma, papilloma, leukoplakia, carcinoma, cancer, tumor]
+  functional: [muscle tension, mtd, atrophy, insufficien, glottis closure, glottal closure, paresis, paralysis, laryngitis, dysphonia]
+  other: [other]
+  unknown: [unknown, "n/a", "na", "none", ""]
+
 tasks:
-  A: {name: normal_vs_altered, positive: [reinke_edema, glottic_cancer, granuloma, leukoplakia, cyst, nodules, polyps], labels: [normal, altered]}
-  B: {name: multiclass8}
-  C: {name: urgent_vs_nonurgent, positive: [glottic_cancer, leukoplakia], labels: [non_urgent, urgent]}
+  A: {name: healthy_vs_disorder, labels: [healthy, disorder]}
+  B: {name: healthy_vs_structural, labels: [healthy, structural]}
+  C: {name: healthy_functional_structural, labels: [healthy, functional, structural]}
+
+segmentation:
+  methods: [otsu, adaptive, otsu_morph, region_grow, watershed]
+  preprocess: [raw, clahe, homo, bilat]
+  tune_fold: 0            # fold cujo treino fixa método/parâmetros da técnica `roi`
+  max_train_frames: 1500  # subamostra do treino para o ajuste (CPU)
 
 train:
   augment: {hflip: 0.5, rotate_deg: 15, scale: [0.9, 1.1]}   # só geométrico

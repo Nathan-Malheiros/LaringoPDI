@@ -9,10 +9,10 @@ from laringopdi.pdi.registry import register
 
 @register("bilat", d=9, sigma_color=75, sigma_space=75)
 def bilat(img: np.ndarray, ctx: dict, d: int = 9, sigma_color: float = 75, sigma_space: float = 75) -> np.ndarray:
-    """O que faz: filtro bilateral — média ponderada por proximidade espacial e de cor.
+    """O que faz: filtro bilateral — média ponderada por proximidade espacial e de intensidade.
     Por que importa: suaviza ruído de sensor e compressão JPEG da mucosa preservando as
     bordas das pregas e das lesões (que o filtro gaussiano borraria).
-    Parâmetros padrão: d=9, σcor=75, σespaço=75.
+    Parâmetros padrão: d=9, σintensidade=75, σespaço=75.
     Referência: Tomasi & Manduchi, 1998."""
     return cv2.bilateralFilter(img, d, sigma_color, sigma_space)
 
