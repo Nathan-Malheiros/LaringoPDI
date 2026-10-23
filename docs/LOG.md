@@ -68,3 +68,9 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
   - H4 (segmentação): o efeito do realce depende do par método × pré-processamento. Crescimento de região + CLAHE dá +0,148 de Dice e watershed/Otsu+morfologia + homomórfica dão +0,08 a +0,10; CLAHE piora os métodos baseados em limiar global.
   - Os p muito pequenos vêm de ~587 vídeos pareados; no Otsu o efeito é desprezível (|Δ| ≤ 0,002) apesar do p.
 - Correção de bug: a chave `classic` do `experiments.yaml` sobrescrevia os hiperparâmetros do `base.yaml`; foi renomeada para `classic_experiments`.
+
+## Fases 7–8 (código) — 2026-10-23
+- `gradcam`: energia do Grad-CAM dentro da glote (GT de cada cache) e sobre os reflexos (máscara `spec` do E00, só em pipelines sem recorte). Usa `model.pt` da semente 0, agora salvo pelo `train`. Roda quando o Estágio 2 terminar.
+- `report`: vereditos (McNemar OOF + Holm + IC bootstrap; Wilcoxon reportado), teste de H4, clássico × CNN, tabelas CSV + LaTeX e `docs/hipoteses.md`.
+- App Streamlit: upload → etapas do PDI → segmentação → métricas → predição + Grad-CAM (quando houver pesos), com o aviso obrigatório.
+- `tests/test_e2e.py`: ponta a ponta em CPU em 64 s. Suíte completa: 64 testes passando.

@@ -8,6 +8,7 @@
 - **Fase 2:** galeria, `docs/pdi_tecnicas.md`, caches E00–E13, `results/pdi_quality.csv`.
 
 - **Fase 4 (código), Fase 5 (probe) e Fase 6 (clássico C1–C5)** rodaram na CPU; `report` gera `docs/hipoteses.md` + tabelas em `results/tables/`.
+- **Fases 7–8 (código):** `gradcam`, `report`, app Streamlit e `tests/test_e2e.py` prontos; 64 testes passando. Falta rodar com os modelos do Colab.
 
 ## Próximo — depende do Colab (humano)
 1. **Nathan prepara o Drive** `MyDrive/LaringoPDI/`:

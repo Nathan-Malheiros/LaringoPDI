@@ -170,6 +170,9 @@ def train_job(cfg: dict, exp: str, task: str, model_name: str, fold: int, seed: 
     m = {**metrics_both_levels(preds), "val_frame": vm["frame"], "val_video": vm["video"],
          "epochs_run": len(hist), "best_val_video_f1": best, "seconds": time.time() - t0,
          "device": str(device), "history": hist}
+    if seed == 0:                                                       # pesos só da semente 0 (Grad-CAM e app)
+        rd.mkdir(parents=True, exist_ok=True)
+        torch.save(best_state, rd / "model.pt")
     _save(rd, m, preds, _conf(cfg, exp, task, model_name, fold, seed, d["meta"], {"epochs_max": epochs, "lr": lr}))
     return {"run": str(rd), "test_video_f1": m["video"]["f1_macro"], "seconds": round(m["seconds"], 1)}
 

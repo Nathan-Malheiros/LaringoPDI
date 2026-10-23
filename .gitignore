@@ -19,3 +19,4 @@ docs/figures/gallery_*.png
 docs/figures/segmentation_examples.png
 results/tables/segmentation_frames.csv.gz
 results/pdi_quality/
+results/tables/attention_frames.csv.gz

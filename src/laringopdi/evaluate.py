@@ -311,3 +311,72 @@ def seg_h4_test(cfg: dict) -> pd.DataFrame:
     df["p_holm"] = _holm(df["p"].to_numpy())
     df["verdict"] = np.where(df["p_holm"] < cfg["stats"]["alpha"], np.where(df["delta"] > 0, "melhora", "piora"), "neutra")
     return df
+
+
+# ----------------------------------------------------------------------------- Grad-CAM
+def load_model(cfg: dict, exp: str, task: str, model_name: str, fold: int):
+    import torch
+
+    from laringopdi.models import build
+    rd = C.path(cfg, "runs") / exp / task / model_name / f"fold{fold}_seed0"
+    if not (rd / "model.pt").exists():
+        return None
+    m = build(model_name, len(D.task_names(cfg, task)), cfg)
+    m.load_state_dict(torch.load(rd / "model.pt", map_location="cpu"))
+    return m.eval()
+
+
+def gradcam_maps(model, X: np.ndarray, batch: int = 32) -> np.ndarray:
+    """Mapas Grad-CAM (N, 224, 224) para a classe prevista."""
+    import torch
+    from pytorch_grad_cam import GradCAM
+
+    from laringopdi.models import gradcam_layer
+    from laringopdi.train import _prep
+    cam = GradCAM(model=model, target_layers=[gradcam_layer(model)])
+    out = []
+    for i in range(0, len(X), batch):
+        xb = _prep(torch.from_numpy(np.array(X[i:i + batch])), torch.device("cpu"))
+        out.append(cam(input_tensor=xb, targets=None))
+    return np.concatenate(out)
+
+
+def cmd_gradcam(cfg: dict, args) -> dict:
+    """Para cada experimento do Estágio 2 com pesos salvos: Grad-CAM nos frames de teste de cada
+    fold → energia na glote (GT do próprio cache) e nos reflexos (máscara `spec` do E00; só para
+    pipelines sem recorte). Saída: results/tables/attention.csv (+ resumo por exp/modelo/tarefa)."""
+    from laringopdi.features import _unpack
+    from laringopdi.pdi.attention import attention_metrics
+    from laringopdi.pdi.enhance import specular_mask
+
+    size = cfg["data"]["image_size"]
+    st = cfg["stage2"]
+    exps = st["experiments"] if not args.exp else args.exp.split(",")
+    X0, paths0, _ = D.load_cache(cfg, "E00")
+    pos0 = {p: i for i, p in enumerate(paths0)}
+    rows = []
+    for e in exps:
+        X, paths, meta = D.load_cache(cfg, e)
+        gt = _unpack(np.load(D.cache_paths(cfg, e)["masks"])["gt_mask_lb"], size)
+        crops = any(s in meta["pipeline"] for s in ("roi",))
+        for model_name in [m for m in st["models"] if m != "probe"]:
+            for t in st["tasks"]:
+                for k in st["folds"]:
+                    m = load_model(cfg, e, t, model_name, k)
+                    if m is None:
+                        continue
+                    idx = np.nonzero(np.isin(meta["video_ids"], D.load_splits(cfg)[k]["test"]))[0]
+                    cams = gradcam_maps(m, X[idx])
+                    for j, i in enumerate(idx):
+                        valid = X[i, ..., 0] > 0
+                        spec = None if crops else specular_mask(np.ascontiguousarray(X0[pos0[paths[i]], ..., 0])) & valid
+                        rows.append({"exp": e, "model": model_name, "task": t, "fold": k, "path": paths[i],
+                                     "video_id": meta["video_ids"][i], **attention_metrics(cams[j], gt[i], spec, valid)})
+    if not rows:
+        return {"gradcam": "sem pesos salvos (rode o Estágio 2 no Colab)"}
+    df = pd.DataFrame(rows)
+    tables = C.path(cfg, "tables")
+    df.to_csv(tables / "attention_frames.csv.gz", index=False)
+    s = df.groupby(["exp", "model", "task"])[["att_glottis", "area_glottis", "att_spec", "area_spec"]].mean().reset_index()
+    s.round(4).to_csv(tables / "attention.csv", index=False)
+    return {"frames": len(df), "groups": len(s)}

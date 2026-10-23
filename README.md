@@ -44,14 +44,28 @@ Cada integrante baixa o BAGLS manualmente.
 .venv\Scripts\python -m pytest -q --no-header -x
 ```
 
-Os comandos `probe`, `train`, `shards`, `classic`, `gradcam`, `summary` e `report` entram nas fases
-seguintes. A matriz de experimentos fica em `configs/experiments.yaml`; os parâmetros fixos, em
-`configs/base.yaml`.
+Depois dos caches:
+
+```powershell
+.venv\Scripts\python -m laringopdi probe                 # Estágio 1, linear probe em CPU (ranking pela validação)
+.venv\Scripts\python -m laringopdi classic               # braço clássico C1–C5 (por vídeo)
+.venv\Scripts\python -m laringopdi shards --stage stage1 # divide os jobs da SimpleCNN entre 5 contas do Colab
+.venv\Scripts\python -m laringopdi summary               # results/summary.csv + stage1_ranking.csv
+.venv\Scripts\python -m laringopdi gradcam               # atenção na glote/reflexos (precisa dos pesos do Estágio 2)
+.venv\Scripts\python -m laringopdi report                # vereditos, H4, clássico × CNN, docs/hipoteses.md
+streamlit run app\streamlit_app.py                        # protótipo (apoio acadêmico; não é diagnóstico)
+```
+
+Treinos de CNN rodam no Colab com `notebooks/colab_runner.ipynb` (escolher `SHARD_ID` → Executar tudo).
+Um job isolado: `python -m laringopdi train --exp E03 --task A --model resnet18 --fold 0 --seed 0`.
 
 ## Estrutura
 
 ```
-src/laringopdi/   cli, config, data, evaluate, report, pdi/ (registry, técnicas, segmentation, quality)
+src/laringopdi/   cli, config, data, features, models, train, evaluate, report,
+                  pdi/ (registry, técnicas, segmentation, quality, attention)
+app/              streamlit_app.py
+notebooks/        colab_runner.ipynb
 configs/          base.yaml, experiments.yaml
 data/             raw/ (ignorado), index.csv, groups.csv, splits/ (frames.json, folds.json)
 docs/             DECISIONS.md, LOG.md, dataset_report.md, figures/
