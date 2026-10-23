@@ -11,3 +11,10 @@ logs/
 *.zip
 *.pt
 *.pth
+# Nada do BAGLS no repositório: imagens de pacientes (CC BY-NC-SA) e metadados por frame.
+data/index.csv
+data/groups.csv
+docs/figures/eda_samples.png
+docs/figures/gallery_*.png
+docs/figures/segmentation_examples.png
+results/tables/segmentation_frames.csv.gz
