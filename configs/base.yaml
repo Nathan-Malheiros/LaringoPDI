@@ -28,14 +28,6 @@ data:
     ssim_min: 0.85
     thumb: 128
 
-# Mapeamento do status do distúrbio (palavras-chave, minúsculas) para as famílias.
-disorders:
-  healthy: [healthy, normal]
-  structural: [edema, reinke, nodule, polyp, cyst, granuloma, papilloma, leukoplakia, carcinoma, cancer, tumor]
-  functional: [muscle tension, mtd, atrophy, insufficien, glottis closure, glottal closure, paresis, paralysis, laryngitis, dysphonia]
-  other: [other]
-  unknown: [unknown, "n/a", "na", "none", ""]
-
 tasks:
   A: {name: healthy_vs_disorder, labels: [healthy, disorder]}
   B: {name: healthy_vs_structural, labels: [healthy, structural]}

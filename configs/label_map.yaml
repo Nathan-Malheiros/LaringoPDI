@@ -1,0 +1,20 @@
+# Mapeamento do "Subject disorder status" do BAGLS (texto livre) → família.
+# Regras avaliadas EM ORDEM; a primeira que casar vence. Comparação em minúsculas, sem espaços
+# nas pontas. `exact` = igualdade; `any` = substring. A tabela completa texto → família, com o nº
+# de vídeos, sai em docs/dataset_report.md para revisão humana.
+# Famílias: healthy | functional | structural | other (excluído) | unknown (excluído).
+rules:
+  - {family: unknown, exact: [""]}                          # status vazio
+  - {family: healthy, exact: ["none (higher phonation)"]}    # sem distúrbio; só a tarefa fonatória difere
+  - {family: unknown, any: ["none ("]}                      # "sem distúrbio" atual, mas pós-cirurgia/histórico de lesão
+  # Lesões estruturais (ESPECIFICACAO.md, Tarefa B) + grafias do BAGLS (polipoid, leucoplacia) + "swelling"
+  # (tumefação mesomembranosa ≈ edema/pseudocisto). Qualquer lesão vence o componente funcional.
+  - {family: structural, any: [edema, reinke, nodule, polyp, polip, cyst, granuloma, papilloma,
+                               leukoplakia, leucoplacia, carcinoma, swelling]}
+  # Alterações estruturais fora da lista da Tarefa B (cicatriz, sulco/vergeture, rigidez, irregularidade
+  # de mucosa) → "outros", excluídos de todas as tarefas.
+  - {family: other, any: [scar, vergeture, sulcus, fibrotic, stif, mucosal irregularity]}
+  - {family: functional, any: [muscle tension, functional, atrophy, insufficien, paresis, paralysis,
+                               laryngitis, spasmodic, irregular vibration]}
+  - {family: healthy, exact: [healthy, normal]}
+default: other

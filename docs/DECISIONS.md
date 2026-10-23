@@ -30,3 +30,15 @@ Registro cronológico. Cada decisão: data, contexto, decisão, motivo.
 - **Matriz nova:** E00–E14 (ESPECIFICACAO.md, Seção 5). `roi_gt` (E07) é o limite superior, não uma técnica utilizável na prática.
 - **Braço clássico:** saem as características de cor; entram as de forma glótica (máscara clássica e, como referência, a do ground truth). As características são agregadas por vídeo (média e desvio-padrão).
 - **Hipóteses H1–H6 reescritas antes de qualquer resultado** (nenhum treino ou métrica de classificação existia em 2026-10-22). Expectativa registrada: distúrbios funcionais são dinâmicos, e um desempenho modesto na Tarefa A é plausível e válido; o efeito mais claro do PDI é esperado na Tarefa B e na segmentação.
+
+## 2026-10-23 — Passo 0 (BAGLS real)
+- **Formato confirmado:** `<id>.png`, `<id>_seg.png` e `<id>.meta` (JSON com 12 chaves, entre elas `Video Id` inteiro, `Color` booleano, `Camera`, `Sampling rate (Hz)`, `Subject disorder status`, `Segmenter`). O `Video Id` (0–639) é único entre `training/` e `test/`, então serve como `video_id`. Nenhum vídeo tem mais de um status. Não há ID de sujeito.
+- **Rótulos:** o status é texto livre, com 55 valores distintos. O mapeamento usa regras ordenadas em `configs/label_map.yaml`, e a tabela completa texto → família fica em `results/tables/status_map.csv` e `docs/dataset_report.md` para revisão humana. Casos decididos:
+  - vazio → excluído;
+  - `None (higher phonation)` → saudável;
+  - os demais `None (…)` (pós-cirurgia ou histórico de lesão) → excluídos;
+  - "swelling" mesomembranoso → estrutural;
+  - cicatriz, vergeture/sulco, rigidez e irregularidade de mucosa → "outros" (excluídos);
+  - espasmódica, laringite e paresia → funcional;
+  - qualquer lesão estrutural vence o componente funcional.
+- **Contagem (vídeos):** saudável 377, funcional 156, estrutural 47, desconhecido 53, outros 7. RGB: 25 vídeos (esperado ~22; a contagem usa o `Color` do 1º frame). Frames com glote visível: 55.286 de 59.250.

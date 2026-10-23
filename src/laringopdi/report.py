@@ -58,7 +58,8 @@ def eda(cfg: dict) -> dict:
 
     fam = pd.DataFrame({"videos": vids["family"].value_counts(), "frames": df["family"].value_counts()}) \
         .fillna(0).astype(int).reindex(FAMILIES + ["other", "unknown"], fill_value=0)
-    tok = pd.Series(idx.get("videos_per_disorder_token", {}), name="videos")
+    smap_p = C.path(cfg, "tables") / "status_map.csv"
+    smap = pd.read_csv(smap_p, keep_default_na=False) if smap_p.exists() else pd.DataFrame()
 
     # amostra de frames para estatísticas de intensidade (máx. 3 por vídeo)
     fr = _frames_or_index(cfg).groupby("video_id", group_keys=False).head(3)
@@ -117,8 +118,9 @@ def eda(cfg: dict) -> dict:
           f"- ID de sujeito nos metadados: {idx.get('subject_id_column') or 'não (só ID de vídeo)'}",
           f"- Split oficial (vídeos): {vids['official_split'].value_counts().to_dict()} — ignorado nos folds", "",
           "### Por família", "", *_md_table(fam.reset_index().rename(columns={"index": "família"})), "",
-          "### Por status bruto (vídeos; um vídeo pode ter mais de um)", "",
-          *_md_table(tok.reset_index().rename(columns={"index": "status"})), "",
+          "### Texto do status → família (revisão humana; regras em `configs/label_map.yaml`)", "",
+          *_md_table(smap.assign(disorder_raw=smap.get("disorder_raw", pd.Series(dtype=str))
+                                 .map(lambda x: f"`{x}`" if x else "*(vazio)*"))), "",
           "### Tarefas (vídeos)", "", *_md_table(tasks), "",
           "![visão geral](figures/eda_overview.png)", "", "![resoluções](figures/eda_sizes.png)", "",
           "![amostras](figures/eda_samples.png)", ""]

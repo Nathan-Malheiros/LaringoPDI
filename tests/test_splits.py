@@ -9,9 +9,16 @@ CFG = C.load()
 
 
 @pytest.mark.parametrize("raw,fam", [
-    ("healthy", "healthy"), ("Muscle tension dysphonia", "functional"), ("Nodules", "structural"),
-    ("muscle tension dysphonia; polyp", "structural"), ("Unknown", "unknown"), ("other", "other"),
-    ("Insufficient glottis closure", "functional"), ("Reinke edema", "structural"), ("", "unknown")])
+    ("healthy", "healthy"), ("Muscle tension dysphonia", "functional"), ("Vocal fold nodules", "structural"),
+    ("Muscle tension dysphonia with nodules", "structural"), ("", "unknown"), ("other", "other"),
+    ("Posterior insufficient glottic closure", "functional"), ("Bilateral Reinke's edema", "structural"),
+    ("leucoplacia", "structural"), ("Vocal insufficiency and contact granuloma", "structural"),
+    ("None (higher phonation)", "healthy"),
+    ("None (half year post-phonomicrosurgery for polipoid mid-membranous lesions)", "unknown"),
+    ("None (one year after presumption of a pseudocyst/sulcus in left vocal fold)", "unknown"),
+    ("scar", "other"), ("Bilateral vergeture with bowed insufficient glottic closure", "other"),
+    ("Bowed/oval insufficient glottic closure (left more than right); stifness right vocal fold", "other"),
+    ("spasmodic dysphonia", "functional"), ("Laryngitis", "functional")])
 def test_disorder_family(raw, fam):
     assert D.disorder_family(raw, CFG) == fam
 

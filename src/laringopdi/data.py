@@ -36,20 +36,13 @@ def imwrite(p: Path | str, img: np.ndarray) -> None:
 
 # ----------------------------------------------------------------------------- rótulos
 def disorder_family(raw: str, cfg: dict) -> str:
-    """healthy / functional / structural / other / unknown (qualquer lesão → structural)."""
+    """Família do status em texto livre pelas regras ordenadas de configs/label_map.yaml."""
     s = str(raw).strip().lower()
-    kw = cfg["disorders"]
-    if s in kw["unknown"]:
-        return "unknown"
-    if any(k in s for k in kw["structural"]):
-        return "structural"
-    if any(k in s for k in kw["functional"]):
-        return "functional"
-    if any(k in s for k in kw["healthy"]):
-        return "healthy"
-    if "unknown" in s:
-        return "unknown"
-    return "other"
+    lm = cfg["label_map"]
+    for r in lm["rules"]:
+        if s in [str(x).lower() for x in r.get("exact", [])] or any(str(k).lower() in s for k in r.get("any", [])):
+            return r["family"]
+    return lm.get("default", "other")
 
 
 FAMILY_LABELS = {"healthy": (0, 0, 0), "functional": (1, -1, 1), "structural": (1, 1, 2),
@@ -117,11 +110,11 @@ def _bagls_row(p: Path, root: Path) -> dict:
     ck = _find_key(meta, "color") or _find_key(meta, "colour")
     dis = meta.get(dk, "") if dk else ""
     dis = "; ".join(map(str, dis)) if isinstance(dis, list) else str(dis)
-    color = str(meta.get(ck, "")).lower() if ck else ""
+    color = meta.get(ck) if ck else None
     rel = p.relative_to(root)
     row = {"path": rel.as_posix(), "video_id": str(meta.get(vk, "")) if vk else "",
            "frame": int(p.stem) if p.stem.isdigit() else p.stem, "disorder_raw": dis,
-           "is_rgb": ("rgb" in color or "colo" in color) if color else mode not in ("L", "I;16", "I"),
+           "is_rgb": bool(color) if isinstance(color, bool) else (mode not in ("L", "I;16", "I")),
            "has_seg": seg.exists(), "seg_path": seg.relative_to(root).as_posix() if seg.exists() else "",
            "seg_area": seg_area, "official_split": rel.parts[0] if len(rel.parts) > 1 else "",
            "height": h, "width": w}
@@ -166,12 +159,14 @@ def build_index(cfg: dict) -> dict:
     df.to_csv(C.path(cfg, "index"), index=False)
     vids = df.drop_duplicates("video_id")
     fam_v = vids["family"].value_counts().to_dict()
-    tok = Counter(t.strip().lower() for s in vids["disorder_raw"] for t in re.split(r"[;,/]", s) if t.strip())
+    status_map = (vids.groupby(["disorder_raw", "family"]).size().reset_index(name="videos")
+                  .sort_values(["family", "videos"], ascending=[True, False]))
+    status_map.to_csv(C.path(cfg, "tables") / "status_map.csv", index=False)
     summary = {
         "n_frames": len(df), "n_videos": len(vids), "expected": {"frames": 59250, "videos": 640},
         "videos_per_family": fam_v,
         "frames_per_family": df["family"].value_counts().to_dict(),
-        "videos_per_disorder_token": dict(tok.most_common()),
+        "n_distinct_status": int(len(status_map)),
         "videos_rgb": int(vids["is_rgb"].sum()), "frames_with_seg": int(df["has_seg"].sum()),
         "frames_seg_nonempty": int((df["seg_area"] > 0).sum()),
         "official_split_videos": vids["official_split"].value_counts().to_dict(),

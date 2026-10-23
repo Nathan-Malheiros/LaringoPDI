@@ -11,10 +11,12 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def load(base: str = "configs/base.yaml", experiments: str = "configs/experiments.yaml") -> dict:
-    """Carrega base.yaml e experiments.yaml num único dicionário."""
+def load(base: str = "configs/base.yaml", experiments: str = "configs/experiments.yaml",
+         label_map: str = "configs/label_map.yaml") -> dict:
+    """Carrega base.yaml, experiments.yaml e label_map.yaml (em `cfg["label_map"]`)."""
     cfg = yaml.safe_load((ROOT / base).read_text(encoding="utf-8"))
     cfg.update(yaml.safe_load((ROOT / experiments).read_text(encoding="utf-8")))
+    cfg["label_map"] = yaml.safe_load((ROOT / label_map).read_text(encoding="utf-8"))
     return cfg
 
 
