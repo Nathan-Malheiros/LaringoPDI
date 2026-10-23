@@ -214,9 +214,17 @@ class LiveTap:
     def pre(self, step: int) -> None:
         self._sampling = step % SAMPLE_EVERY == 0
 
-    def batch(self, xin, yb, logits, epoch: int, step: int, steps: int, loss: float) -> None:
+    def batch(self, xin, yb, logits, epoch: int, step: int, steps: int, loss: float, lr: float | None = None) -> None:
         try:
             self.st.update(epoch=epoch + 1, step=step + 1, steps=steps, loss=loss)
+            t = epoch + (step + 1) / steps
+            if self._sampling:
+                acc = float((logits.detach().argmax(1).cpu() == yb.cpu()).float().mean())
+                self.st.setdefault("acc_hist", []).append([t, acc])
+                self.st["acc_hist"] = self.st["acc_hist"][-400:]
+                if lr is not None:
+                    self.st.setdefault("lr_hist", []).append([t, lr])
+                    self.st["lr_hist"] = self.st["lr_hist"][-400:]
             if self._sampling and self.layers:
                 for i, (_, m) in enumerate(self.layers):
                     w = m.weight.detach().float()
@@ -229,7 +237,9 @@ class LiveTap:
                         L["act"] = [float(v) for v in k]
                         L["act_mean"] = float(a.mean())
                 self._snapshot()
-                self.st["loss_hist"] = (self.st["loss_hist"] + [[epoch + (step + 1) / steps, loss]])[-400:]
+                self.st.setdefault("upd_hist", []).append([t, [L["upd"] for L in self.st["layers"]]])
+                self.st["upd_hist"] = self.st["upd_hist"][-160:]
+                self.st["loss_hist"] = (self.st["loss_hist"] + [[t, loss]])[-400:]
                 self._sampling = False
             now = time.time()
             if now - self._last_batch < 2.0:
@@ -247,8 +257,10 @@ class LiveTap:
         except Exception:
             pass
 
-    def epoch(self, model, ep: int, val_f1: float, device) -> None:
+    def epoch(self, model, ep: int, val_f1: float, device, pv=None, yva=None, vm=None, iva=None) -> None:
         try:
+            if pv is not None:
+                self._val_stats(ep, pv, yva, vm, iva)
             import torch
             from pytorch_grad_cam import GradCAM
 
@@ -304,6 +316,40 @@ class LiveTap:
             self._write()
         except Exception:
             pass
+
+    def _val_stats(self, ep: int, pv: np.ndarray, yva: np.ndarray, vm: dict, iva: np.ndarray) -> None:
+        """Matriz de confusão (frame e vídeo), precisão/revocação, confiança e os erros mais confiantes."""
+        k = pv.shape[1]
+        pred = pv.argmax(1)
+        cm = np.zeros((k, k), int)
+        for t, q in zip(yva, pred):
+            cm[t, q] += 1
+        conf = pv.max(1)
+        ok = pred == yva
+        bins = np.linspace(1 / k, 1, 11)
+        self.st["conf_frame"] = cm.tolist()
+        self.st["conf_video"] = vm["video"]["confusion"] if vm else None
+        self.st["val_counts"] = {"frames_ok": int(ok.sum()), "frames_err": int((~ok).sum()),
+                                 "videos_ok": int(np.trace(np.array(vm["video"]["confusion"]))) if vm else None,
+                                 "videos_total": int(np.array(vm["video"]["confusion"]).sum()) if vm else None}
+        self.st["per_class"] = [{"recall": float(cm[i, i] / max(cm[i].sum(), 1)),
+                                 "precision": float(cm[i, i] / max(cm[:, i].sum(), 1))} for i in range(k)]
+        self.st["conf_hist"] = {"edges": bins.tolist(), "ok": np.histogram(conf[ok], bins)[0].tolist(),
+                                "err": np.histogram(conf[~ok], bins)[0].tolist()}
+        if vm:
+            self.st.setdefault("valacc_hist", []).append([ep + 1, vm["video"]["bal_acc"], vm["frame"]["bal_acc"]])
+        wrong = np.nonzero(~ok)[0]
+        wrong = wrong[np.argsort(-conf[wrong])][:6]
+        if len(wrong) and iva is not None:
+            idx = iva[wrong]
+            order = np.argsort(idx)
+            imgs = np.array(self.X[idx[order]])[np.argsort(order)]
+            tiles = [_caption(np.ascontiguousarray(im[..., :3]), f"real: {self.names[yva[w]]}",
+                              f"rede: {self.names[pred[w]]} {conf[w]:.0%}", False) for im, w in zip(imgs, wrong)]
+            while len(tiles) < 6:
+                tiles.append(np.full_like(tiles[0], 6))
+            _atomic(self.out / "errors.jpg", _jpg(np.vstack([np.hstack(tiles[:3]), np.hstack(tiles[3:6])])))
+            self.st["has_errors"] = True
 
     def finish(self, test_video_f1: float) -> None:
         try:

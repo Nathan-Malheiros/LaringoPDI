@@ -160,14 +160,14 @@ def train_job(cfg: dict, exp: str, task: str, model_name: str, fold: int, seed: 
                 loss = loss_fn(out, yb.to(device))
             scaler.scale(loss).backward(); scaler.step(opt); scaler.update()
             if tap:
-                tap.batch(xin, yb, out, ep, step, len(dl_tr), loss.item())
+                tap.batch(xin, yb, out, ep, step, len(dl_tr), loss.item(), opt.param_groups[0]["lr"])
         sched.step()
         pv = _predict(model, dl_va, device)
         vm = metrics_both_levels(_preds_df(d["paths"][iva], d["video"][iva], yva, pv))
         f1 = vm["video"][tc["monitor"]]                                 # early stopping no F1-macro por vídeo
         hist.append({"epoch": ep, "val_video_f1": f1, "loss": loss.item(), "sec": time.time() - te})
         if tap:
-            tap.epoch(model, ep, f1, device)
+            tap.epoch(model, ep, f1, device, pv, yva, vm, iva)
         if f1 > best:
             best, wait = f1, 0
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
