@@ -1,0 +1,16 @@
+method,preprocess,n_videos,dice_raw,dice_pre,delta,p,p_holm,verdict
+adaptive,bilat,587,0.2531,0.3212,0.0681,0.0,0.0,melhora
+adaptive,clahe,587,0.2531,0.1495,-0.1036,0.0,0.0,piora
+adaptive,homo,587,0.2531,0.1031,-0.15,0.0,0.0,piora
+otsu,bilat,587,0.0228,0.022,-0.0008,0.0,0.0,piora
+otsu,clahe,587,0.0228,0.0235,0.0007,0.0,0.0,melhora
+otsu,homo,587,0.0228,0.0248,0.002,0.0,0.0,melhora
+otsu_morph,bilat,587,0.3241,0.2993,-0.0248,0.0,0.0,piora
+otsu_morph,clahe,587,0.3241,0.1715,-0.1526,0.0,0.0,piora
+otsu_morph,homo,587,0.3241,0.4074,0.0833,0.0,0.0,melhora
+region_grow,bilat,587,0.4666,0.358,-0.1086,0.0,0.0,piora
+region_grow,clahe,587,0.4666,0.6144,0.1478,0.0,0.0,melhora
+region_grow,homo,587,0.4666,0.4401,-0.0265,0.0005,0.0005,piora
+watershed,bilat,587,0.3336,0.3154,-0.0183,0.0,0.0,piora
+watershed,clahe,587,0.3336,0.1816,-0.1521,0.0,0.0,piora
+watershed,homo,587,0.3336,0.4369,0.1032,0.0,0.0,melhora

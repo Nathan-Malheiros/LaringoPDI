@@ -263,3 +263,84 @@ def pdi_doc(cfg: dict) -> str:
     out = C.path(cfg, "docs") / "pdi_tecnicas.md"
     out.write_text("\n".join(md), encoding="utf-8")
     return str(out)
+
+
+# ----------------------------------------------------------------------------- tabelas finais
+def to_latex(df: pd.DataFrame, path, caption: str) -> None:
+    """Tabela LaTeX simples (booktabs), sem dependências extras."""
+    fmt = lambda v: f"{v:.3f}" if isinstance(v, float) else str(v).replace("_", r"\_").replace("%", r"\%")
+    lines = [r"\begin{table}[ht]", r"\centering", rf"\caption{{{caption}}}", r"\begin{tabular}{" + "l" * df.shape[1] + "}",
+             r"\toprule", " & ".join(fmt(c) for c in df.columns) + r" \\", r"\midrule",
+             *[" & ".join(fmt(v) for v in r) + r" \\" for r in df.itertuples(index=False)],
+             r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _save_table(cfg, df: pd.DataFrame, name: str, caption: str) -> None:
+    t = C.path(cfg, "tables")
+    df.round(4).to_csv(t / f"{name}.csv", index=False)
+    to_latex(df.round(3), t / f"{name}.tex", caption)
+
+
+def cmd_report(cfg: dict, args) -> dict:
+    """Gera vereditos, H4 da segmentação, clássico × CNN e docs/hipoteses.md com o que já existe."""
+    from laringopdi.evaluate import cmd_summary, collect_runs, seg_h4_test, verdicts
+
+    cmd_summary(cfg, args)
+    runs = collect_runs(cfg)
+    out, made = {}, []
+    for model in sorted(set(runs["model"]) & {"probe", "simplecnn_fast", "resnet18", "simplecnn"}):
+        v = verdicts(cfg, model)
+        if not v.empty:
+            _save_table(cfg, v, f"verdicts_{model}", f"Vereditos do PDI vs E00 ({model}, F1-macro por vídeo)")
+            out[model] = v.groupby(["task", "verdict"]).size().unstack(fill_value=0).to_dict("index")
+            made.append(model)
+    h4 = seg_h4_test(cfg)
+    _save_table(cfg, h4, "seg_h4", "H4: Dice por vídeo com realce vs raw (Wilcoxon, Holm)")
+    cls = runs[runs["exp"].str.startswith("C")]
+    cnn = runs[runs["model"].isin(["probe", "resnet18", "simplecnn"]) & (runs["exp"] == "E00")]
+    cmp_ = pd.concat([cls, cnn]).groupby(["exp", "model", "task"]).agg(
+        f1=("video_f1_macro", "mean"), f1_sd=("video_f1_macro", "std"), auc=("video_auc", "mean"),
+        bal_acc=("video_bal_acc", "mean"), n=("fold", "count")).reset_index()
+    if not cmp_.empty:
+        _save_table(cfg, cmp_, "classic_vs_cnn", "Braço clássico × CNN (E00), por vídeo")
+    _hypotheses_doc(cfg, runs, h4, cmp_, made)
+    return {"verdicts": out, "h4_melhora": int((h4["verdict"] == "melhora").sum()), "h4_total": len(h4)}
+
+
+def _hypotheses_doc(cfg, runs, h4, cmp_, made) -> None:
+    t = C.path(cfg, "tables")
+    def v(model):
+        p = t / f"verdicts_{model}.csv"
+        return pd.read_csv(p) if p.exists() else pd.DataFrame()
+    pr = v("probe")
+    lines = ["# Hipóteses — estado da evidência", "",
+             f"Gerado por `python -m laringopdi report` (git {C.git_sha()}). Não edite à mão. "
+             f"Modelos com resultados: {', '.join(made) or 'nenhum'}. Hipóteses pré-registradas em DECISIONS.md (2026-10-22).", ""]
+    def row(df, e, task):
+        r = df[(df["exp"] == e) & (df["task"] == task)]
+        return "—" if r.empty else f"ΔF1={r['oof_delta_f1'].iloc[0]:+.3f} [IC {r['ci_low'].iloc[0]:+.3f}; {r['ci_high'].iloc[0]:+.3f}], {r['verdict'].iloc[0]}"
+    lines += ["## H1 — `spec` mantém/melhora o F1 e reduz a atenção nos reflexos",
+              f"- Probe (E01 vs E00): A {row(pr, 'E01', 'A')}; B {row(pr, 'E01', 'B')}.",
+              "- Atenção (Grad-CAM): **pendente** (requer CNNs do Colab).", "",
+              "## H2 — CLAHE/homomórfica > HE global (classificação e segmentação)",
+              *[f"- Probe {e}: A {row(pr, e, 'A')}; B {row(pr, e, 'B')}." for e in ("E02", "E03", "E04")]]
+    s = h4.set_index(["method", "preprocess"])
+    lines += [f"- Segmentação, Δ Dice vs raw (crescimento de região): clahe {s.loc[('region_grow', 'clahe'), 'delta']:+.3f}, "
+              f"homo {s.loc[('region_grow', 'homo'), 'delta']:+.3f}; HE não faz parte do estudo de segmentação.", "",
+              "## H3 — PDI ajuda mais a SimpleCNN do que a ResNet",
+              "- **Pendente** (Estágios 1–2 no Colab)." if not {"simplecnn", "resnet18"} <= set(made) else "- Ver `verdicts_simplecnn.csv` × `verdicts_resnet18.csv`.", "",
+              "## H4 — o realce melhora o Dice da segmentação clássica", "",
+              "| método | pré | Dice raw | Dice pré | Δ | p (Holm) | veredito |", "|---|---|---:|---:|---:|---:|---|",
+              *[f"| {r.method} | {r.preprocess} | {r.dice_raw:.3f} | {r.dice_pre:.3f} | {r.delta:+.3f} | {r.p_holm:.2g} | {r.verdict} |"
+                for r in h4.itertuples()], "",
+              "## H5 — ROI ajuda mais em B do que em A; `roi` se aproxima de `roi_gt`",
+              f"- Probe E08 (`roi`): A {row(pr, 'E08', 'A')}; B {row(pr, 'E08', 'B')}.",
+              f"- Probe E07 (`roi_gt`): A {row(pr, 'E07', 'A')}; B {row(pr, 'E07', 'B')}.", "",
+              "## H6 — forma glótica + MLP competitiva com a CNN em A, inferior em B"]
+    if not cmp_.empty:
+        lines += ["", "| exp | modelo | tarefa | F1 vídeo | dp | AUC |", "|---|---|---|---:|---:|---:|",
+                  *[f"| {r.exp} | {r.model} | {r.task} | {r.f1:.3f} | {r.f1_sd:.3f} | {r.auc:.3f} |" for r in cmp_.itertuples()],
+                  "", "- A comparação final usa a ResNet-18 do Estágio 2 (pendente); o probe é só referência provisória."]
+    lines += ["", "> Com 5 pares (probe: 5 folds × 1 semente), o Wilcoxon não alcança p < 0,05; os vereditos usam McNemar OOF (Holm) + IC bootstrap."]
+    (C.path(cfg, "docs") / "hipoteses.md").write_text("\n".join(lines), encoding="utf-8")

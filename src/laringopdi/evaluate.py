@@ -194,3 +194,120 @@ def cmd_summary(cfg: dict, args) -> dict:
         top = [e for e in score.sort_values("mean_delta", ascending=False)["exp"] if e not in ("E00", "E07")]
         out["top4"] = top[:cfg["stage1"]["top_k"]]
     return out
+
+
+# ----------------------------------------------------------------------------- estatística
+def oof_video_preds(cfg: dict, exp: str, task: str, model: str, seed: int = 0) -> pd.DataFrame:
+    """Predições out-of-fold por vídeo (concatena o teste dos 5 folds) para uma semente."""
+    rows = []
+    for k in cfg["stage1"]["folds"]:
+        p = C.path(cfg, "runs") / exp / task / model / f"fold{k}_seed{seed}" / "preds.csv"
+        if not p.exists():
+            return pd.DataFrame()
+        df = pd.read_csv(p, dtype={"video_id": str})
+        pc = sorted((c for c in df.columns if c[0] == "p" and c[1:].isdigit()), key=lambda c: int(c[1:]))
+        v = video_level(df, pc)
+        v["pred"] = v[pc].to_numpy().argmax(1)
+        rows.append(v[["video_id", "y", "pred"]])
+    return pd.concat(rows, ignore_index=True)
+
+
+def mcnemar_p(correct_a: np.ndarray, correct_b: np.ndarray) -> float:
+    """McNemar exato (binomial) sobre os pares discordantes."""
+    from scipy.stats import binomtest
+    b = int((correct_a & ~correct_b).sum())
+    c = int((~correct_a & correct_b).sum())
+    return 1.0 if b + c == 0 else float(binomtest(b, b + c, 0.5).pvalue)
+
+
+def bootstrap_delta_f1(y, pa, pb, n_boot: int, seed: int = 0) -> tuple[float, float]:
+    """IC 95% (percentil) da diferença de F1-macro (b − a) por reamostragem de vídeos."""
+    from sklearn.metrics import f1_score
+    rng = np.random.default_rng(seed)
+    n = len(y)
+    d = []
+    for _ in range(n_boot):
+        i = rng.integers(0, n, n)
+        d.append(f1_score(y[i], pb[i], average="macro") - f1_score(y[i], pa[i], average="macro"))
+    return float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))
+
+
+def verdicts(cfg: dict, model: str, tasks=("A", "B"), baseline: str = "E00", exps: list[str] | None = None) -> pd.DataFrame:
+    """Cada técnica × tarefa contra o baseline: ΔF1 (vídeo), Wilcoxon pareado (fold×semente) com Holm,
+    McNemar OOF com Holm e IC 95% bootstrap. Veredito: melhora/piora só se o McNemar corrigido for
+    < α **e** o IC excluir 0; senão, neutra."""
+    from scipy.stats import wilcoxon
+    from sklearn.metrics import f1_score
+
+    runs = collect_runs(cfg)
+    runs = runs[runs["model"] == model]
+    exps = exps or [e for e in cfg["stage1"]["experiments"] if e != baseline]
+    rows = []
+    for t in tasks:
+        base = runs[(runs["exp"] == baseline) & (runs["task"] == t)].set_index(["fold", "seed"])["video_f1_macro"]
+        oa = oof_video_preds(cfg, baseline, t, model)
+        for e in exps:
+            cur = runs[(runs["exp"] == e) & (runs["task"] == t)].set_index(["fold", "seed"])["video_f1_macro"]
+            pair = pd.concat([base, cur], axis=1, keys=["a", "b"]).dropna()
+            if pair.empty or oa.empty:
+                continue
+            ob = oof_video_preds(cfg, e, t, model)
+            if ob.empty:
+                continue
+            m = oa.merge(ob, on=["video_id", "y"], suffixes=("_a", "_b"))
+            y, pa, pb = m["y"].to_numpy(), m["pred_a"].to_numpy(), m["pred_b"].to_numpy()
+            diff = pair["b"] - pair["a"]
+            wp = float(wilcoxon(pair["b"], pair["a"]).pvalue) if (diff != 0).any() else 1.0
+            lo, hi = bootstrap_delta_f1(y, pa, pb, cfg["stats"]["n_boot"])
+            rows.append({"model": model, "task": t, "exp": e, "pipeline": cfg["experiments"].get(e, {}).get("pipeline", e),
+                         "n_pairs": len(pair), "f1_base": pair["a"].mean(), "f1_exp": pair["b"].mean(),
+                         "delta_f1": diff.mean(), "wilcoxon_p": wp,
+                         "oof_delta_f1": f1_score(y, pb, average="macro") - f1_score(y, pa, average="macro"),
+                         "ci_low": lo, "ci_high": hi, "mcnemar_p": mcnemar_p(pa == y, pb == y)})
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    for col in ("wilcoxon_p", "mcnemar_p"):
+        df[col + "_holm"] = df.groupby("task")[col].transform(lambda p: _holm(p.to_numpy()))
+    a = cfg["stats"]["alpha"]
+    sig = (df["mcnemar_p_holm"] < a) & ((df["ci_low"] > 0) | (df["ci_high"] < 0))
+    df["verdict"] = np.where(sig & (df["oof_delta_f1"] > 0), "melhora", np.where(sig, "piora", "neutra"))
+    return df
+
+
+def _holm(p: np.ndarray) -> np.ndarray:
+    """Correção de Holm–Bonferroni (p ajustados, monotônicos)."""
+    m = len(p)
+    o = np.argsort(p)
+    adj = np.minimum(1, np.maximum.accumulate((m - np.arange(m)) * p[o]))
+    out = np.empty(m)
+    out[o] = adj
+    return out
+
+
+def seg_h4_test(cfg: dict) -> pd.DataFrame:
+    """H4: para cada método, Dice por vídeo (média dos frames, parâmetros escolhidos no treino de
+    cada fold) com realce × raw — Wilcoxon pareado por vídeo, Holm entre comparações."""
+    from scipy.stats import wilcoxon
+
+    tables = C.path(cfg, "tables")
+    long = pd.read_csv(tables / "segmentation_frames.csv.gz")
+    chosen = pd.read_csv(tables / "segmentation.csv")
+    fr = D.load_frames(cfg)[["path", "video_id"]]
+    long = long.merge(fr, on="path")
+    test_of = {v: f["fold"] for f in D.load_splits(cfg) for v in f["test"]}
+    long["fold"] = long["video_id"].map(test_of)
+    sel = long.merge(chosen[["fold", "preprocess", "method", "param_id"]], on=["fold", "preprocess", "method", "param_id"])
+    vid = sel.groupby(["method", "preprocess", "video_id"])["dice"].mean().unstack("preprocess")
+    rows = []
+    for meth, g in vid.groupby(level="method"):
+        for pre in [p for p in g.columns if p != "raw"]:
+            x = g[[pre, "raw"]].dropna()
+            d = x[pre] - x["raw"]
+            rows.append({"method": meth, "preprocess": pre, "n_videos": len(x), "dice_raw": x["raw"].mean(),
+                         "dice_pre": x[pre].mean(), "delta": d.mean(),
+                         "p": float(wilcoxon(x[pre], x["raw"]).pvalue) if (d != 0).any() else 1.0})
+    df = pd.DataFrame(rows)
+    df["p_holm"] = _holm(df["p"].to_numpy())
+    df["verdict"] = np.where(df["p_holm"] < cfg["stats"]["alpha"], np.where(df["delta"] > 0, "melhora", "piora"), "neutra")
+    return df

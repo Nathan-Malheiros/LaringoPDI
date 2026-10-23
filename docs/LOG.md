@@ -49,3 +49,22 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
   - fallback da ROI: 2,1% (`roi`), 0,3% (`clahe>roi`), 0% (`roi_gt`).
 - Limitação: as métricas de qualidade usam o canal 0. Em `edges` e M2, que começam pelo cinza, elas coincidem com E00.
 - Testes: 55 passam (inclui o teste de vazamento nos splits reais).
+
+## Fases 4–6 (parte local, CPU) — 2026-10-23
+- **Fase 4 (código):**
+  - `models.py` (ResNet-18 ImageNet, SimpleCNN 32/64/128/256);
+  - `train.py`: jobs com early stopping no F1-macro **por vídeo da validação interna**, só aug geométrico, AMP na GPU, jobs concluídos pulados;
+  - `shards` (stage1: 140 jobs em 5 shards de 2–3 experimentos cada) e `notebooks/colab_runner.ipynb`.
+  - Medição local: SimpleCNN ≈ 121 s/época na CPU. A medição no T4 está **pendente** (humano).
+- **Fase 5 (probe em CPU):** 14 exp × 2 tarefas × 5 folds = 140 jobs.
+  - F1 por vídeo no teste: A 0,61–0,67; B 0,72–0,80.
+  - Top-4 provisório, escolhido **só pela validação**: E05 `bilat`, E04 `homo`, E08 `roi`, E06 `median`. É definitivo só depois da SimpleCNN rápida no Colab.
+- **Fase 6 (clássico):** C1–C5 com características por vídeo (média e desvio de 187 características × 10 frames).
+  - F1 por vídeo, A: C1 0,642 · C2 0,662 · C3 0,664 · C4 0,664 · C5 0,658.
+  - F1 por vídeo, B: C1 0,762 · C2 0,737 · C3 0,757 · C4 0,811 · C5 0,762.
+  - Competitivo com o probe da ResNet (E00: A 0,656; B 0,748).
+- **Estatística (`report`):**
+  - Probe: todos os 26 vereditos são **neutros** (McNemar OOF com Holm + IC bootstrap). Os ΔF1 ficam em ±0,03, com ICs cruzando 0.
+  - H4 (segmentação): o efeito do realce depende do par método × pré-processamento. Crescimento de região + CLAHE dá +0,148 de Dice e watershed/Otsu+morfologia + homomórfica dão +0,08 a +0,10; CLAHE piora os métodos baseados em limiar global.
+  - Os p muito pequenos vêm de ~587 vídeos pareados; no Otsu o efeito é desprezível (|Δ| ≤ 0,002) apesar do p.
+- Correção de bug: a chave `classic` do `experiments.yaml` sobrescrevia os hiperparâmetros do `base.yaml`; foi renomeada para `classic_experiments`.

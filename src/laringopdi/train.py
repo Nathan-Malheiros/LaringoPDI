@@ -194,7 +194,7 @@ def probe_features(cfg: dict, exp: str, batch: int = 64):
     feats = []
     with torch.no_grad():
         for i in range(0, len(X), batch):
-            xb = torch.from_numpy(np.ascontiguousarray(X[i:i + batch]))
+            xb = torch.from_numpy(np.array(X[i:i + batch]))
             feats.append(m(_prep(xb, device)).cpu().numpy())
     F = np.concatenate(feats).astype(np.float32)
     np.save(out, F)
