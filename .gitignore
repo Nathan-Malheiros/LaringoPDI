@@ -3,9 +3,11 @@ __pycache__/
 *.pyc
 *.egg-info/
 .pytest_cache/
+.ipynb_checkpoints/
 data/raw/
 data/processed/
 results/runs/
 logs/
-annotations/*.tmp
-.ipynb_checkpoints/
+*.zip
+*.pt
+*.pth

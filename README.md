@@ -17,13 +17,20 @@ uv pip install -p .venv -r requirements.txt
 uv pip install -p .venv -e .
 ```
 
-## Dados (download manual) — BAGLS
+## Dados
 
-1. Baixe o BAGLS (Gómez et al., Scientific Data, 2020; CC BY-NC-SA 4.0) por bagls.org, Zenodo ou Kaggle.
-2. Extraia em `data/raw/bagls/`, mantendo as pastas `training/` e `test/` com `<id>.png`,
-   `<id>_seg.png` e os metadados por frame.
+O dataset **não fica neste repositório**: são imagens de pacientes sob licença CC BY-NC-SA 4.0.
+Cada integrante baixa o BAGLS manualmente.
 
-Cite: Gómez, P. et al. *BAGLS, a multihospital Benchmark for Automatic Glottis Segmentation*. Sci Data 7, 186 (2020).
+1. Baixe `training.zip` e `test.zip` do Zenodo, record 3762320
+   (https://zenodo.org/records/3762320), e confira o md5 de cada arquivo. O `raw.zip` não é necessário.
+2. Extraia em `data/raw/bagls/training/` e `data/raw/bagls/test/`. Cada frame tem `<id>.png`,
+   `<id>_seg.png` (máscara da glote) e `<id>.meta` (metadados em JSON).
+
+- **Licença do dataset:** Creative Commons BY-NC-SA 4.0 (uso não comercial, com atribuição e
+  compartilhamento pela mesma licença).
+- **Citação:** Gómez, P., Kist, A. M., Schlegel, P. et al. *BAGLS, a multihospital Benchmark for
+  Automatic Glottis Segmentation*. Scientific Data 7, 186 (2020). https://doi.org/10.1038/s41597-020-0526-3
 
 ## Fluxo
 

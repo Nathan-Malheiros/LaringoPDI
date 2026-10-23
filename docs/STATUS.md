@@ -30,3 +30,4 @@
 ## Pendências humanas
 - E-mail aos autores do Laryngoscope8.
 - Avisar a Prof.ª Lyndainês sobre a troca de dataset.
+- Adicionar Marcos Vinicius, Pedro Nobre, Marcos Mendes e Tales como colaboradores do repositório privado `PDIZip` (preciso dos usernames do GitHub).
