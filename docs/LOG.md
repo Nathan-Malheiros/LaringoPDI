@@ -24,3 +24,11 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - O status é texto livre (55 valores) → `configs/label_map.yaml` (regras ordenadas) + tabela de revisão em `dataset_report.md`.
 - Vídeos: saudável 377 · funcional 156 · estrutural **47** · desconhecido 53 · outros 7. Tarefas A 377×203; B 377×47; C 377/156/47. RGB: 25.
 - **Parada:** a família estrutural tem menos de 50 vídeos (regra do ESPECIFICACAO.md) → decisão de método com o usuário antes dos splits.
+
+## Fase 1 — Dados (2026-10-23)
+- Tarefa B ampliada para 54 vídeos estruturais (decisão do usuário). Vídeos: saudável 377 · funcional 156 · estrutural 54 · excluídos 53.
+- Amostragem: 5.870 frames de 587 vídeos (10 por vídeo, só frames com glote visível) em `data/splits/frames.json`.
+- Quase-duplicatas de vídeo: 1 par candidato (pHash ≤ 6), nenhum confirmado por SSIM ≥ 0,85 → 587 grupos de 1 vídeo.
+- Folds (StratifiedGroupKFold por vídeo, estratificados por C): teste com ~118 vídeos por fold (75–76 saudáveis / 31–32 funcionais / 10–11 estruturais); validação interna com ~67 vídeos.
+- O teste de vazamento nos splits reais passa. `dataset_report.md` regenerado com figuras e com a tabela status → família.
+- Histórico do Git limpo de arquivos do BAGLS (filter-repo + force push, aprovado).

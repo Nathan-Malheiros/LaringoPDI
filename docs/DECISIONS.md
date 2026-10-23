@@ -42,3 +42,7 @@ Registro cronológico. Cada decisão: data, contexto, decisão, motivo.
   - espasmódica, laringite e paresia → funcional;
   - qualquer lesão estrutural vence o componente funcional.
 - **Contagem (vídeos):** saudável 377, funcional 156, estrutural 47, desconhecido 53, outros 7. RGB: 25 vídeos (esperado ~22; a contagem usa o `Color` do 1º frame). Frames com glote visível: 55.286 de 59.250.
+
+## 2026-10-23 — Tarefa B ampliada (decisão do usuário)
+- Com a lista original, a família estrutural tinha 47 vídeos (< 50). Por decisão do usuário, entraram nela os 7 vídeos de alterações estruturais benignas da lâmina própria: cicatriz, sulco/vergeture, rigidez/fibrose e irregularidade de mucosa. Antes ficavam em "outros" e eram excluídos. Total: **54 vídeos**. A família "outros" fica vazia no BAGLS.
+- Higiene do repositório: `eda_samples.png` (frames reais) e `data/index.csv` foram commitados por engano. Saíram de todo o histórico (git filter-repo + force push, com aprovação do usuário). O `.gitignore` agora barra figuras com frames reais e tabelas por frame.

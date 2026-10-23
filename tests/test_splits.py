@@ -16,8 +16,8 @@ CFG = C.load()
     ("None (higher phonation)", "healthy"),
     ("None (half year post-phonomicrosurgery for polipoid mid-membranous lesions)", "unknown"),
     ("None (one year after presumption of a pseudocyst/sulcus in left vocal fold)", "unknown"),
-    ("scar", "other"), ("Bilateral vergeture with bowed insufficient glottic closure", "other"),
-    ("Bowed/oval insufficient glottic closure (left more than right); stifness right vocal fold", "other"),
+    ("scar", "structural"), ("Bilateral vergeture with bowed insufficient glottic closure", "structural"),
+    ("Bowed/oval insufficient glottic closure (left more than right); stifness right vocal fold", "structural"),
     ("spasmodic dysphonia", "functional"), ("Laryngitis", "functional")])
 def test_disorder_family(raw, fam):
     assert D.disorder_family(raw, CFG) == fam
