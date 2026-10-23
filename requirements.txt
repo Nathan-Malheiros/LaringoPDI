@@ -1,0 +1,17 @@
+# Python 3.11. Em máquina sem GPU, instale o torch CPU:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+torch>=2.2
+torchvision>=0.17
+opencv-python>=4.9
+scikit-image>=0.22
+scikit-learn>=1.4
+scipy>=1.11
+numpy>=1.26
+pandas>=2.1
+matplotlib>=3.8
+pyyaml>=6.0
+tqdm>=4.66
+imagehash>=4.3
+grad-cam>=1.5
+streamlit>=1.32
+pytest>=8.0

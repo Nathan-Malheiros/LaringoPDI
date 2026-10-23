@@ -1,0 +1,75 @@
+# Configuração base do LaringoPDI. Caminhos relativos à raiz do repositório.
+paths:
+  raw: data/raw/laryngoscope8
+  index: data/index.csv
+  groups: data/groups.csv
+  splits: data/splits
+  cache: data/processed/cache
+  runs: results/runs
+  results: results
+  docs: docs
+  figures: docs/figures
+  annotations: annotations
+  logs: logs
+
+data:
+  # Ordem do README do Laryngoscope8 (pastas numeradas 1..8 seguem esta ordem).
+  classes: [reinke_edema, glottic_cancer, granuloma, leukoplakia, cyst, nodules, polyps, normal]
+  # Regex aplicada ao nome do arquivo para extrair o ID do paciente (grupo 1). null = não há ID.
+  patient_id_regex: null
+  min_class_count: 50
+  image_size: 224
+  # Lado maior máximo antes do PDI (padroniza a escala dos parâmetros; ver DECISIONS.md).
+  work_size: 512
+  n_folds: 5
+  split_seed: 42
+  inner_val_frac: 0.15
+  dedup:
+    phash_max_dist: 8      # distância de Hamming máxima (64 bits) para virar candidato
+    ssim_min: 0.85         # SSIM mínimo (cinza 128x128) para confirmar quase-duplicata
+    thumb: 128
+
+tasks:
+  A: {name: normal_vs_altered, positive: [reinke_edema, glottic_cancer, granuloma, leukoplakia, cyst, nodules, polyps], labels: [normal, altered]}
+  B: {name: multiclass8}
+  C: {name: urgent_vs_nonurgent, positive: [glottic_cancer, leukoplakia], labels: [non_urgent, urgent]}
+
+train:
+  augment: {hflip: 0.5, rotate_deg: 15, scale: [0.9, 1.1]}   # só geométrico
+  loss: weighted_ce
+  optimizer: adamw
+  lr: {resnet18: 1.0e-4, simplecnn: 1.0e-3}
+  weight_decay: 1.0e-4
+  scheduler: cosine
+  batch_size: 32
+  epochs: 30
+  epochs_fast: 10
+  patience: 7
+  monitor: f1_macro
+  amp: true
+  num_workers: 0
+  seeds: [0, 1, 2]
+
+probe:
+  C: 1.0
+  max_iter: 2000
+
+simplecnn:
+  filters: [32, 64, 128, 256]
+  dropout: 0.3
+
+classic:
+  mlp: {hidden_layer_sizes: [256, 64], alpha: 1.0e-3, max_iter: 500, early_stopping: true}
+  svm: {C: 1.0, gamma: scale}
+  rf: {n_estimators: 500}
+  permutation_repeats: 10
+
+stats:
+  alpha: 0.05
+  n_boot: 2000
+  neutral_band: 0.0   # veredito: p_holm >= alpha -> neutra; senão sinal da diferença mediana
+
+colab:
+  drive_root: /content/drive/MyDrive/LaringoPDI
+  n_accounts: 5
+  t4_budget_hours: 6

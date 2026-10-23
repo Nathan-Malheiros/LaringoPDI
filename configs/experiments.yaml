@@ -1,0 +1,44 @@
+# Matriz de experimentos. O PDI é a variável independente; todo o resto é fixo (base.yaml).
+# pipeline: passos separados por ">" (registry em src/laringopdi/pdi). O redimensionamento
+# + pad para 224 (`raw`) é sempre aplicado ao final.
+# params: sobrescreve parâmetros padrão por técnica (valores da literatura, nunca do teste).
+experiments:
+  E00: {pipeline: raw,         desc: baseline (resize + pad)}
+  E01: {pipeline: fov,         desc: recorte do campo de visão}
+  E02: {pipeline: fov>spec,    desc: remoção de reflexo especular}
+  E03: {pipeline: fov>he,      desc: equalização global (L)}
+  E04: {pipeline: fov>clahe,   desc: CLAHE (L)}
+  E05: {pipeline: fov>homo,    desc: filtragem homomórfica}
+  E06: {pipeline: fov>bilat,   desc: filtro bilateral}
+  E07: {pipeline: fov>median,  desc: filtro da mediana}
+  E08: {pipeline: fov>lab,     desc: entrada em LAB}
+  E09: {pipeline: fov>hsv,     desc: entrada em HSV}
+  E10: {pipeline: fov>vessel,  desc: realce vascular pseudo-NBI}
+  E11: {pipeline: fov>roi,     desc: ROI glótica (Otsu), params: {roi: {method: otsu}}}
+  E12: {pipeline: fov>roi,     desc: ROI glótica (adaptativa), params: {roi: {method: adaptive}}}
+  E13: {pipeline: fov>edges,   desc: mapa de bordas}
+  E14: {pipeline: fov>m1,      desc: "M1 = [L-CLAHE, bordas, LBP]"}
+  E15: {pipeline: fov>m2,      desc: "M2 = RGB + bordas + vessel (5 canais)"}
+  E16: {pipeline: null,        desc: combinação gulosa (definida no Estágio 2 só pela validação interna)}
+
+stage1:
+  experiments: [E00, E01, E02, E03, E04, E05, E06, E07, E08, E09, E10, E11, E12, E13, E14, E15]
+  tasks: [A, B]
+  models: [probe, simplecnn_fast]
+  folds: [0, 1, 2, 3, 4]
+  seeds: [0]
+  top_k: 4
+
+stage2:
+  # Preenchido pelo comando `probe`/`summary` ao fim do Estágio 1 (top-4 + E16).
+  experiments: [E00]
+  tasks: [A, B]
+  models: [resnet18, simplecnn]
+  folds: [0, 1, 2, 3, 4]
+  seeds: [0, 1, 2]
+
+classic:
+  C1: {model: mlp, region: full, pipeline: fov}
+  C2: {model: mlp, region: roi,  pipeline: fov>roi}
+  C3: {model: svm, region: full, pipeline: fov}
+  C4: {model: rf,  region: full, pipeline: fov}

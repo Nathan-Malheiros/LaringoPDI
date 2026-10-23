@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "laringopdi"
+version = "0.1.0"
+description = "PDI em laringoscopia de luz branca: efeito de técnicas de PDI na classificação de alterações das pregas vocais"
+requires-python = ">=3.11"
+
+[project.scripts]
+laringopdi = "laringopdi.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
