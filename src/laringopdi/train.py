@@ -427,7 +427,12 @@ def greedy_e14(cfg: dict, top: list[str]) -> dict:
     best_steps = [pool[0]]
     best = _probe_val_f1(cfg, _compose(best_steps))
     trail.append({"pipeline": _compose(best_steps), "val_f1": best, "accepted": True})
+    rep = {"edges", "lbp", "m1", "m2"}                     # saídas multicanal: no máximo uma, sempre no fim
     for cand in pool[1:]:
+        if cand in rep and rep & set(best_steps):
+            trail.append({"pipeline": _compose(best_steps + [cand]), "val_f1": None, "accepted": False,
+                          "note": "incompatível: duas representações multicanal"})
+            continue
         steps = best_steps + [cand]
         f = _probe_val_f1(cfg, _compose(steps))
         ok = f > best
