@@ -11,3 +11,9 @@ Registro cronológico. Cada decisão: data, contexto, decisão, motivo.
 - **`edges`:** 3 canais [cinza, Sobel, Canny automático] para manter a compatibilidade com a ResNet.
 - **Estratificação dos splits:** pelas 8 classes (cobre as tarefas A, B e C); validação interna = 1 fold de um StratifiedGroupKFold interno (~15%) dentro do treino.
 - **Dataset:** o Laryngoscope8 só está disponível pelo Baidu Pan (exige login) e não há espelho público; o download continua manual.
+
+## 2026-10-22 — Bloqueio de dados (decisão pendente com o usuário)
+- O link do Baidu Pan do Laryngoscope8 retorna "arquivo compartilhado excluído". As issues #1–#17 do repositório pedem um novo link desde 2023-08 e os autores não respondem.
+- Não há espelho público (busca em Kaggle, Hugging Face e Zenodo).
+- VoFoCD (Dao et al., 2024; 1724 imagens, 4 classes) **não é público**: as imagens pertencem ao Cho Ray Hospital.
+- CE-NBI (Scientific Data, 2023) é público, mas é NBI de contato, que está fora do escopo.
