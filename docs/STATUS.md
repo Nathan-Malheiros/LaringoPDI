@@ -1,33 +1,21 @@
-# Estado do projeto — retomar em 2026-10-23
+# Estado do projeto — 2026-10-23
 
-## Fase atual
-- Código adaptado ao BAGLS (commit `dcdd219`). O **Passo 0 ainda NÃO rodou**.
-- Testes: 45 passam, 1 pulado (splits reais), incluindo o teste de fumaça ponta a ponta sobre um BAGLS sintético.
+## Concluído
+- **Passo 0:** BAGLS (Zenodo 3762320) validado por md5 e extraído em `data/raw/bagls/{training,test}`: 59.250 frames, 640 vídeos.
+- **Rótulos:** `configs/label_map.yaml` (texto livre → família). Vídeos: saudável 377 · funcional 156 · estrutural 54 · excluídos 53.
+- **Fase 1:** 5.870 frames (10 por vídeo), 587 vídeos, 5 folds por vídeo sem vazamento; `docs/dataset_report.md`.
+- **Fase 3:** segmentação clássica; melhor = crescimento de região + CLAHE (Dice 0,614); `roi` e `m2` fixados.
+- **Fase 2:** galeria, `docs/pdi_tecnicas.md`, caches E00–E13, `results/pdi_quality.csv`.
 
-## Dataset
-- BAGLS, Zenodo record 3762320, licença CC BY-NC-SA 4.0.
-- `C:\Users\natha\Downloads\test.zip`: completo, 207.236.572 bytes, md5 `4ed918e5adfd0b8e0bebdc3aa1265afd`.
-- `C:\Users\natha\Downloads\training.zip`: baixando durante a noite (~3,5 GB, ~0,5 MB/s). **Antes de extrair**, confira o tamanho final e o md5 contra zenodo.org/records/3762320. Se estiver incompleto, rebaixe.
-- `raw.zip` (13,4 GB): propositalmente não baixado.
-
-## Formato confirmado
-- `<id>.png`, `<id>_seg.png`, `<id>.meta` (JSON) com `"Video Id"`, `"Color"`, `"Subject disorder status"`, `"Age range (yrs)"`, `"Subject sex"`.
-- O `BaglsAdapter` já lê `.meta` em JSON e normaliza as chaves (`video_id`, `color`, `subject_disorder_status` …). Falta validar contra os arquivos reais.
-
-## Achado importante: status em texto livre
-- `"Subject disorder status"` é **texto livre**. Exemplos: `'healthy'`, `''`, `'Vocal fold nodules (high phonation)'`, `"Reinke's edema right vocal fold ..."`, `'None (half year post-phonomicrosurgery ...)'`.
-- No split de teste: 70 vídeos, sendo 29 healthy, 20 com status vazio e 11 coloridos.
-- **A fazer:** criar `configs/label_map.yaml` por palavras-chave (saudável / funcional / estrutural / excluir), substituindo a seção `disorders` de `configs/base.yaml` hoje usada por `data.disorder_family`. Incluir no `dataset_report.md` a tabela "texto → rótulo" para revisão humana.
-- Atenção a casos como `'None (pós-cirurgia …)'`: hoje caem em `other` (excluído) porque `unknown` só reconhece correspondência exata. Decidir explicitamente no label_map. Pós-operatório não é saudável por padrão.
-- Ver também `Color`: hoje o adaptador trata texto contendo "rgb"/"colo" como RGB. Se o valor for booleano, ajustar.
-
-## Próximos passos (em ordem)
-1. Extrair `test.zip` e `training.zip` em `data/raw/bagls/{test,training}/`, depois de validar o md5 do training.
-2. Criar o `label_map.yaml` e validar o leitor em 2–3 `.meta` reais.
-3. Rodar o Passo 0 completo (`index`, contagens reais por status em `docs/dataset_report.md`).
-4. Fases 1–3 automáticas, conforme o ESPECIFICACAO.md (`splits` → `eda` → `seg-study` → `gallery` → `cache`).
+## Próximo (Fase 4 — infra de GPU)
+- `train`, `models.py`, `shards`, `notebooks/colab_runner.ipynb`; depois o `probe` local em CPU (Fase 5).
+- Depende de humanos: medir 1 job no T4 para recalcular o orçamento.
 
 ## Pendências humanas
-- E-mail aos autores do Laryngoscope8.
-- Avisar a Prof.ª Lyndainês sobre a troca de dataset.
-- Adicionar Marcos Vinicius, Pedro Nobre, Marcos Mendes e Tales como colaboradores do repositório privado `PDIZip` (preciso dos usernames do GitHub).
+- Revisar as figuras locais em `docs/figures/` (não versionadas: contêm frames do BAGLS):
+  - Marcos Vinicius: `gallery_*.png`;
+  - Marcos Mendes e Tales: `segmentation_examples.png`.
+- Revisar a tabela "texto → família" em `docs/dataset_report.md`, sobretudo os casos ambíguos (`None (…)`, "swelling", cicatriz/sulco).
+- E-mail aos autores do Laryngoscope8; avisar a Prof.ª Lyndainês sobre a troca de dataset.
+- Adicionar Marcos Vinicius, Pedro Nobre, Marcos Mendes e Tales como colaboradores do repositório `PDIZip` (preciso dos usernames do GitHub).
+- Os zips `data/test.zip` e `data/training.zip` (3,7 GB) já foram extraídos e podem ser movidos ou apagados por você.

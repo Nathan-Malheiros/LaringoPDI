@@ -38,3 +38,14 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - Melhor: crescimento de região + CLAHE (Dice 0,614 · falha 2,1% · HD95 9,7 px), seguido de crescimento de região sobre o `raw` (0,467) e sobre a homomórfica (0,440). O Otsu global é linha de base (Dice 0,02).
 - Watershed corrigido (núcleos por componente) antes da escolha final; o vencedor não mudou (DECISIONS.md).
 - Saídas: `results/tables/segmentation.csv`, `segmentation_summary.csv`, `segmentation_best.json`; a figura `segmentation_examples.png` (local, não versionada) vai para a revisão de Marcos Mendes e Tales.
+
+## Fase 2 — PDI (2026-10-23)
+- 14 técnicas em cinza + 5 segmentadores. `docs/pdi_tecnicas.md` é gerado das docstrings pelo `gallery`. A galeria (grade técnica × família; passo a passo de `spec`, `homo` com espectro e H(u,v), e `roi` × `roi_gt`) fica em `docs/figures/`, local e não versionada, para revisão do Marcos Vinicius.
+- Caches E00–E13: 5.870 × 224 × 224 × 3 cada (~12 GB em `data/processed/cache`, fora do Git).
+- `results/pdi_quality.csv`:
+  - `spec` reduz a fração especular de 1,7% para 0,9%;
+  - HE estoura o contraste (entropia 7,7; contraste RMS 0,31) frente ao CLAHE (6,5; 0,22);
+  - a homomórfica eleva a nitidez (variância do Laplaciano 130 → 1.185);
+  - fallback da ROI: 2,1% (`roi`), 0,3% (`clahe>roi`), 0% (`roi_gt`).
+- Limitação: as métricas de qualidade usam o canal 0. Em `edges` e M2, que começam pelo cinza, elas coincidem com E00.
+- Testes: 55 passam (inclui o teste de vazamento nos splits reais).

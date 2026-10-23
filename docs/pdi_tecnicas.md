@@ -1,6 +1,6 @@
 # Técnicas de PDI — LaringoPDI (BAGLS, escala de cinza)
 
-Gerado por `python -m laringopdi gallery` a partir das docstrings (git da17496). Não edite à mão.
+Gerado por `python -m laringopdi gallery` a partir das docstrings (git 34c340b). Não edite à mão.
 
 Toda imagem é convertida para cinza e reduzida a lado maior ≤ 512 px antes do PDI; ao final, letterbox 224×224 e replicação para 3 canais. Parâmetros vêm da literatura, nunca do classificador.
 
@@ -126,7 +126,7 @@ Toda imagem é convertida para cinza e reduzida a lado maior ≤ 512 px antes do
 
 ## Segmentação clássica da glote (Fase 3)
 
-Melhor configuração atual (usada por `roi` e `m2`): **otsu_morph** sobre **raw**, parâmetros `{}` (padrão, antes da Fase 3).
+Melhor configuração atual (usada por `roi` e `m2`): **region_grow** sobre **clahe**, parâmetros `{"tol": 20}` — treino+val do fold 0 (só máscaras de glote).
 
 ### `otsu`
 
