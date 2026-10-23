@@ -74,3 +74,7 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - `report`: vereditos (McNemar OOF + Holm + IC bootstrap; Wilcoxon reportado), teste de H4, clássico × CNN, tabelas CSV + LaTeX e `docs/hipoteses.md`.
 - App Streamlit: upload → etapas do PDI → segmentação → métricas → predição + Grad-CAM (quando houver pesos), com o aviso obrigatório.
 - `tests/test_e2e.py`: ponta a ponta em CPU em 64 s. Suíte completa: 64 testes passando.
+
+## Telemetria do treino + bug de AMP (2026-10-23)
+- `live.py`: telemetria só de observação para o painel LaringoMonitor: lote atual, Grad-CAM com a caixa da glote, ativação e ‖ΔW‖/‖W‖ por camada, filtros, mapas de ativação e PDI passo a passo. Liga só com `results/live/enabled`.
+- A telemetria revelou augmentation corrompida sob AMP (DECISIONS.md). Corrigido, com teste de regressão; os 22 runs afetados foram para quarentena; o Estágio 1 foi reiniciado.

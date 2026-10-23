@@ -20,3 +20,5 @@ docs/figures/segmentation_examples.png
 results/tables/segmentation_frames.csv.gz
 results/pdi_quality/
 results/tables/attention_frames.csv.gz
+results/live/
+results/runs_quarantine_amp_aug/

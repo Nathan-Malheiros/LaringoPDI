@@ -92,8 +92,9 @@ def _loader(X, idx, y, batch, shuffle, seed):
 def _prep(xb, device, aug=None):
     import torch
     x = xb.to(device, non_blocking=True).permute(0, 3, 1, 2).float().div_(255)
-    if aug is not None:
-        x = aug(x)
+    if aug is not None:                                      # parâmetros sorteados por imagem, não por lote
+        with torch.autocast(device.type, enabled=False):     # sob AMP o RandomAffine satura os pixels (bug de 2026-10-23)
+            x = torch.stack([aug(xi.float()) for xi in x])
     mean = torch.tensor(IMAGENET_MEAN, device=device).view(1, 3, 1, 1)
     std = torch.tensor(IMAGENET_STD, device=device).view(1, 3, 1, 1)
     return (x - mean) / std
@@ -141,20 +142,32 @@ def train_job(cfg: dict, exp: str, task: str, model_name: str, fold: int, seed: 
     a = tc["augment"]                                                   # só geométrico
     aug = v2.Compose([v2.RandomHorizontalFlip(a["hflip"]),
                       v2.RandomAffine(degrees=a["rotate_deg"], scale=tuple(a["scale"]))])
+    from laringopdi.live import LiveTap
+    tap = LiveTap.maybe(cfg, exp, task, model_name, fold, seed, d, epochs, iva, yva)   # só observação
+    if tap:
+        tap.attach(model)
     best, best_state, wait, hist = -1.0, None, 0, []
     for ep in range(epochs):
         te = time.time()
         model.train()
-        for xb, yb in dl_tr:
+        for step, (xb, yb) in enumerate(dl_tr):
             opt.zero_grad(set_to_none=True)
+            if tap:
+                tap.pre(step)
             with torch.autocast(device.type, enabled=scaler.is_enabled()):
-                loss = loss_fn(model(_prep(xb, device, aug)), yb.to(device))
+                xin = _prep(xb, device, aug)
+                out = model(xin)
+                loss = loss_fn(out, yb.to(device))
             scaler.scale(loss).backward(); scaler.step(opt); scaler.update()
+            if tap:
+                tap.batch(xin, yb, out, ep, step, len(dl_tr), loss.item())
         sched.step()
         pv = _predict(model, dl_va, device)
         vm = metrics_both_levels(_preds_df(d["paths"][iva], d["video"][iva], yva, pv))
         f1 = vm["video"][tc["monitor"]]                                 # early stopping no F1-macro por vídeo
         hist.append({"epoch": ep, "val_video_f1": f1, "loss": loss.item(), "sec": time.time() - te})
+        if tap:
+            tap.epoch(model, ep, f1, device)
         if f1 > best:
             best, wait = f1, 0
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
@@ -170,6 +183,8 @@ def train_job(cfg: dict, exp: str, task: str, model_name: str, fold: int, seed: 
     m = {**metrics_both_levels(preds), "val_frame": vm["frame"], "val_video": vm["video"],
          "epochs_run": len(hist), "best_val_video_f1": best, "seconds": time.time() - t0,
          "device": str(device), "history": hist}
+    if tap:
+        tap.finish(m["video"]["f1_macro"])
     if seed == 0:                                                       # pesos só da semente 0 (Grad-CAM e app)
         rd.mkdir(parents=True, exist_ok=True)
         torch.save(best_state, rd / "model.pt")
@@ -226,6 +241,9 @@ def probe_job(cfg: dict, exp: str, task: str, fold: int, F: np.ndarray, force: b
 
 
 def cmd_probe(cfg: dict, args) -> dict:
+    if args.exp == "E14":                                   # define o E14 a partir do ranking do Estágio 1
+        from laringopdi.evaluate import cmd_summary
+        return greedy_e14(cfg, cmd_summary(cfg, args)["top4"])
     exps = cfg["stage1"]["experiments"] if not args.exp or args.exp == "stage1" else args.exp.split(",")
     done = 0
     for e in exps:
@@ -376,3 +394,46 @@ def cmd_classic(cfg: dict, args) -> dict:
     from laringopdi.evaluate import cmd_summary
     cmd_summary(cfg, args)
     return {"video_f1_mean": res}
+
+
+# ----------------------------------------------------------------------------- E14 (combinação gulosa)
+STEP_ORDER = ["spec", "bilat", "median", "he", "clahe", "homo", "roi_gt", "roi", "edges", "lbp", "m1", "m2"]
+
+
+def _compose(steps: list[str]) -> str:
+    return ">".join(sorted(steps, key=STEP_ORDER.index))
+
+
+def _probe_val_f1(cfg: dict, pipeline: str) -> float:
+    """F1-macro por vídeo na VALIDAÇÃO interna (média em tarefas × folds) do probe para um pipeline."""
+    eid = "G_" + pipeline.replace(">", "+")
+    cfg["experiments"][eid] = {"pipeline": pipeline, "desc": "candidato E14"}
+    D.build_cache(cfg, eid)
+    F = probe_features(cfg, eid)
+    f1 = []
+    for t in cfg["stage1"]["tasks"]:
+        for k in cfg["stage1"]["folds"]:
+            probe_job(cfg, eid, t, k, F)
+            m = json.loads((run_dir(cfg, eid, t, "probe", k, 0) / "metrics.json").read_text(encoding="utf-8"))
+            f1.append(m["val_video"]["f1_macro"])
+    return float(np.mean(f1))
+
+
+def greedy_e14(cfg: dict, top: list[str]) -> dict:
+    """Seleção gulosa entre as técnicas do top-k do Estágio 1 (só validação; `roi_gt` excluído)."""
+    pool = [cfg["experiments"][e]["pipeline"] for e in top]
+    pool = [p for p in pool if ">" not in p and p not in ("roi_gt", "raw")]
+    trail = []
+    best_steps = [pool[0]]
+    best = _probe_val_f1(cfg, _compose(best_steps))
+    trail.append({"pipeline": _compose(best_steps), "val_f1": best, "accepted": True})
+    for cand in pool[1:]:
+        steps = best_steps + [cand]
+        f = _probe_val_f1(cfg, _compose(steps))
+        ok = f > best
+        trail.append({"pipeline": _compose(steps), "val_f1": f, "accepted": ok})
+        if ok:
+            best, best_steps = f, steps
+    out = {"E14": _compose(best_steps), "val_f1": best, "trail": trail, "top": top, "git_sha": C.git_sha()}
+    C.write_json(C.path(cfg, "tables") / "e14_greedy.json", out)
+    return out

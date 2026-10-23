@@ -59,3 +59,22 @@ def test_shards_cover_all_jobs_once(tmp_cfg):
     out = make_shards(tmp_cfg, "stage1", 5)
     jobs = [tuple(j.values()) for v in out["shards"].values() for j in v]
     assert len(jobs) == len(set(jobs)) == len(stage_jobs(tmp_cfg, "stage1")) == 140
+
+
+def test_augmentation_is_not_corrupted_by_autocast():
+    """Regressão: sob autocast (AMP) o RandomAffine saturava ~20% dos pixels."""
+    from torchvision.transforms import v2
+
+    from laringopdi.train import _prep
+    dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    rng = np.random.default_rng(0)
+    xb = torch.from_numpy(np.repeat(rng.integers(0, 200, (8, 224, 224, 1), dtype=np.uint8), 3, axis=3))
+    a = v2.Compose([v2.RandomHorizontalFlip(0.5), v2.RandomAffine(degrees=15, scale=(0.9, 1.1))])
+    sat = []
+    for ac in (False, True):
+        torch.manual_seed(0)
+        with torch.autocast(dev.type, enabled=ac):
+            x = _prep(xb, dev, a)
+        x01 = x * torch.tensor((0.229, 0.224, 0.225), device=dev).view(1, 3, 1, 1) + torch.tensor((0.485, 0.456, 0.406), device=dev).view(1, 3, 1, 1)
+        sat.append((x01 >= 0.999).float().mean().item())
+    assert sat[1] <= sat[0] + 0.01

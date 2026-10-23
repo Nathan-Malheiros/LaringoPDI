@@ -55,3 +55,15 @@ Registro cronológico. Cada decisão: data, contexto, decisão, motivo.
   - A homomórfica melhora o Otsu+morfologia (0,324 → 0,408) e o watershed (0,334 → 0,437).
   - Em métodos globais (Otsu, adaptativo), o realce não ajuda ou piora.
   - O teste estatístico formal fica para o `report`.
+
+## 2026-10-23 — Treino na GPU local (RTX 3060) e augmentation por imagem
+- O PC do Nathan tem uma **RTX 3060 (12 GB)**. O torch passou a usar CUDA 13 (2.14.1+cu130). Medição no protocolo: SimpleCNN rápida a 6,6 s/época (85 s por job); ResNet-18 a 5,4 s/época (152 s, 28 épocas).
+- **Orçamento:** Estágio 1 ≈ 3,5 h (140 jobs); Estágio 2 ≈ 16 h (360 jobs). Tudo roda localmente. O Colab vira opcional e serve só para paralelizar; o notebook e os shards continuam válidos.
+- **Correção:** as transformações geométricas eram sorteadas uma vez por lote (v2 sobre o tensor 4-D) e agora são sorteadas por imagem. Os 2 jobs de medição feitos antes da correção foram descartados e refeitos no Estágio 1.
+- **E14:** seleção gulosa entre as técnicas do top-4 do Estágio 1. Parte da melhor; acrescenta cada candidata na ordem canônica (ruído/reflexo → realce → recorte → representação) e aceita se o F1-macro por vídeo da **validação interna** do probe (média em A, B × 5 folds) aumentar. Saída em `results/tables/e14_greedy.json`.
+
+## 2026-10-23 — Bug: augmentation corrompida sob AMP (corrigido; Estágio 1 reiniciado)
+- **Sintoma:** encontrado pela telemetria visual do treino (`live.py`). Os lotes de treino na GPU apareciam quase binarizados.
+- **Causa:** o `RandomAffine` (torchvision v2) rodava dentro do `torch.autocast` (AMP) e saturava ~21,6% dos pixels, contra 0,9% sem autocast.
+- **Alcance:** só treinos de CNN na GPU com augmentation (22 jobs do Estágio 1). O probe (sem augmentation), o braço clássico (CPU) e a segmentação não foram afetados.
+- **Correção:** a augmentation roda com o autocast desligado, em float32; há teste de regressão em `tests/test_models.py`. Os 22 runs foram para `results/runs_quarantine_amp_aug/` (fora da análise), e o Estágio 1 foi refeito do zero.
