@@ -38,6 +38,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--shard", type=int)
     ap.add_argument("--n-shards", type=int, default=5)
     ap.add_argument("--jobs", type=int, default=-1)
+    ap.add_argument("--epochs", type=int, help="sobrescreve o nº máximo de épocas (só para teste/medição)")
     ap.add_argument("--force", action="store_true", help="sobrescreve saídas existentes (cuidado)")
     a = ap.parse_args(argv)
     cfg = C.load()

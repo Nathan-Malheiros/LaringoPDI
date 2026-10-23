@@ -35,7 +35,7 @@ stage2:
   folds: [0, 1, 2, 3, 4]
   seeds: [0, 1, 2]
 
-classic:
+classic_experiments:
   C1: {model: mlp, region: full, mask: classic}
   C2: {model: mlp, region: roi,  mask: classic}
   C3: {model: svm, region: full, mask: classic}
