@@ -84,3 +84,11 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - `report`: probe e SimpleCNN somam **52/52 vereditos neutros** (nenhuma técnica muda o F1 por vídeo de forma significativa no Estágio 1).
 - 1ª tentativa do Estágio 2 encerrada por falta de RAM, ainda na busca gulosa do E14 (nada foi gravado). `build_cache` agora grava em blocos (memmap).
 - Relatório técnico em PDF (`tools/relatorio_pdf.py`): 16 p. na versão pública (Git) e 19 p. na completa (Área de Trabalho). Próximo passo em `docs/PROXIMOS_PASSOS.md`.
+
+## Estágio 2 em execução + fechamento automático (2026-10-24)
+- E14 guloso = `homo>lbp` (F1 de validação do probe 0,712). Estágio 2 (360 jobs) rodando em `tools/stage2_chain.py`.
+- `tools/final_chain.py` espera o Estágio 2 e roda `stage2_hyp` (E01/E07/E08, 1 semente, para H1 e H5) → `gradcam` → `report` → PDFs.
+- Regra de veredito do Estágio 2 fixada antes dos resultados (DECISIONS.md): OOF por ensemble das sementes; IC exclui 0 e McNemar ou Wilcoxon (≥ 10 pares) com Holm.
+- `report` agora conclui H1–H6 de forma explícita (`docs/hipoteses.md` + `results/tables/hypotheses.json`): H2 com confronto direto contra o HE, H3 por Wilcoxon sobre os ΔF1, H5 com `roi` × `roi_gt`, H6 com C1 × CNN pareado.
+- Com os dados atuais (Estágio 1): H2 e H3 não suportadas; H4, H5 e H6 parciais; H1 aguarda o Grad-CAM.
+- PDF: seção do Estágio 2, figura de atenção e tabela de hipóteses entram sozinhas quando os dados existirem. 67 testes passando.

@@ -17,7 +17,7 @@ experiments:
   E11: {pipeline: lbp,        desc: LBP uniforme}
   E12: {pipeline: m1,         desc: "M1 = [cinza com CLAHE, bordas, LBP]"}
   E13: {pipeline: m2,         desc: "M2 = [cinza, máscara glótica clássica, bordas]"}
-  E14: {pipeline: null,       desc: combinação gulosa (definida no Estágio 2 só pela validação interna)}
+  E14: {pipeline: homo>lbp, desc: combinação gulosa (validação interna; ver results/tables/e14_greedy.json)}
 
 stage1:
   experiments: [E00, E01, E02, E03, E04, E05, E06, E07, E08, E09, E10, E11, E12, E13]
@@ -28,8 +28,8 @@ stage1:
   top_k: 4
 
 stage2:
-  # Preenchido ao fim do Estágio 1 (E00 + top-4 + E14).
-  experiments: [E00]
+  # E00 + top-4 do Estágio 1 (validação) + E14.
+  experiments: [E00, E04, E11, E05, E10, E14]
   tasks: [A, B]
   models: [resnet18, simplecnn]
   folds: [0, 1, 2, 3, 4]
@@ -41,3 +41,12 @@ classic_experiments:
   C3: {model: svm, region: full, mask: classic}
   C4: {model: rf,  region: full, mask: classic}
   C5: {model: mlp, region: full, mask: gt}       # referência superior (forma pelo ground truth)
+
+# Complemento do Estágio 2 só para as hipóteses pré-registradas (DECISIONS.md, 2026-10-24):
+# E01 (H1: atenção nos reflexos), E07/E08 (H5: roi × roi_gt). 1 semente; não entra no ranking.
+stage2_hyp:
+  experiments: [E01, E07, E08]
+  tasks: [A, B]
+  models: [resnet18, simplecnn]
+  folds: [0, 1, 2, 3, 4]
+  seeds: [0]

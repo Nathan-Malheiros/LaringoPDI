@@ -299,6 +299,45 @@ def fig_curves():
     return save(fig, "curvas")
 
 
+def fig_stage2():
+    cfg = C.load()
+    ms = [(m, n) for m, n in (("resnet18", "ResNet-18 (fine-tuning)"), ("simplecnn", "SimpleCNN (treino completo)"))
+          if (T / f"verdicts_{m}.csv").exists()]
+    fig, axes = plt.subplots(1, len(ms), figsize=(6 * len(ms), 3.8), sharey=True, squeeze=False)
+    for a, (m, title) in zip(axes[0], ms):
+        v = pd.read_csv(T / f"verdicts_{m}.csv")
+        exps = list(dict.fromkeys(v["exp"]))
+        for k, t in enumerate("AB"):
+            d = v[v.task == t].set_index("exp").reindex(exps)
+            y = np.arange(len(exps)) + (k - .5) * .32
+            col = [GR if x == "melhora" else RD if x == "piora" else [CY, OR][k] for x in d["verdict"].fillna("neutra")]
+            a.errorbar(d["oof_delta_f1"], y, xerr=[d["oof_delta_f1"] - d["ci_low"], d["ci_high"] - d["oof_delta_f1"]],
+                       fmt="none", ecolor=[CY, OR][k], capsize=2, lw=1.1)
+            a.scatter(d["oof_delta_f1"], y, c=col, s=22, zorder=3, label=f"Tarefa {t}")
+        a.axvline(0, color=INK, lw=.8)
+        a.set_yticks(range(len(exps)), [f"{e} {cfg['experiments'][e]['pipeline']}" + (" (1 sem.)" if e in cfg["stage2_hyp"]["experiments"] else "")
+                                         for e in exps], fontsize=8)
+        a.invert_yaxis(); a.set_xlabel("Δ F1-macro por vídeo vs E00 (IC 95% bootstrap)"); a.set_title(title); a.legend(frameon=False, fontsize=8)
+    return save(fig, "estagio2")
+
+
+def fig_attention():
+    d = pd.read_csv(T / "attention.csv")
+    fig, axes = plt.subplots(1, 2, figsize=(12, 3.6), sharey=True)
+    for a, t in zip(axes, "AB"):
+        x = d[d.task == t].copy()
+        x["nome"] = x["exp"] + " " + x["model"].map({"resnet18": "RN18", "simplecnn": "SCNN"})
+        x = x.sort_values(["model", "exp"])
+        i = np.arange(len(x))
+        a.bar(i - .2, x["att_glottis"], .4, color=CY, label="energia na glote")
+        a.bar(i + .2, x["att_spec"].fillna(0), .4, color=OR, label="energia nos reflexos")
+        a.scatter(i - .2, x["area_glottis"], marker="_", s=120, color=INK, zorder=3, label="área (acaso)")
+        a.scatter(i + .2, x["area_spec"].fillna(0), marker="_", s=120, color=INK, zorder=3)
+        a.set_xticks(i, x["nome"], rotation=90, fontsize=7.5); a.set_title(f"Grad-CAM · Tarefa {t}")
+    axes[0].set_ylabel("fração da energia"); axes[0].legend(frameon=False, fontsize=8)
+    return save(fig, "atencao")
+
+
 # ============================================================================ PDF
 def build(out: Path, publico: bool) -> None:
     from reportlab.lib import colors
@@ -378,6 +417,11 @@ def build(out: Path, publico: bool) -> None:
     fam = idx["videos_per_family"]
     n_runs = len(summ)
     git = C.git_sha()
+    s2 = (T / "verdicts_resnet18.csv").exists()
+    v2 = pd.concat([pd.read_csv(T / f"verdicts_{m}.csv") for m in ("resnet18", "simplecnn") if (T / f"verdicts_{m}.csv").exists()]) if s2 else None
+    hyp = rj(T / "hypotheses.json") if (T / "hypotheses.json").exists() else {}
+    att = (T / "attention.csv").exists()
+    e14 = cfg["experiments"]["E14"]["pipeline"]
 
     # ------------------------------------------------------------------ capa
     story += [Spacer(1, 3.2 * cm), Paragraph("LaringoPDI", st["title"]), Spacer(1, 6),
@@ -416,6 +460,12 @@ def build(out: Path, publico: bool) -> None:
        "no mesmo patamar das CNNs.",
        "<b>Erros relevantes encontrados e corrigidos:</b> o principal foi a augmentation corrompida em precisão mista "
        "na GPU, detectada pela telemetria visual do treino. Os 22 jobs afetados foram descartados e o Estágio 1 foi refeito.",
+       *([f"<b>Classificação, Estágio 2 (fine-tuning, 3 sementes × 5 folds):</b> ResNet-18 no E00 com F1 por vídeo "
+          f"{e00.get(('resnet18', 'A'), float('nan')):.3f} (A) e {e00.get(('resnet18', 'B'), float('nan')):.3f} (B); "
+          f"{int((v2.verdict != 'neutra').sum())} de {len(v2)} vereditos diferentes de 'neutra' "
+          f"({', '.join(f'{r.exp} {r.pipeline} {r.task} {r.model}: {r.verdict}' for r in v2[v2.verdict != 'neutra'].itertuples()) or 'nenhum'}). "
+          f"E14 (guloso) = <i>{escape(str(e14))}</i>."] if s2 else []),
+       ("<b>Hipóteses:</b> " + "; ".join(f"{k} {v}" for k, v in hyp.items()) + ". Detalhes em <i>docs/hipoteses.md</i>.") if s2 and hyp else
        "<b>Próximo passo:</b> o Estágio 2 (fine-tuning de E00, do top-4 e do E14; 360 jobs, ~16 h na RTX 3060), seguido de "
        "Grad-CAM, relatório estatístico final e conclusão de H1–H6. As instruções estão em <i>docs/PROXIMOS_PASSOS.md</i>."])
 
@@ -571,7 +621,7 @@ def build(out: Path, publico: bool) -> None:
     P("Estágios de classificação", "h2")
     B(["<b>Estágio 1 (triagem):</b> todas as 14 variantes × tarefas A e B × 5 folds, com ResNet-18 congelada (probe, CPU) "
        "e SimpleCNN rápida (10 épocas, GPU).",
-       f"<b>Estágio 2 (pendente):</b> fine-tuning completo (até 30 épocas, 3 sementes × 5 folds) de E00, do top-4 do "
+       f"<b>Estágio 2{'' if s2 else ' (pendente)'}:</b> fine-tuning completo (até 30 épocas, 3 sementes × 5 folds) de E00, do top-4 do "
        f"Estágio 1 ({', '.join(top4)}) e do E14, uma combinação gulosa escolhida só pela validação.",
        "<b>Braço clássico:</b> C1 (forma + textura + MLP), C2 (idem na ROI), C3 (SVM), C4 (Random Forest) e C5 (forma pelo "
        "ground truth + MLP, como referência superior)."])
@@ -606,13 +656,31 @@ def build(out: Path, publico: bool) -> None:
       "<i>roi</i> caem na B da SimpleCNN, possivelmente porque o recorte remove contexto útil. Essas tendências guiaram o "
       "top-4, mas precisam do Estágio 2 (15 pares por comparação e treino completo) para virar conclusão. Um resultado "
       "neutro também é informativo: as redes já extraem do frame cru, sozinhas, o que o PDI de realce entregaria.")
-    P("7.3 Braço clássico × CNN (H6)", "h2")
+    if s2:
+        P("7.3 Classificação, Estágio 2 (fine-tuning)", "h2")
+        P(f"ResNet-18 (ImageNet) e SimpleCNN treinadas por completo (até 30 épocas, early stopping no F1 por vídeo da validação "
+          f"interna) em E00, no top-4 do Estágio 1 ({', '.join(top4)}) e no E14 (<i>{escape(str(e14))}</i>), com 3 sementes × 5 folds "
+          f"= 15 pares por comparação. E01, E07 e E08 rodaram com 1 semente só para H1 e H5. No E00, o F1 por vídeo foi "
+          f"{e00.get(('resnet18', 'A'), float('nan')):.3f} (A) e {e00.get(('resnet18', 'B'), float('nan')):.3f} (B) na ResNet-18, e "
+          f"{e00.get(('simplecnn', 'A'), float('nan')):.3f} (A) e {e00.get(('simplecnn', 'B'), float('nan')):.3f} (B) na SimpleCNN.")
+        fig(fig_stage2(), "Figura. Δ F1 de cada técnica vs E00 no Estágio 2 (IC 95% bootstrap sobre o ensemble das sementes; verde = melhora, vermelho = piora).")
+        rows = [["Técnica", "Modelo", "Tarefa", "ΔF1 (IC 95%)", "Wilcoxon p (Holm)", "McNemar p (Holm)", "Veredito"]]
+        rows += [[f"{r.exp} {escape(str(r.pipeline))}", r.model, r.task, f"{r.oof_delta_f1:+.3f} [{r.ci_low:+.3f}; {r.ci_high:+.3f}]",
+                  f"{r.wilcoxon_p_holm:.2g}", f"{r.mcnemar_p_holm:.2g}", f"<b>{r.verdict}</b>"] for r in v2.itertuples()]
+        table(rows, [.2, .12, .08, .22, .13, .13, .12])
+        P(f"<b>Leitura:</b> {int((v2.verdict == 'melhora').sum())} melhora(s), {int((v2.verdict == 'piora').sum())} piora(s) e "
+          f"{int((v2.verdict == 'neutra').sum())} neutra(s). Com 15 pares, o Wilcoxon passa a ter poder; um veredito exige também "
+          "que o IC do ΔF1 exclua zero (regra fixada antes dos resultados, em <i>DECISIONS.md</i>).")
+    P("7.3 Braço clássico × CNN (H6)" if not s2 else "7.4 Braço clássico × CNN (H6)", "h2")
     fig(fig_classic(), "Figura 18. F1 por vídeo do braço clássico (roxo) e das CNNs no E00 (ciano).")
     fig(fig_perm(), "Figura 19. Importância por família de características (queda da acurácia balanceada ao permutar a família inteira).")
     P("As características clássicas, que são interpretáveis, ficam no mesmo patamar das CNNs. O Random Forest (C4) é o "
       "melhor na Tarefa B. Até aqui, H6 é <b>parcialmente apoiada</b> (competitivo em A), mas a parte 'inferior em B' "
-      "<b>não se confirmou</b> contra a CNN de triagem. A comparação definitiva usa a ResNet-18 do Estágio 2.")
-    P("7.4 Aprendizado e interpretabilidade (preliminar)", "h2")
+      "<b>não se confirmou</b> contra a CNN de triagem." + (f" Contra a ResNet-18 do Estágio 2 a conclusão é: <b>{escape(hyp.get('H6', '—'))}</b>."
+      if s2 and hyp else " A comparação definitiva usa a ResNet-18 do Estágio 2."))
+    P("7.4 Aprendizado e interpretabilidade (preliminar)" if not s2 else "7.5 Aprendizado e interpretabilidade", "h2")
+    if att:
+        fig(fig_attention(), "Figura. Fração da energia do Grad-CAM na glote (máscara do especialista) e sobre os reflexos especulares; o traço preto é a área da região (o que um mapa uniforme daria).")
     fig(fig_curves(), "Figura 20. Curvas de aprendizado da SimpleCNN rápida (todas as variantes): F1 na validação e custo por época.")
     live = ROOT / "results" / "live"
     fig(live / "val.jpg", "Figura 21. Grad-CAM ao fim de uma época (exemplo do painel de telemetria): contorno verde e caixa = glote do especialista; a porcentagem é a atenção dentro dela.", .75, private=True)
@@ -623,7 +691,17 @@ def build(out: Path, publico: bool) -> None:
 
     # ------------------------------------------------------------------ 8. hipóteses
     P("8. Estado das hipóteses", "h1")
-    table([["Hipótese", "Evidência até agora", "Estado"],
+    if hyp:
+        P("Conclusões geradas pelo comando <i>report</i> a partir das regras pré-registradas (evidência completa em <i>docs/hipoteses.md</i>):")
+        tests = {"H1": "F1 de E01 × E00 e energia do Grad-CAM sobre os reflexos (Wilcoxon por frame).",
+                 "H2": "E03/E04 contra o E02 (McNemar + IC) e Δ Dice na segmentação.",
+                 "H3": "ΔF1 da SimpleCNN × ΔF1 da ResNet nas mesmas técnicas (Wilcoxon).",
+                 "H4": "Δ Dice por vídeo com realce × raw, 5 métodos × 3 realces (Wilcoxon, Holm).",
+                 "H5": "ΔF1 do roi em B × A; roi × roi_gt (IC bootstrap).",
+                 "H6": "C1 (forma + textura + MLP) × ResNet-18 no E00 (IC bootstrap)."}
+        table([["Hipótese", "Teste", "Conclusão"], *[[k, tests.get(k, ""), escape(v)] for k, v in hyp.items()]], [.12, .5, .38])
+    if not hyp:
+        table([["Hipótese", "Evidência até agora", "Estado"],
            ["H1 spec", "F1: neutro nos dois modelos (Estágio 1). Atenção sobre reflexos: ainda não medida.", "Parcial (F1 mantém)"],
            ["H2 CLAHE/homo > HE", "Classificação: sem diferença significativa. Segmentação: CLAHE e homo ajudam conforme o método (HE não testada na segmentação).", "Não apoiada na classificação"],
            ["H3 PDI ajuda mais a SimpleCNN", "Estágio 1: todos neutros nos dois modelos.", "Pendente (Estágio 2)"],
@@ -663,10 +741,11 @@ def build(out: Path, publico: bool) -> None:
        "Rótulos derivados de texto livre por regras; os casos ambíguos aguardam revisão humana.",
        "No Estágio 1 há só 5 pares por comparação; o Wilcoxon não alcança p < 0,05, por isso os vereditos usam McNemar + bootstrap.",
        "A HE não foi incluída no estudo de segmentação, o que deixa H2 incompleta nessa parte."])
-    P("11. Próximo passo", "h1")
+    P("11. Próximo passo" if not s2 else "11. Próximos passos", "h1")
     P("O roteiro executável completo está em <i>docs/PROXIMOS_PASSOS.md</i>. Em resumo:")
-    B(["<b>Estágio 2:</b> busca gulosa do E14 → atualizar a matriz → 360 jobs de fine-tuning (ResNet-18 e SimpleCNN, 3 sementes × 5 folds), ~16 h na RTX 3060.",
-       "<b>Fase 7:</b> Grad-CAM sistemático (atenção na glote e nos reflexos) e <i>report</i> final, com os vereditos do Estágio 2 e a conclusão de H1–H6.",
+    B([*([] if s2 else ["<b>Estágio 2:</b> busca gulosa do E14 → atualizar a matriz → 360 jobs de fine-tuning (ResNet-18 e SimpleCNN, 3 sementes × 5 folds), ~16 h na RTX 3060."]),
+       *([] if att else ["<b>Fase 7:</b> Grad-CAM sistemático (atenção na glote e nos reflexos) e <i>report</i> final, com os vereditos do Estágio 2 e a conclusão de H1–H6.",
+       ]),
        "<b>Fase 8:</b> protótipo Streamlit com os modelos treinados e reprodução a partir de um clone limpo.",
        "<b>Equipe:</b> revisão visual da galeria e da segmentação, revisão da tabela de rótulos, aviso à professora sobre a troca de dataset e colaboradores no GitHub."])
     P("Referências principais", "h2")

@@ -56,7 +56,15 @@ Depois dos caches:
 streamlit run app\streamlit_app.py                        # protótipo (apoio acadêmico; não é diagnóstico)
 ```
 
-Treinos de CNN rodam no Colab com `notebooks/colab_runner.ipynb` (escolher `SHARD_ID` → Executar tudo).
+Estágio 2 e fechamento (GPU local; retomáveis, jobs concluídos são pulados):
+
+```powershell
+.venv\Scripts\python -m laringopdi train --stage stage1 --shard 0   # … shards 0–4 da SimpleCNN rápida
+.venv\Scripts\python tools\stage2_chain.py > logs\stage2_chain.log 2>&1   # E14 guloso → cache → 360 jobs do Estágio 2
+.venv\Scripts\python tools\final_chain.py  > logs\final_chain.log 2>&1    # stage2_hyp (E01/E07/E08) → gradcam → report → PDFs
+```
+
+Treinos de CNN também rodam no Colab com `notebooks/colab_runner.ipynb` (escolher `SHARD_ID` → Executar tudo).
 Um job isolado: `python -m laringopdi train --exp E03 --task A --model resnet18 --fold 0 --seed 0`.
 
 ## Estrutura

@@ -1,0 +1,8 @@
+{
+  "H1": "não testada (atenção)",
+  "H2": "não suportada (sem diferença detectável na classificação)",
+  "H3": "não suportada",
+  "H4": "parcialmente suportada (depende do par método × realce: 6 melhoram, 9 pioram; melhor = region_grow + clahe, Δ +0.148)",
+  "H5": "parcialmente suportada",
+  "H6": "parcialmente suportada (A: competitiva; B: competitiva)"
+}

@@ -67,3 +67,10 @@ Registro cronológico. Cada decisão: data, contexto, decisão, motivo.
 - **Causa:** o `RandomAffine` (torchvision v2) rodava dentro do `torch.autocast` (AMP) e saturava ~21,6% dos pixels, contra 0,9% sem autocast.
 - **Alcance:** só treinos de CNN na GPU com augmentation (22 jobs do Estágio 1). O probe (sem augmentation), o braço clássico (CPU) e a segmentação não foram afetados.
 - **Correção:** a augmentation roda com o autocast desligado, em float32; há teste de regressão em `tests/test_models.py`. Os 22 runs foram para `results/runs_quarantine_amp_aug/` (fora da análise), e o Estágio 1 foi refeito do zero.
+
+## 2026-10-24 — Regra de veredito do Estágio 2 (fixada antes de qualquer resultado do Estágio 2)
+- **OOF por vídeo:** com 3 sementes, as predições out-of-fold usam a **média das probabilidades das sementes** (ensemble) antes do McNemar e do bootstrap. Com 1 semente (probe, SimpleCNN rápida) nada muda.
+- **Significância:** o IC 95% bootstrap do ΔF1 precisa excluir 0 **e** pelo menos um teste corrigido por Holm (por tarefa) dar p < 0,05: o McNemar OOF ou, quando houver ≥ 10 pares fold×semente, o Wilcoxon pareado. Com 5 pares (Estágio 1) o Wilcoxon não alcança p < 0,05, então a regra do Estágio 1 fica idêntica à já aplicada.
+- **H3:** compara o ΔF1 (técnica − E00) da SimpleCNN com o da ResNet-18 nas mesmas técnicas (Estágio 2: 5 técnicas; Estágio 1: SimpleCNN rápida × probe, 13 técnicas), por Wilcoxon pareado sobre as técnicas × tarefas. Suporte se a mediana da diferença for > 0 e p < 0,05.
+- **H1 (atenção):** fração da energia do Grad-CAM sobre os reflexos, E01 × E00, por frame pareado (Wilcoxon). Só se E01 tiver pesos (não está no top-4; se ficar de fora, H1 de atenção é reportada como não testada no Estágio 2 e a parte do F1 vem do Estágio 1).
+- **Complemento `stage2_hyp`:** E01, E07 e E08 com fine-tuning (ResNet-18 e SimpleCNN, 1 semente, 60 jobs ≈ 2,5 h) só para testar H1 (Grad-CAM sobre reflexos exige pesos do E01) e H5 (`roi` × `roi_gt` com fine-tuning). Não entram no ranking nem no E14; nos vereditos, o par com E00 usa só a semente 0 (5 pares, McNemar OOF).

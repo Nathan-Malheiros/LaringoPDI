@@ -197,16 +197,28 @@ def cmd_summary(cfg: dict, args) -> dict:
 
 
 # ----------------------------------------------------------------------------- estatística
-def oof_video_preds(cfg: dict, exp: str, task: str, model: str, seed: int = 0) -> pd.DataFrame:
-    """Predições out-of-fold por vídeo (concatena o teste dos 5 folds) para uma semente."""
+def run_seeds(cfg: dict, exp: str, task: str, model: str) -> set[int]:
+    """Sementes com preds.csv em **todos** os folds."""
+    root = C.path(cfg, "runs") / exp / task / model
+    per_fold = [{int(d.name.split("_seed")[1]) for d in root.glob(f"fold{k}_seed*") if (d / "preds.csv").exists()}
+                for k in cfg["stage1"]["folds"]]
+    return set.intersection(*per_fold) if per_fold else set()
+
+
+def oof_video_preds(cfg: dict, exp: str, task: str, model: str, seeds=(0,)) -> pd.DataFrame:
+    """Predições out-of-fold por vídeo (concatena o teste dos 5 folds). Com várias sementes, a
+    probabilidade por vídeo é a média entre elas (ensemble) antes do argmax."""
     rows = []
     for k in cfg["stage1"]["folds"]:
-        p = C.path(cfg, "runs") / exp / task / model / f"fold{k}_seed{seed}" / "preds.csv"
-        if not p.exists():
-            return pd.DataFrame()
-        df = pd.read_csv(p, dtype={"video_id": str})
-        pc = sorted((c for c in df.columns if c[0] == "p" and c[1:].isdigit()), key=lambda c: int(c[1:]))
-        v = video_level(df, pc)
+        vs = []
+        for s in seeds:
+            p = C.path(cfg, "runs") / exp / task / model / f"fold{k}_seed{s}" / "preds.csv"
+            if not p.exists():
+                return pd.DataFrame()
+            df = pd.read_csv(p, dtype={"video_id": str})
+            pc = sorted((c for c in df.columns if c[0] == "p" and c[1:].isdigit()), key=lambda c: int(c[1:]))
+            vs.append(video_level(df, pc).set_index(["video_id", "y"])[pc])
+        v = (sum(vs) / len(vs)).reset_index()
         v["pred"] = v[pc].to_numpy().argmax(1)
         rows.append(v[["video_id", "y", "pred"]])
     return pd.concat(rows, ignore_index=True)
@@ -241,26 +253,25 @@ def verdicts(cfg: dict, model: str, tasks=("A", "B"), baseline: str = "E00", exp
 
     runs = collect_runs(cfg)
     runs = runs[runs["model"] == model]
-    exps = exps or [e for e in cfg["stage1"]["experiments"] if e != baseline]
+    exps = exps or [e for e in dict.fromkeys(cfg["stage1"]["experiments"] + cfg["stage2"]["experiments"]) if e != baseline]
     rows = []
     for t in tasks:
         base = runs[(runs["exp"] == baseline) & (runs["task"] == t)].set_index(["fold", "seed"])["video_f1_macro"]
-        oa = oof_video_preds(cfg, baseline, t, model)
+        sa = run_seeds(cfg, baseline, t, model)
         for e in exps:
             cur = runs[(runs["exp"] == e) & (runs["task"] == t)].set_index(["fold", "seed"])["video_f1_macro"]
             pair = pd.concat([base, cur], axis=1, keys=["a", "b"]).dropna()
-            if pair.empty or oa.empty:
+            seeds = sorted(sa & run_seeds(cfg, e, t, model))
+            if pair.empty or not seeds:
                 continue
-            ob = oof_video_preds(cfg, e, t, model)
-            if ob.empty:
-                continue
+            oa, ob = oof_video_preds(cfg, baseline, t, model, seeds), oof_video_preds(cfg, e, t, model, seeds)
             m = oa.merge(ob, on=["video_id", "y"], suffixes=("_a", "_b"))
             y, pa, pb = m["y"].to_numpy(), m["pred_a"].to_numpy(), m["pred_b"].to_numpy()
             diff = pair["b"] - pair["a"]
             wp = float(wilcoxon(pair["b"], pair["a"]).pvalue) if (diff != 0).any() else 1.0
             lo, hi = bootstrap_delta_f1(y, pa, pb, cfg["stats"]["n_boot"])
             rows.append({"model": model, "task": t, "exp": e, "pipeline": cfg["experiments"].get(e, {}).get("pipeline", e),
-                         "n_pairs": len(pair), "f1_base": pair["a"].mean(), "f1_exp": pair["b"].mean(),
+                         "n_pairs": len(pair), "n_seeds": len(seeds), "f1_base": pair["a"].mean(), "f1_exp": pair["b"].mean(),
                          "delta_f1": diff.mean(), "wilcoxon_p": wp,
                          "oof_delta_f1": f1_score(y, pb, average="macro") - f1_score(y, pa, average="macro"),
                          "ci_low": lo, "ci_high": hi, "mcnemar_p": mcnemar_p(pa == y, pb == y)})
@@ -270,7 +281,9 @@ def verdicts(cfg: dict, model: str, tasks=("A", "B"), baseline: str = "E00", exp
     for col in ("wilcoxon_p", "mcnemar_p"):
         df[col + "_holm"] = df.groupby("task")[col].transform(lambda p: _holm(p.to_numpy()))
     a = cfg["stats"]["alpha"]
-    sig = (df["mcnemar_p_holm"] < a) & ((df["ci_low"] > 0) | (df["ci_high"] < 0))
+    # Regra fixada em DECISIONS.md (2026-10-24): IC exclui 0 e (McNemar ou, com >= 10 pares, Wilcoxon) < α.
+    test = (df["mcnemar_p_holm"] < a) | ((df["n_pairs"] >= 10) & (df["wilcoxon_p_holm"] < a))
+    sig = test & ((df["ci_low"] > 0) | (df["ci_high"] < 0))
     df["verdict"] = np.where(sig & (df["oof_delta_f1"] > 0), "melhora", np.where(sig, "piora", "neutra"))
     return df
 

@@ -1,0 +1,2555 @@
+{
+  "stage": "stage2",
+  "n_shards": 5,
+  "n_jobs": 360,
+  "shards": {
+    "0": [
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E00",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E14",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      }
+    ],
+    "1": [
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E04",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      }
+    ],
+    "2": [
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E05",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      }
+    ],
+    "3": [
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E10",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      }
+    ],
+    "4": [
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "A",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 0,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 1,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 2,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 3,
+        "seed": 2
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 1
+      },
+      {
+        "exp": "E11",
+        "task": "B",
+        "model": "simplecnn",
+        "fold": 4,
+        "seed": 2
+      }
+    ]
+  },
+  "caches": {
+    "0": [
+      "E00",
+      "E14"
+    ],
+    "1": [
+      "E04"
+    ],
+    "2": [
+      "E05"
+    ],
+    "3": [
+      "E10"
+    ],
+    "4": [
+      "E11"
+    ]
+  }
+}
