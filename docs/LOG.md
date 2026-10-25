@@ -102,3 +102,6 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
   - H4: parcialmente suportada (depende do par método × realce: 6 melhoram, 9 pioram; melhor = region_grow + clahe, Δ +0.148)
   - H5: parcialmente suportada
   - H6: parcialmente suportada (A: competitiva; B: competitiva)
+- **Resultado principal:** 420/420 jobs. Estágio 2: os **32 vereditos são neutros** (ResNet-18 e SimpleCNN, A e B). O maior ganho bruto (E04 `homo`, ResNet-18, A: 0,643 → 0,680) não passou no teste. Somando os estágios, nenhuma técnica de PDI mudou a classificação de forma significativa; o PDI só teve efeito na segmentação (H4).
+- **H1 (atenção):** a energia sobre os reflexos já fica no nível do acaso (~3%) no E00. O `spec` a reduz na ResNet-18 (0,036 → 0,034), mas a mediana por frame é 0, porque a maioria dos frames quase não tem reflexo.
+- **Pendências:** revisar `docs/hipoteses.md` e o PDF (cópia completa na Área de Trabalho do OneDrive); Fase 8 (app com os pesos `fold0_seed0`); o `gradcam` roda na CPU (2,5 h) e poderia usar a GPU.
