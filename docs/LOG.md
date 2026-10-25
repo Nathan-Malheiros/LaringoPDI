@@ -92,3 +92,13 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - `report` agora conclui H1–H6 de forma explícita (`docs/hipoteses.md` + `results/tables/hypotheses.json`): H2 com confronto direto contra o HE, H3 por Wilcoxon sobre os ΔF1, H5 com `roi` × `roi_gt`, H6 com C1 × CNN pareado.
 - Com os dados atuais (Estágio 1): H2 e H3 não suportadas; H4, H5 e H6 parciais; H1 aguarda o Grad-CAM.
 - PDF: seção do Estágio 2, figura de atenção e tabela de hipóteses entram sozinhas quando os dados existirem. 67 testes passando.
+
+
+## Fechamento automático (tools/final_chain.py, 2026-10-25 00:47)
+- Estágio 2 + stage2_hyp concluídos; gradcam, report e PDFs regenerados. Conclusões (`docs/hipoteses.md`):
+  - H1: parcialmente suportada
+  - H2: não suportada (sem diferença detectável na classificação)
+  - H3: não suportada
+  - H4: parcialmente suportada (depende do par método × realce: 6 melhoram, 9 pioram; melhor = region_grow + clahe, Δ +0.148)
+  - H5: parcialmente suportada
+  - H6: parcialmente suportada (A: competitiva; B: competitiva)
