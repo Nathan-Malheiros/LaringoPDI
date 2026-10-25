@@ -30,4 +30,3 @@
 - Revisar a tabela "texto → família" em `docs/dataset_report.md`, sobretudo os casos ambíguos (`None (…)`, "swelling", cicatriz/sulco).
 - E-mail aos autores do Laryngoscope8; avisar a Prof.ª Lyndainês sobre a troca de dataset.
 - Adicionar Marcos Vinicius, Pedro Nobre, Marcos Mendes e Tales como colaboradores do repositório `PDIZip` (preciso dos usernames do GitHub).
-- Os zips `data/test.zip` e `data/training.zip` (3,7 GB) já foram extraídos e podem ser movidos ou apagados por você.
