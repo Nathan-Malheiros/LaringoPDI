@@ -1,0 +1,7 @@
+[theme]
+base = "light"
+primaryColor = "#1A47E0"
+font = "sans serif"
+
+[runner]
+magicEnabled = false

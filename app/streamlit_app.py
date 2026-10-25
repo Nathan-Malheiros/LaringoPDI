@@ -124,7 +124,9 @@ def hist_fig(img: np.ndarray, color: str = CY):
     cdf = np.cumsum(np.histogram(v, 64, (0, 255))[0]); ax2 = ax.twinx()
     ax2.plot(np.linspace(0, 255, 64), cdf / max(cdf[-1], 1), color=INK, lw=1)
     for a in (ax, ax2):
-        a.set_yticks([]); [s.set_visible(False) for s in a.spines.values()]
+        a.set_yticks([])
+        for sp in a.spines.values():
+            sp.set_visible(False)
     ax.set_xticks([0, 128, 255]); ax.tick_params(labelsize=6, colors=DIM, length=0)
     fig.tight_layout(pad=.2)
     return fig
@@ -141,8 +143,11 @@ def metric_row(q: dict, ref: dict | None = None):
                      delta_color="off" if k == "spec_frac" else "normal")
 
 
-tabs = st.tabs(["① Pipeline passo a passo", "② Laboratório de técnicas", "③ Domínio da frequência",
-                "④ Segmentação da glote", "⑤ Rede neural + Grad-CAM"])
+TAB_NAMES = ["① Pipeline passo a passo", "② Laboratório de técnicas", "③ Domínio da frequência",
+             "④ Segmentação da glote", "⑤ Rede neural + Grad-CAM"]
+first = int(st.query_params.get("aba", 0)) % len(TAB_NAMES)   # ?aba=N abre direto numa aba (capturas)
+order = list(range(first, len(TAB_NAMES))) + list(range(first))
+tabs = dict(zip(order, st.tabs([TAB_NAMES[i] for i in order])))
 
 # ---------------------------------------------------------------------------------------- ① pipeline
 with tabs[0]:
