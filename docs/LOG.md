@@ -172,3 +172,6 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - **Reprodução, em `D:/Dev/repro_laringo` com venv novo e torch CPU:**
   - Clone limpo sem o dataset: 94 testes passaram, 2 foram pulados e 1 falhou (`test_real_splits_no_leak`, que exigia `data/groups.csv`, não versionado). Corrigido para pular nesse caso.
   - Pacote com pesos, com `TORCH_HOME` vazio e sem o BAGLS: `test_app` e `test_pacote` com 3 aprovados e 2 pulados; modo upload sem exceção, experimento padrão E00, 7 abas, probabilidades da ResNet-18 e MLP-18 presentes, nenhum download. Servidor `streamlit run` headless respondeu 200 em 20 s, sem erro no log.
+
+## Etapa 2 — Equipe nos relatórios (2026-11-04)
+- Nomes completos e matrículas dos 5 integrantes nas capas dos PDFs (`EQUIPE` em `tools/relatorio_pdf.py`, reaproveitada por `relatorio_completo.py`). PDFs e zips regenerados.

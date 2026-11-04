@@ -31,6 +31,9 @@ from laringopdi import config as C  # noqa: E402
 
 FIG = ROOT / "docs" / "figures" / "relatorio"
 T = ROOT / "results" / "tables"
+EQUIPE = ("Marcos Mendes Carneiro Furtado Bezerra (2310532)<br/>Marcos Vinícius dos Santos e Silva (2220232)<br/>"
+          "Nathan Linhares Dias Malheiros (2220227), representante<br/>Pedro Nobre Costa (2210380)<br/>"
+          "Tales Rodrigues da Costa Sales Rios (2220242)")
 INK, DIM, CY, VI, OR, GR, RD = "#1B2A4A", "#5B6785", "#0E9FB5", "#7B5BD6", "#E07B2E", "#2E9E6A", "#D6455D"
 EXP_COLORS = {"raw": "#8A94AD", "spec": "#5C9DFF", "he": "#B07CF0", "clahe": "#0E9FB5", "homo": "#E07B2E", "bilat": "#2E9E6A",
               "median": "#6CBF5A", "roi_gt": "#D6455D", "roi": "#F08A9C", "clahe>roi": "#C2547F", "edges": "#2F5BD3",
@@ -434,7 +437,7 @@ def build(out: Path, publico: bool) -> None:
     fig(fig_pipeline(), "Figura 1. Desenho do estudo: o PDI é a variável independente; o classificador, o protocolo e os splits ficam fixos.")
     story += [Spacer(1, 26)]
     table([["Disciplina", "Processamento Digital de Imagens (PDI), UNIFOR. Prof.ª Lyndainês Santos. Projeto extensionista."],
-           ["Equipe", "Nathan (2220227, representante) · Marcos Vinicius · Pedro Nobre · Marcos Mendes · Tales"],
+           ["Equipe", EQUIPE],
            ["Data", date.today().strftime("%d/%m/%Y") + f" · versão do código {git} · {'versão pública (sem frames de pacientes)' if publico else 'versão completa (uso interno da equipe)'}"],
            ["Aviso", "Ferramenta de apoio acadêmico. Não substitui avaliação médica."]], [.18, .82], header=False, zebra=False)
     story.append(PageBreak())

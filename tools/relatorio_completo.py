@@ -319,7 +319,7 @@ def build(out: Path):
     fig(rf["fig_pipeline"], "Desenho do estudo: o PDI é a variável independente; classificador, protocolo e divisões dos dados ficam fixos.", .92)
     story.append(Spacer(1, 1.2 * cm))
     tc = Table([[Paragraph("<b>Disciplina</b>", st["cell"]), Paragraph("Processamento Digital de Imagens — Universidade de Fortaleza (UNIFOR). Prof.ª Lyndainês Santos.", st["cell"])],
-                [Paragraph("<b>Equipe</b>", st["cell"]), Paragraph("Nathan (2220227) · Marcos Vinicius · Pedro Nobre · Marcos Mendes · Tales", st["cell"])],
+                [Paragraph("<b>Equipe</b>", st["cell"]), Paragraph(R.EQUIPE, st["cell"])],
                 [Paragraph("<b>Data</b>", st["cell"]), Paragraph(f"{date.today().strftime('%d/%m/%Y')} · código {C.git_sha()}", st["cell"])],
                 [Paragraph("<b>Uso</b>", st["cell"]), Paragraph("Documento interno da equipe: contém frames do BAGLS (CC BY-NC-SA 4.0). "
                                                                 "Ferramenta de apoio acadêmico; não substitui avaliação médica.", st["cell"])]],
