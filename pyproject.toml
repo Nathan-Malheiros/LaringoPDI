@@ -7,6 +7,10 @@ name = "laringopdi"
 version = "0.1.0"
 description = "PDI em laringoscopia de luz branca: efeito de técnicas de PDI na classificação de alterações das pregas vocais"
 requires-python = ">=3.11"
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
 
 [project.scripts]
 laringopdi = "laringopdi.cli:main"

@@ -219,7 +219,7 @@ def build(out: Path):
     addMapping("Georgia", 0, 0, "Georgia"); addMapping("Georgia", 1, 0, "Georgia-Bold"); addMapping("Georgia", 0, 1, "Georgia-Italic")
     c = colors.HexColor
     st = {
-        "h1": ParagraphStyle("h1", fontName="Georgia", fontSize=21, leading=26, textColor=c(INK), spaceAfter=10, spaceBefore=4),
+        "h1": ParagraphStyle("h1", fontName="Georgia", fontSize=21, leading=26, textColor=c(INK), spaceAfter=10, spaceBefore=4, keepWithNext=1),
         "kick": ParagraphStyle("k", fontName="Arial-Bold", fontSize=8.5, leading=11, textColor=c(BLUE), spaceAfter=2),
         "h2": ParagraphStyle("h2", fontName="Georgia-Bold", fontSize=12.5, leading=16, textColor=c(INK), spaceBefore=12, spaceAfter=5),
         "h3": ParagraphStyle("h3", fontName="Arial-Bold", fontSize=9.6, leading=12.5, textColor=c(BLUE), spaceBefore=8, spaceAfter=3),
@@ -497,7 +497,7 @@ def build(out: Path):
       "espectro concentra energia no centro (iluminação lenta), o filtro atenua esse centro e reforça o anel externo, e o "
       "resultado devolve uma imagem de iluminação uniforme e textura acentuada.")
     fig(DF / "gallery_homo.png", "Filtragem homomórfica num frame real: imagem, espectro, H(u,v) e resultado.", 1.0)
-    fig(ROOT / "docs" / "figures" / "app" / "aba2.png", "A mesma análise no protótipo (aba \"Domínio da frequência\"), com o perfil radial de H e o espectro médio por raio antes e depois.", 1.0, maxh=11 * cm)
+    fig(ROOT / "docs" / "figures" / "app" / "aba3.png", "A mesma análise no protótipo (aba \"Domínio da frequência\"), com o perfil radial de H e o espectro médio por raio antes e depois.", 1.0, maxh=11 * cm)
     P("Por que isso não ajudou a rede? Uma hipótese é que a primeira camada de uma CNN já aprende filtros passa-altas; a "
       "filtragem homomórfica entrega um resultado que a rede consegue construir sozinha. A ResNet-18 com homomórfica foi a "
       f"combinação com maior ganho bruto na Tarefa A, mas o intervalo de confiança cruzou o zero.")
@@ -567,11 +567,13 @@ def build(out: Path):
     H1("11", "O protótipo")
     P("O aplicativo (Streamlit, roda em CPU no Windows) é a dimensão tecnológica do projeto. Ele não esconde o PDI atrás de "
       "uma predição: cada aba mostra uma etapa do que o estudo fez, sobre qualquer frame enviado.")
-    caps = ["Pipeline passo a passo: cada etapa com seu histograma e histograma acumulado, e as métricas comparadas com o E00.",
+    caps = ["Técnicas de aula: realce com histogramas, ruído com PSNR e SSIM ao vivo e passa-baixa gaussiano com σ ajustável.",
+            "Pipeline passo a passo: cada etapa com seu histograma e histograma acumulado, e as métricas comparadas com o E00.",
             "Laboratório: as 14 técnicas no mesmo frame, com tabela de métricas.",
             "Domínio da frequência: espectro, H(u,v), resultado e perfis radiais.",
             "Segmentação: pré-processamento, resultado clássico e contorno do especialista, com Dice, IoU e HD95.",
-            "Rede neural: probabilidades, Grad-CAM e o veredito daquela técnica no estudo."]
+            "Rede neural: probabilidades, Grad-CAM, o veredito daquela técnica no estudo e as 18 características com a MLP-18.",
+            "Resultados: hipóteses P1–P6, Dice por método × realce, vereditos e clássico × CNN, lidos das tabelas."]
     for i, cp in enumerate(caps):
         fig(ROOT / "docs" / "figures" / "app" / f"aba{i}.png", cp, .9, maxh=11.5 * cm)
 
@@ -592,8 +594,12 @@ def build(out: Path):
            ["Cache inteiro na RAM", "Processo encerrado", "Escrita em blocos (memmap)"],
            ["Gabor do scikit-image", "~13 h de extração", "Kernel do OpenCV: 240× mais rápido"]], [.3, .25, .45])
 
-    # ------------------------------------------------------------------ 13. discussão
-    H1("13", "Discussão, limitações e o que mais o PDI pode oferecer")
+    # ------------------------------------------------------------------ 13–18. fechamento da Etapa 1
+    from secoes_etapa1 import secoes
+    secoes(lambda n, t: H1(str(n), t), P, table, lambda p, cap, w=1.0, priv=False: fig(p, cap, w, maxh=20 * cm), ROOT, 13)
+
+    # ------------------------------------------------------------------ 19. discussão
+    H1("19", "Discussão, limitações e o que mais o PDI pode oferecer")
     P("O achado central não é \"o PDI não serve\". É mais preciso: <b>o PDI importa quando quem lê a imagem é um algoritmo de "
       "regras fixas</b> — um limiar, um crescimento de região —, e importa pouco quando quem lê é uma rede que aprende seus "
       "próprios filtros com dados suficientes. Na segmentação clássica, escolher o realce certo vale tanto quanto escolher o "
@@ -613,7 +619,7 @@ def build(out: Path):
       "análise. Em todos esses casos o PDI deixa de ser um pré-processamento opcional e passa a ser a própria medida.")
 
     # ------------------------------------------------------------------ 14. reprodução
-    H1("14", "Reprodutibilidade e referências")
+    H1("20", "Reprodutibilidade e referências")
     P("Todo o projeto roda com um único ponto de entrada (<i>python -m laringopdi &lt;comando&gt;</i>), a matriz de experimentos é "
       "um arquivo YAML, cada execução salva configuração, semente, versão do código e hash do pipeline, e execuções concluídas "
       "são puladas. Todos os números e figuras deste documento são gerados a partir de <i>results/</i>.")

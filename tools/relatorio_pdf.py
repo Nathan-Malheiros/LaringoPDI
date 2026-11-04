@@ -266,6 +266,8 @@ def fig_classic():
 def fig_perm():
     rows = []
     for p in (ROOT / "results" / "runs").glob("C*/*/*/fold*_seed0/metrics.json"):
+        if p.parts[-5] == "C6":        # famílias diferentes; figura própria em secoes_etapa1 (importancia_c6.png)
+            continue
         m = rj(p)
         for fam, v in m.get("perm_importance", {}).items():
             rows.append({"exp": p.parts[-5], "task": p.parts[-4], "fam": fam, "drop": v["mean"]})
@@ -360,7 +362,7 @@ def build(out: Path, publico: bool) -> None:
     st = {
         "title": ParagraphStyle("t", fontName="Arial-Bold", fontSize=24, leading=29, textColor=colors.HexColor(INK)),
         "sub": ParagraphStyle("s", fontName="Arial", fontSize=12.5, leading=17, textColor=colors.HexColor(DIM)),
-        "h1": ParagraphStyle("h1", fontName="Arial-Bold", fontSize=16, leading=20, spaceBefore=6, spaceAfter=8, textColor=colors.HexColor(INK)),
+        "h1": ParagraphStyle("h1", fontName="Arial-Bold", fontSize=16, leading=20, spaceBefore=6, spaceAfter=8, keepWithNext=1, textColor=colors.HexColor(INK)),
         "h2": ParagraphStyle("h2", fontName="Arial-Bold", fontSize=12, leading=15, spaceBefore=10, spaceAfter=4, textColor=colors.HexColor("#0B6F80")),
         "p": ParagraphStyle("p", fontName="Arial", fontSize=9.8, leading=14.2, alignment=TA_JUSTIFY, spaceAfter=6, textColor=colors.HexColor("#222B3D")),
         "b": ParagraphStyle("b", fontName="Arial", fontSize=9.8, leading=14, leftIndent=12, bulletIndent=2, spaceAfter=3, textColor=colors.HexColor("#222B3D")),
@@ -728,26 +730,26 @@ def build(out: Path, publico: bool) -> None:
     B(["Uma única CLI (<i>python -m laringopdi</i>) e a matriz inteira em YAML; jobs concluídos são pulados; cada execução "
        "registra config, semente, git e hash do pipeline.",
        "A RTX 3060 local substituiu o Colab: Estágio 1 em ~3,5 h e Estágio 2 estimado em ~16 h.",
-       "65 testes automatizados, incluindo um ponta a ponta em CPU (~1 min) sobre um BAGLS sintético.",
+       "Mais de 90 testes automatizados, incluindo um ponta a ponta em CPU (~1 min) sobre um BAGLS sintético.",
        "O painel <b>LaringoMonitor</b> (janela nativa) mostra progresso e tempo previsto, CPU/GPU, temperatura, fan e a rede "
        "treinando ao vivo (lote atual, Grad-CAM, ativações, ajuste dos pesos, matriz de confusão). Foi ele que revelou o "
        "bug de AMP."])
     fig(live / "batch.jpg", "Figura 23. Lote de treino visto pelo painel após a correção: frames com augmentation, rótulo real e palpite da rede.", .7, private=True)
 
-    # ------------------------------------------------------------------ 10. limitações e próximos passos
-    P("10. Limitações", "h1")
+    # ------------------------------------------------------------------ 10–15. fechamento da Etapa 1
+    from secoes_etapa1 import secoes
+    secoes(lambda n, t: P(f"{n}. {t}", "h1"), P, table, lambda p, cap, w=1.0, priv=False: fig(p, cap, w, private=priv), ROOT, 10)
+
+    # ------------------------------------------------------------------ 16–17. limitações e próximos passos
+    P("16. Limitações", "h1")
     B(["Frames isolados: a dinâmica vibratória, essencial nos distúrbios funcionais, não é usada (análise temporal está fora do escopo).",
        "Classe estrutural pequena (54 vídeos, ~11 por fold de teste): intervalos de confiança largos na Tarefa B.",
        "Rótulos derivados de texto livre por regras; os casos ambíguos aguardam revisão humana.",
        "No Estágio 1 há só 5 pares por comparação; o Wilcoxon não alcança p < 0,05, por isso os vereditos usam McNemar + bootstrap.",
-       "A HE não foi incluída no estudo de segmentação, o que deixa H2 incompleta nessa parte."])
-    P("11. Próximo passo" if not s2 else "11. Próximos passos", "h1")
-    P("O roteiro executável completo está em <i>docs/PROXIMOS_PASSOS.md</i>. Em resumo:")
-    B([*([] if s2 else ["<b>Estágio 2:</b> busca gulosa do E14 → atualizar a matriz → 360 jobs de fine-tuning (ResNet-18 e SimpleCNN, 3 sementes × 5 folds), ~16 h na RTX 3060."]),
-       *([] if att else ["<b>Fase 7:</b> Grad-CAM sistemático (atenção na glote e nos reflexos) e <i>report</i> final, com os vereditos do Estágio 2 e a conclusão de H1–H6.",
-       ]),
-       "<b>Fase 8:</b> protótipo Streamlit com os modelos treinados e reprodução a partir de um clone limpo.",
-       "<b>Equipe:</b> revisão visual da galeria e da segmentação, revisão da tabela de rótulos, aviso à professora sobre a troca de dataset e colaboradores no GitHub."])
+       "Os números de HE e de alargamento na segmentação foram gerados no fechamento da Etapa 1, com o método já fixado; não entraram na escolha do método nem em H2."])
+    P("17. Próximo passo", "h1")
+    P("O próximo passo é a apresentação final (até 15 min, com demonstração), preparada a partir de <i>docs/hipoteses_etapa1.md</i>, "
+      "<i>docs/MUDANCAS_ETAPA1.md</i>, <i>docs/ROTEIRO_DEMO.md</i> e deste relatório.")
     P("Referências principais", "h2")
     refs = ["Gómez P. et al. BAGLS, a multihospital Benchmark for Automatic Glottis Segmentation. Scientific Data 7, 186 (2020).",
             "Gonzalez R. C., Woods R. E. Digital Image Processing. 4ª ed. Pearson, 2018.",

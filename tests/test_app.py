@@ -39,3 +39,29 @@ def test_app_noise_controls_change_psnr():
     at.radio(key="ruido_tipo").set_value("gaussiano").run()
     assert not at.exception
     assert [m.value for m in at.metric if m.label == "PSNR"] != before
+
+
+def test_app_upload_mode_works_without_dataset_frame():
+    """O modo usado na entrega, sem o BAGLS: o uploader é trocado por um PNG sintético."""
+    import cv2
+    import numpy as np
+    from unittest.mock import patch
+
+    g = np.full((256, 320), 90, np.uint8)
+    cv2.ellipse(g, (160, 128), (20, 70), 0, 0, 360, 15, -1)
+    png = cv2.imencode(".png", g)[1].tobytes()
+
+    class Upload:
+        def getvalue(self):
+            return png
+
+    with patch("streamlit.file_uploader", lambda label, **kw: Upload() if label.startswith("Frame") else None):
+        at = _app().run()
+        src = at.sidebar.radio[0]
+        if src.value != "Enviar arquivo":
+            src.set_value("Enviar arquivo")
+            at.run()
+    assert not at.exception
+    assert any("calibrada no BAGLS" in c.value for c in at.caption)
+    assert any(m.label == "PSNR" for m in at.metric)
+    assert any("Não substitui avaliação médica" in w.value for w in at.warning)
