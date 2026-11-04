@@ -149,3 +149,8 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 ## Etapa 2 — Bloco 6: tempo de processamento (2026-11-04)
 - `python -m laringopdi timing` → `results/tables/timing.csv`: mediana em 100 frames, CPU AMD64 Family 25 Model 80 (6 threads do PyTorch), um processo, 5 aquecimentos descartados.
 - Técnicas mais lentas: m1 14,7 ms, lbp 13,5 ms, homo 13,4 ms; `gauss_lpf` 9,5 ms. Pipelines: de 1,1 ms (E00) a 28,5 ms (E14). `region_grow` + `clahe`: 3,5 ms. 18 características: 13,1 ms. Inferência: ResNet-18 24,5 ms, SimpleCNN 8,1 ms, MLP C6 0,24 ms.
+
+## Etapa 2 — Bloco 7: relatório P1–P6 (2026-11-04)
+- `python -m laringopdi etapa1-report` → `docs/hipoteses_etapa1.md` + `results/tables/hypotheses_etapa1.json`. `docs/MUDANCAS_ETAPA1.md` escrito; P1–P6 e os novos comandos acrescentados ao `docs/ESPECIFICACAO.md`.
+- **Vereditos:** P1 parcial; P2 confirmada; P3 confirmada; P4 confirmada; P5 parcial; P6 refutada.
+- **Ressalvas na evidência gerada:** P1, a fração saturada não demonstra o "estouro" do HE. P3, o Otsu puro quase não acerta a glote (0,023), e o mecanismo do reflexo não foi testado. P4, confirmação frágil: IC [−0,104; +0,009], mas a acurácia é 0,842 × 0,903 e McNemar p < 0,001 a favor da ResNet-18. P5, o veredito "parcial" esconde que mais combinações caem (9) do que sobem (5).

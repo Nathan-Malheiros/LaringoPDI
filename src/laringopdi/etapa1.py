@@ -439,6 +439,7 @@ def _importance_figure(cfg: dict, imp: pd.DataFrame) -> None:
 
 def cmd_mlp18_study(cfg: dict, args) -> dict:
     """Roda o C6 (se faltar), a importância por família e a comparação com a ResNet-18 do E00 (P4)."""
+    from laringopdi.evaluate import oof_video_preds
     from laringopdi.report import paired_compare
     from laringopdi.train import cmd_classic
     t = C.path(cfg, "tables")
@@ -452,8 +453,11 @@ def cmd_mlp18_study(cfg: dict, args) -> dict:
     for sys_, model in (("C6", "mlp18"), ("C1", "mlp")):
         for task in ("A", "B"):
             r = paired_compare(cfg, ("E00", "resnet18"), (sys_, model), task)
+            m = oof_video_preds(cfg, "E00", task, "resnet18", (0,)).merge(oof_video_preds(cfg, sys_, task, model, (0,)), on=["video_id", "y"], suffixes=("_a", "_b"))
+            ok_a, ok_b = m["pred_a"] == m["y"], m["pred_b"] == m["y"]
+            acc = {"acc_resnet18": ok_a.mean(), "acc_classic": ok_b.mean(), "only_resnet18_right": int((ok_a & ~ok_b).sum()), "only_classic_right": int((~ok_a & ok_b).sum())}
             rows.append({"system": sys_, "task": task, "f1_resnet18": r["f1_a"], "f1_classic": r["f1_b"], "delta": r["delta"], "ci_low": r["ci_low"],
-                         "ci_high": r["ci_high"], "ci_width": r["ci_high"] - r["ci_low"], "mcnemar_p": r["mcnemar_p"], "n_seeds": r["n_seeds"], "n_videos": r["n_videos"]})
+                         "ci_high": r["ci_high"], "ci_width": r["ci_high"] - r["ci_low"], "mcnemar_p": r["mcnemar_p"], "n_seeds": r["n_seeds"], "n_videos": r["n_videos"], **acc})
     p4 = pd.DataFrame(rows)
     p4.round(4).to_csv(t / "mlp18_p4.csv", index=False)
     f = pd.read_csv(C.path(cfg, "cache").parent / "features" / "f18.csv", usecols=["video_id", "f18shape_area_rel"], dtype={"video_id": str})
@@ -669,6 +673,10 @@ def _fn(v: float, d: int = 3) -> str:
     return f"{v:.{d}f}".replace(".", ",")
 
 
+def _pc(v: float, d: int = 2) -> str:
+    return f"{v:.{d}%}".replace(".", ",")
+
+
 def _verdict_p1(cfg: dict, a: float) -> dict:
     t = C.path(cfg, "tables")
     s = pd.read_csv(t / "seg_p1.csv")
@@ -684,9 +692,9 @@ def _verdict_p1(cfg: dict, a: float) -> dict:
     v = "refutada" if refuted else "confirmada" if (va and vb and n >= 3) else "parcialmente confirmada" if (va or vb) else "inconclusiva"
     ctx = pd.read_csv(t / "realce_classif_context.csv")
     txt = (f"`region_grow`: Dice CLAHE {_fn(rg['dice_b'])} × HE {_fn(rg['dice_a'])}, p_Holm {_fp(rg['p_holm'])}. "
-           f"CLAHE vence com significância em {n} de 5 métodos; HE vence em {n_he}. Fração saturada: HE {sh:.2%} × CLAHE {sc:.2%}. "
-           f"Ressalva: a imagem sem realce já tem {q.loc['raw', 'saturated_frac_mean']:.2%} de pixels em 0 ou 255, quase todos pretos (fundo do frame); "
-           f"o HE quase não acrescenta nada a isso, e o CLAHE fica baixo porque tira esses pixels do zero ({q.loc['raw', 'sat_low_mean']:.2%} → {q.loc['clahe', 'sat_low_mean']:.2%}). "
+           f"CLAHE vence com significância em {n} de 5 métodos; HE vence em {n_he}. Fração saturada: HE {_pc(sh)} × CLAHE {_pc(sc)}. "
+           f"Ressalva: a imagem sem realce já tem {_pc(q.loc['raw', 'saturated_frac_mean'])} de pixels em 0 ou 255, quase todos pretos (fundo do frame); "
+           f"o HE quase não acrescenta nada a isso, e o CLAHE fica baixo porque tira esses pixels do zero ({_pc(q.loc['raw', 'sat_low_mean'])} → {_pc(q.loc['clahe', 'sat_low_mean'])}). "
            "Logo, a condição (b) é atendida, mas não demonstra que o HE \"estoura\" o tecido. "
            f"Contexto, fora do veredito: na classificação do Estágio 1, ΔF1 (CLAHE − HE) varia de {_fn(ctx['delta'].min())} a {_fn(ctx['delta'].max())}, "
            f"com McNemar mínimo {_fp(ctx['mcnemar_p'].min())}.")
@@ -717,7 +725,8 @@ def _verdict_p3(cfg: dict, a: float) -> dict:
     v = ("confirmada" if delta >= 0.05 else "parcialmente confirmada") if (p < a and delta > 0) else "refutada" if (p < a and delta < 0) else "inconclusiva"
     m = vid.mean()
     txt = (f"Sobre `raw`, por vídeo (n = {len(x)}): `adaptive` {_fn(x['adaptive'].mean())} × `otsu` {_fn(x['otsu'].mean())}, Δ = {_fn(delta)}, p {_fp(p)}. "
-           f"Nuance, fora do veredito: `otsu_morph` {_fn(m['otsu_morph'])} e `region_grow` {_fn(m['region_grow'])}.")
+           f"Nuance, fora do veredito: `otsu_morph` {_fn(m['otsu_morph'])} e `region_grow` {_fn(m['region_grow'])}. "
+           "O Otsu puro praticamente não acerta a glote, e o adaptativo também é fraco; o resultado mostra a superioridade do adaptativo, mas não testa se a causa é o reflexo.")
     return {"verdict": v, "evidence": txt, "numbers": {"dice_adaptive": float(x["adaptive"].mean()), "dice_otsu": float(x["otsu"].mean()), "delta": delta, "p": p,
                                                        "dice_otsu_morph": float(m["otsu_morph"]), "dice_region_grow": float(m["region_grow"])}}
 
@@ -730,6 +739,8 @@ def _verdict_p4(cfg: dict, a: float) -> dict:
     def f(x):
         return (f"F1 {_fn(x['f1_classic'])} × ResNet-18 {_fn(x['f1_resnet18'])}, ΔF1 {_fn(x['delta'])} [IC 95% {_fn(x['ci_low'])}; {_fn(x['ci_high'])}], McNemar p {_fp(x['mcnemar_p'])}")
     txt = (f"C6, Tarefa B ({int(r['n_videos'])} vídeos): {f(r)}. Largura do IC: {_fn(r['ci_width'])}; \"competitiva\" não significa equivalente. "
+           f"O veredito segue a regra do IC, mas o McNemar aponta outra direção: a acurácia é {_fn(r['acc_classic'])} (C6) × {_fn(r['acc_resnet18'])} (ResNet-18), e só a ResNet-18 acerta "
+           f"{int(r['only_resnet18_right'])} vídeos em que o C6 erra, contra {int(r['only_classic_right'])} no sentido inverso. Trate esta confirmação como frágil. "
            f"Contexto: C6, Tarefa A: {f(d.loc[('C6', 'A')])}. Extensão C1 (187 características), Tarefa B: {f(d.loc[('C1', 'B')])}. "
            "Comparação contra a semente 0 da ResNet-18, porque o C6 tem uma semente só.")
     return {"verdict": v, "evidence": txt, "numbers": {k: float(r[k]) for k in ("f1_classic", "f1_resnet18", "delta", "ci_low", "ci_high", "ci_width", "mcnemar_p")}}
@@ -754,10 +765,10 @@ def _verdict_p5(cfg: dict, a: float) -> dict:
            + (f" ({', '.join(sorted(set(down['exp'])))})" if len(down) else "")
            + f". Por modelo, sobem {per(up)}; caem {per(down)}. Mais combinações caem do que sobem, e o efeito muda de sinal conforme técnica, modelo e tarefa. "
            f"Razão média no E00: {_fn(n['ratio_E00'].mean(), 2)} (1 = acaso). "
-           f"Desvio do pré-registro: frames com mapa de energia zero (até {ze['resnet18']:.1%} na ResNet-18 e {ze['simplecnn']:.1%} na SimpleCNN) têm razão indefinida e saíram da análise principal, "
+           f"Desvio do pré-registro: frames com mapa de energia zero (até {_pc(ze['resnet18'], 1)} na ResNet-18 e {_pc(ze['simplecnn'], 1)} na SimpleCNN) têm razão indefinida e saíram da análise principal, "
            f"decisão tomada depois de ver os resultados, e por isso a queda no número de vídeos pareados da SimpleCNN (mínimo {int(n[n['model'] == 'simplecnn']['n_videos'].min())}). "
            f"Sensibilidade, contando esses frames como atenção 0: sobem {s_up}, caem {s_down}. "
-           f"Pixels da glote com X = 0, que a medida exclui da energia: E00 {val['E00']:.2%}, " + ", ".join(f"{e} {val[e]:.2%}" for e in val.index if e != "E00")
+           f"Pixels da glote com X = 0, que a medida exclui da energia: E00 {_pc(val['E00'])}, " + ", ".join(f"{e} {_pc(val[e])}" for e in val.index if e != "E00")
            + ". Com recorte, à parte e com a ressalva da área: " + "; ".join(f"{e} {_fn(r['ratio_exp'], 2)} (E00 {_fn(r['ratio_E00'], 2)})" for e, r in crop.iterrows()) + ".")
     return {"verdict": v, "evidence": txt, "numbers": {"n": len(n), "up": len(up), "down": len(down), "sens_up": s_up, "sens_down": s_down, "up_exps": sorted(set(up["exp"])), "down_exps": sorted(set(down["exp"]))}}
 
