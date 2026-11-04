@@ -1,9 +1,12 @@
 import numpy as np
 import pytest
 
+from skimage.metrics import peak_signal_noise_ratio
+
 from laringopdi import config as C
 from laringopdi.pdi import TECHNIQUES, letterbox, parse, run_pipeline
 from laringopdi.pdi.quality import image_quality
+from laringopdi.pdi.registry import DEFAULTS
 from laringopdi.pdi.segmentation import PARAM_GRID, SEGMENTERS, dice, hd95, seg_metrics, segment
 
 CFG = C.load()
@@ -90,6 +93,53 @@ def test_seg_metrics_edge_cases():
     assert dice(e, e) == 1.0 and np.isnan(hd95(e, f))
     m = seg_metrics(e, f)
     assert m["fail"] == 1.0 and m["dice"] == 0.0
+
+
+@pytest.mark.parametrize("name", ["stretch", "mean", "gauss_lpf"])
+def test_class_techniques_shape_dtype_determinism(glottis, name):
+    img, _ = glottis
+    assert "Por que importa" in TECHNIQUES[name].__doc__
+    a = TECHNIQUES[name](img, {}, **DEFAULTS[name])
+    b = TECHNIQUES[name](img, {}, **DEFAULTS[name])
+    assert a.dtype == np.uint8 and a.shape == img.shape and np.array_equal(a, b)
+    assert run_pipeline(img, name)[0].shape == (224, 224, 3)
+
+
+def test_gauss_lpf_huge_sigma_is_identity(glottis):
+    img, _ = glottis
+    out = TECHNIQUES["gauss_lpf"](img, {}, sigma=1e5)
+    assert peak_signal_noise_ratio(img, out, data_range=255) > 40
+
+
+def test_gauss_lpf_small_sigma_blurs(glottis):
+    img, _ = glottis
+    assert TECHNIQUES["gauss_lpf"](img, {}, sigma=5).std() < img.std()
+
+
+def test_stretch_uses_full_range():
+    img = np.random.default_rng(0).integers(60, 121, (128, 128)).astype(np.uint8)
+    out = TECHNIQUES["stretch"](img, {})
+    assert out.min() == 0 and out.max() == 255
+
+
+def test_stretch_flat_image_unchanged():
+    img = np.full((32, 32), 77, np.uint8)
+    assert np.array_equal(TECHNIQUES["stretch"](img, {}), img)
+
+
+def test_mean_reduces_gaussian_noise_variance():
+    n = np.random.default_rng(0).normal(128, 20, (128, 128))
+    img = np.clip(n, 0, 255).astype(np.uint8)
+    assert TECHNIQUES["mean"](img, {}, ksize=3).var() < 0.25 * img.var()
+
+
+def test_saturated_frac():
+    img = np.full((10, 10), 100, np.uint8)
+    img[0, :5] = 0
+    img[1, :5] = 255
+    q = image_quality(img)
+    assert q["saturated_frac"] == pytest.approx(0.10)
+    assert {"entropy", "rms_contrast", "spec_frac", "lap_var"} <= set(q)
 
 
 def test_determinism(glottis):

@@ -111,3 +111,8 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - Verificado: `data/raw/bagls/{training,test}`; caches E00, E08 e E13 (o nome leva o hash do pipeline: `data/processed/cache/E00_ff5107162d.*`, e não uma pasta `E00/` como o plano supunha); pesos `fold0_seed0/model.pt` de E00 e E04 (A e B × resnet18 e simplecnn); `attention_frames.csv.gz` com as colunas `exp,model,task,fold,path,video_id,att_glottis,area_glottis,att_spec,area_spec`.
 - Cobertura da atenção: 9 experimentos × 2 modelos × 2 tarefas, 5.870 frames e 587 vídeos em cada combinação. Frames com área glótica 0: 27 (0 no E07; 185 no E08).
 - `pytest`: 67 passando.
+
+## Etapa 2 — Bloco 1: técnicas de aula (2026-11-04)
+- `stretch` e `gauss_lpf` em `pdi/enhance.py`; `mean` em `pdi/filters.py`; `saturated_frac` em `pdi/quality.py` (coluna nova, sem mexer nas existentes). As técnicas novas ficam fora da matriz E00–E14 e os hashes dos caches não mudam.
+- `homo_transfer` e `gauss_lpf_transfer` agora compartilham `_freq_d2`, com a fórmula inalterada. Conferido antes da refatoração: `homo` reproduz o frame 0 do cache E04 byte a byte.
+- `docs/pdi_tecnicas.md` regenerado só pelo `pdi_doc`, sem refazer a galeria.

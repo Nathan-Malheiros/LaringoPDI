@@ -1,6 +1,6 @@
 # Técnicas de PDI — LaringoPDI (BAGLS, escala de cinza)
 
-Gerado por `python -m laringopdi gallery` a partir das docstrings (git 34c340b). Não edite à mão.
+Gerado por `python -m laringopdi gallery` a partir das docstrings (git 693ca7b). Não edite à mão.
 
 Toda imagem é convertida para cinza e reduzida a lado maior ≤ 512 px antes do PDI; ao final, letterbox 224×224 e replicação para 3 canais. Parâmetros vêm da literatura, nunca do classificador.
 
@@ -22,7 +22,7 @@ Toda imagem é convertida para cinza e reduzida a lado maior ≤ 512 px antes do
 | E11 | `lbp` | LBP uniforme |
 | E12 | `m1` | M1 = [cinza com CLAHE, bordas, LBP] |
 | E13 | `m2` | M2 = [cinza, máscara glótica clássica, bordas] |
-| E14 | `None` | combinação gulosa (definida no Estágio 2 só pela validação interna) |
+| E14 | `homo>lbp` | combinação gulosa (validação interna; ver results/tables/e14_greedy.json) |
 
 ## Técnicas
 
@@ -54,6 +54,20 @@ Toda imagem é convertida para cinza e reduzida a lado maior ≤ 512 px antes do
 - **Parâmetros padrão:** clip 2,0, grade 8×8.
 - **Referência:** Zuiderveld, 1994; Pizer et al., 1987.
 
+### `stretch`
+
+- **O que faz:** alargamento linear de contraste s = a·r + b, levando os percentis p_low e p_high a 0 e 255, com recorte do que fica fora desse intervalo.
+- **Por que importa na laringoscopia:** é a correção mais simples para um frame escuro ou lavado; como a transformação é global, não compensa a iluminação desigual do endoscópio, e por isso serve de base para comparar com a equalização global e o CLAHE.
+- **Parâmetros padrão:** p_low=1, p_high=99 (percentis, que toleram os reflexos melhor que min/max).
+- **Referência:** Gonzalez & Woods, Digital Image Processing, seção 3.2.
+
+### `gauss_lpf`
+
+- **O que faz:** filtragem no domínio da frequência com passa-baixa gaussiano — FFT → multiplica por H(u,v) = exp(−D²/2σ²) → IFFT → recorte em 0–255.
+- **Por que importa na laringoscopia:** mostra na prática que o ruído e as bordas finas moram nas altas frequências; atenuá-las reduz o ruído, mas também borra a borda livre das pregas, que é o que importa para segmentar a glote. O σ controla esse compromisso, e o filtro gaussiano não produz o anelamento do passa-baixa ideal.
+- **Parâmetros padrão:** σ=40 (o estudo de ruído usa 15 e 40), em pixels de frequência, na escala de trabalho (lado maior ≤ 512).
+- **Referência:** Gonzalez & Woods, Digital Image Processing, seção 4.8.
+
 ### `homo`
 
 - **O que faz:** filtragem homomórfica — log → FFT → filtro gaussiano de alta ênfase H(u,v) = (γH−γL)(1−e^{−cD²/D0²})+γL → IFFT → exp → reescala pelos percentis 0,5–99,5.
@@ -67,6 +81,13 @@ Toda imagem é convertida para cinza e reduzida a lado maior ≤ 512 px antes do
 - **Por que importa na laringoscopia:** suaviza ruído de sensor e compressão JPEG da mucosa preservando as bordas das pregas e das lesões (que o filtro gaussiano borraria).
 - **Parâmetros padrão:** d=9, σintensidade=75, σespaço=75.
 - **Referência:** Tomasi & Manduchi, 1998.
+
+### `mean`
+
+- **O que faz:** filtro da média — cada pixel vira a média da janela ksize×ksize.
+- **Por que importa na laringoscopia:** é o suavizador espacial mais simples. Reduz o ruído gaussiano do sensor, mas espalha os valores extremos em vez de removê-los e borra a borda da glote cada vez mais à medida que a janela cresce; serve de referência para a mediana e o bilateral.
+- **Parâmetros padrão:** ksize=3 (o estudo de ruído usa 3, 7 e 15).
+- **Referência:** Gonzalez & Woods, Digital Image Processing, seção 3.5.
 
 ### `median`
 
