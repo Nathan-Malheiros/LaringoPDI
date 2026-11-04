@@ -57,5 +57,7 @@ def test_real_splits_no_leak():
     cfg = C.load()
     if not (C.path(cfg, "splits") / "folds.json").exists():
         pytest.skip("splits reais ainda não gerados")
+    if not C.path(cfg, "groups").exists():
+        pytest.skip("groups.csv não é versionado (metadados do BAGLS); clone limpo sem o dataset")
     grp = pd.read_csv(C.path(cfg, "groups"), dtype={"video_id": str}).set_index("video_id")["group"].to_dict()
     D.check_leakage(D.load_splits(cfg), grp)

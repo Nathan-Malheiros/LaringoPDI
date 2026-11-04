@@ -162,3 +162,13 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - Upload aceita PNG/JPG e informa que a segmentação foi calibrada no BAGLS. Sem o peso do E04, o experimento padrão passa a ser o E00.
 - Frames da demonstração em `configs/base.yaml`: test/1881 (Dice 0,000 → 0,929) e test/21 (reflexo 3,5%). O caso "0,00 → 0,93" da Etapa 1 não está identificado nos arquivos; test/1881 é o mais próximo. Roteiro em `docs/ROTEIRO_DEMO.md`.
 - `tools/capturas_app.py` regenera `docs/figures/app/aba0–6.png` com Chrome headless; o log antigo `app_test.log` vinha do AppTest, que não gera imagens. `tests/test_app.py` cobre as abas e os controles de ruído.
+
+## Etapa 2 — Bloco 9: relatório, README e pacote (2026-11-04)
+- Seis seções novas nos dois PDFs (`tools/secoes_etapa1.py`, com números lidos das tabelas). Regenerados: `docs/relatorio_tecnico.pdf` (público, 23 páginas), `LaringoPDI_relatorio_tecnico.pdf` (versão local com frames, em Desktop e na Área de Trabalho do OneDrive) e `LaringoPDI_relatorio_completo.pdf` (48 páginas, na Área de Trabalho do OneDrive).
+- **Erro evitado:** `fig_perm` usava `C*` e incluía o C6 na figura de C1–C5; corrigido, e `importancia.png` voltou a ser idêntica à versão commitada. O texto de limitações que dizia que o HE ficou fora da segmentação foi atualizado.
+- **README:** seção "Como executar o protótipo" (sem GPU e sem BAGLS), novos comandos, pesos, relatório e aviso de que o dataset não é redistribuído.
+- `tools/pacote_entrega.py`: `entrega/LaringoPDI_codigo.zip` (109 arquivos, 3,6 MB) e `entrega/LaringoPDI_codigo_com_pesos.zip` (113 arquivos, 86,8 MB; pesos 89,6 MB, abaixo do limite de 200 MB). Sem frames, `data/raw`, `data/processed`, logs ou figuras.
+- `pyproject.toml` agora lê as dependências do `requirements.txt`: antes, `pip install -e .` não instalava nada além do pacote.
+- **Reprodução, em `D:/Dev/repro_laringo` com venv novo e torch CPU:**
+  - Clone limpo sem o dataset: 94 testes passaram, 2 foram pulados e 1 falhou (`test_real_splits_no_leak`, que exigia `data/groups.csv`, não versionado). Corrigido para pular nesse caso.
+  - Pacote com pesos, com `TORCH_HOME` vazio e sem o BAGLS: `test_app` e `test_pacote` com 3 aprovados e 2 pulados; modo upload sem exceção, experimento padrão E00, 7 abas, probabilidades da ResNet-18 e MLP-18 presentes, nenhum download. Servidor `streamlit run` headless respondeu 200 em 20 s, sem erro no log.
