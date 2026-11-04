@@ -1,0 +1,38 @@
+kind,name,median_ms,p90_ms,n,cpu,torch_threads
+técnica,raw,0.81,0.941,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,spec,3.201,9.627,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,he,0.112,0.129,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,clahe,0.107,0.137,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,stretch,1.625,1.81,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,gauss_lpf,9.509,9.961,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,homo,13.418,14.034,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,bilat,2.983,3.291,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,mean,0.098,0.138,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,median,0.304,0.316,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,fov,3.797,4.556,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,roi_gt,0.271,0.367,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,roi,3.561,3.862,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,edges,1.181,1.284,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,lbp,13.532,14.133,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,m1,14.654,15.514,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+técnica,m2,4.085,4.916,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E00 (raw),1.078,1.139,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E01 (spec),4.482,11.309,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E02 (he),1.203,1.272,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E03 (clahe),1.336,1.417,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E04 (homo),15.167,16.158,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E05 (bilat),4.05,4.273,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E06 (median),1.403,1.489,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E07 (roi_gt),1.219,1.339,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E08 (roi),4.888,5.561,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E09 (clahe>roi),4.896,5.205,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E10 (edges),2.014,2.202,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E11 (lbp),14.669,15.52,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E12 (m1),15.281,18.372,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E13 (m2),5.92,6.949,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+pipeline,E14 (homo>lbp),28.547,30.868,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+segmentação,region_grow + clahe,3.508,4.248,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+características,18 características (C6),13.056,16.539,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+inferência,"resnet18 (CPU, batch 1)",24.467,27.549,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+inferência,"simplecnn (CPU, batch 1)",8.103,9.335,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6
+inferência,MLP C6 (1 vetor),0.239,0.266,100,"AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",6

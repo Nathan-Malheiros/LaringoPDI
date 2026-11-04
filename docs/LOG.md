@@ -145,3 +145,7 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - **Nível:** na ResNet-18, o E00 já fica acima do acaso (razão 1,52 na A, 1,36 na B). Na SimpleCNN, a Tarefa B fica abaixo do acaso (0,63, mediana 0).
 - **Artefato de `X > 0`:** desprezível. Pixels da glote com X = 0 são 0,38% no E04 e 0 nas demais.
 - **Desvio registrado em `DECISIONS.md`:** frames com Grad-CAM sem energia saíram da análise principal, com sensibilidade que mantém o veredito.
+
+## Etapa 2 — Bloco 6: tempo de processamento (2026-11-04)
+- `python -m laringopdi timing` → `results/tables/timing.csv`: mediana em 100 frames, CPU AMD64 Family 25 Model 80 (6 threads do PyTorch), um processo, 5 aquecimentos descartados.
+- Técnicas mais lentas: m1 14,7 ms, lbp 13,5 ms, homo 13,4 ms; `gauss_lpf` 9,5 ms. Pipelines: de 1,1 ms (E00) a 28,5 ms (E14). `region_grow` + `clahe`: 3,5 ms. 18 características: 13,1 ms. Inferência: ResNet-18 24,5 ms, SimpleCNN 8,1 ms, MLP C6 0,24 ms.
