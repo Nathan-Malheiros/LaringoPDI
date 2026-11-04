@@ -1,5 +1,5 @@
 {
-  "P1": {
+  "H1": {
     "statement": "CLAHE > equalização global",
     "rationale": "a iluminação é desigual e a equalização global \"estoura\" o tecido",
     "rule": "Confirmada: CLAHE > HE no Dice do `region_grow` (p_Holm < 0,05), em pelo menos 3 dos 5 métodos, e fração saturada de HE > CLAHE. Parcial: vale só parte disso. Refutada: HE > CLAHE com significância no `region_grow`.",
@@ -15,9 +15,10 @@
       "p_holm": 0.0,
       "sat_he": 0.18199,
       "sat_clahe": 0.01527
-    }
+    },
+    "plain": "No método escolhido, o CLAHE deu Dice 0,614 contra 0,476 da equalização global. Mas ele só venceu em 2 dos 5 métodos, e a equalização venceu em 3: depende do método."
   },
-  "P2": {
+  "H2": {
     "statement": "mediana > média em sal e pimenta",
     "rationale": "a mediana ignora valores extremos e preserva a borda",
     "rule": "Confirmada: mediana 3×3 > média 3×3 em PSNR e SSIM nas duas densidades (p_Holm < 0,05). Parcial: vale só em parte. Refutada: a média vence com significância e a mediana em nenhum teste.",
@@ -27,14 +28,15 @@
       "median_wins": 4,
       "mean_wins": 0,
       "max_p_holm": 0.0
-    }
+    },
+    "plain": "Em sal e pimenta a 5%, a mediana 3×3 chegou a 41,4 dB contra 25,9 dB da média 3×3. A 10%, 39,2 contra 22,5 dB. O SSIM confirma."
   },
-  "P3": {
+  "H3": {
     "statement": "limiar adaptativo > global (Otsu)",
     "rationale": "o reflexo desloca o limiar único",
     "rule": "Confirmada: Dice por vídeo de `adaptive` > `otsu` sobre `raw`, com p < 0,05 e Δ ≥ 0,05. Parcial: p < 0,05 com Δ < 0,05. Refutada: Otsu > adaptativo com p < 0,05.",
     "verdict": "confirmada",
-    "evidence": "Sobre `raw`, por vídeo (n = 587): `adaptive` 0,253 × `otsu` 0,023, Δ = 0,230, p < 0,001. Nuance, fora do veredito: `otsu_morph` 0,324 e `region_grow` 0,467. O Otsu puro praticamente não acerta a glote, e o adaptativo também é fraco; o resultado mostra a superioridade do adaptativo, mas não testa se a causa é o reflexo.",
+    "evidence": "Sobre `raw`, por vídeo (n = 587): `adaptive` 0,253 × `otsu` 0,023, Δ = 0,230, p < 0,001. Nuance, fora do veredito: `otsu_morph` 0,324 e `region_grow` 0,467. O Otsu puro praticamente não acerta a glote, e o adaptativo também é fraco; o resultado mostra a superioridade do adaptativo, mas não testa se a causa é o reflexo. Complemento, fora do veredito: a adaptativa + morfologia apresentada no slide 9 chega a 0,280 sobre `raw`, contra 0,324 do Otsu + morfologia (p_Holm 0,127).",
     "numbers": {
       "dice_adaptive": 0.25309400005980537,
       "dice_otsu": 0.02275759810474662,
@@ -42,9 +44,10 @@
       "p": 3.9368653520372703e-97,
       "dice_otsu_morph": 0.3241244558526343,
       "dice_region_grow": 0.4666341821613338
-    }
+    },
+    "plain": "Sem realce, a adaptativa deu Dice 0,253 contra 0,023 do Otsu, que quase não acerta a glote. Com morfologia nos dois, a adaptativa fica em 0,280 e o Otsu em 0,324: sem diferença detectável. O 0,97 do slide 9 era o exemplo de uma imagem."
   },
-  "P4": {
+  "H4": {
     "statement": "MLP ≈ CNN em saudável × lesão estrutural (Tarefa B)",
     "rationale": "a lesão deforma a glote",
     "rule": "Confirmada (\"competitiva\"): o IC 95% do ΔF1 por vídeo (C6 − ResNet-18 E00) contém 0 ou está acima de 0. Refutada: está todo abaixo de 0.",
@@ -58,9 +61,10 @@
       "ci_high": 0.0092,
       "ci_width": 0.1135,
       "mcnemar_p": 0.0005
-    }
+    },
+    "plain": "Na Tarefa B, o F1 da MLP foi 0,713 contra 0,762 da ResNet-18. A regra confirma, porque o intervalo de confiança (-0,104 a 0,009) contém o zero, mas a confirmação é frágil: ele é quase todo negativo."
   },
-  "P5": {
+  "H5": {
     "statement": "PDI na entrada aumenta a atenção da CNN na glote",
     "rationale": "menos reflexo, mais contraste",
     "rule": "Das 24 combinações técnica × modelo × tarefa sem recorte: confirmada se ≥ 50% sobem (p_Holm < 0,05) e nenhuma cai; parcial se 1 ou mais sobem; refutada se nenhuma sobe e alguma cai; inconclusiva se nenhuma é significativa.",
@@ -84,9 +88,10 @@
         "E11",
         "E14"
       ]
-    }
+    },
+    "plain": "Nas 24 combinações previstas pela regra, que incluem variantes além das apresentadas, 5 sobem e 9 caem: o efeito é misto."
   },
-  "P6": {
+  "H6": {
     "statement": "a forma da glote é o grupo de características mais importante",
     "rationale": "nódulo e pólipo mudam o contorno",
     "rule": "No C6, a queda média por permutação da família forma é a maior das 3 (e positiva): confirmada nas duas tarefas; parcial em uma; refutada em nenhuma.",
@@ -97,6 +102,7 @@
         "A": false,
         "B": false
       }
-    }
+    },
+    "plain": "Quanto a acurácia cai ao embaralhar cada grupo. Tarefa A: forma 0,027, intensidade 0,027, textura 0,036. Tarefa B: forma 0,017, intensidade 0,037, textura 0,061. A textura foi a primeira nas duas."
   }
 }

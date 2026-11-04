@@ -88,3 +88,42 @@ def test_p5_tests_holm_within_model_task():
     r = p5_tests(v, ["E01", "E04"], "sem_recorte").set_index("exp")
     assert r.loc["E01", "delta"] > 0.4 and r.loc["E01", "p_holm"] < 0.05 and r.loc["E01", "n_videos"] == 40
     assert (r["p_holm"] >= r["p"]).all()
+
+
+def test_adaptive_morph_steps_and_result():
+    from laringopdi.pdi.segmentation import adaptive_morph_steps, seg_adaptive_morph
+    g = np.full((200, 200), 150, np.uint8)
+    g[70:130, 95:105] = 20
+    g[10, 10] = 20                                     # ponto isolado: a abertura precisa apagar
+    s = adaptive_morph_steps(g)
+    assert list(s) == ["limiar", "abertura", "fechamento", "componente"]
+    assert s["limiar"][10, 10] and not s["abertura"][10, 10]
+    assert s["componente"][100, 100] and not s["componente"][10, 10]
+    assert np.array_equal(seg_adaptive_morph(g), s["componente"])
+
+
+def test_bootstrap_delta_sens_sign():
+    from laringopdi.etapa1 import bootstrap_delta_sens
+    y = np.array([1] * 40 + [0] * 40)
+    pa = np.array([0] * 40 + [0] * 40)
+    pb = np.array([1] * 40 + [0] * 40)
+    lo, hi = bootstrap_delta_sens(y, pa, pb, 200)
+    assert lo == 1.0 and hi == 1.0
+
+
+def test_old_verdict_family_does_not_change_with_class_jobs():
+    """Com os jobs novos em disco, a família padrão de vereditos da ResNet-18 continua a mesma."""
+    import pandas as pd
+
+    from laringopdi import config as C
+    from laringopdi.evaluate import collect_runs, verdicts
+    cfg = C.load()
+    t = C.path(cfg, "tables") / "verdicts_resnet18.csv"
+    if not t.exists() or collect_runs(cfg).empty:
+        pytest.skip("sem resultados locais")
+    v = verdicts(cfg, "resnet18")
+    assert not set(v["exp"]) & set(cfg["stage_aula"]["experiments"])
+    old = pd.read_csv(t).set_index(["task", "exp"])
+    new = v.set_index(["task", "exp"])
+    assert set(new.index) == set(old.index)
+    assert (new["verdict"] == old.loc[new.index, "verdict"]).all()

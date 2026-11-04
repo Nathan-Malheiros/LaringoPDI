@@ -1,0 +1,226 @@
+{
+  "stage": "stage_aula",
+  "n_shards": 1,
+  "n_jobs": 30,
+  "shards": {
+    "0": [
+      {
+        "exp": "E02",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E02",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E02",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E02",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E02",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E02",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E02",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E02",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E02",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E02",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E03",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E03",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E03",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E03",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E03",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E03",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E03",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E03",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E03",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E03",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E06",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E06",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E06",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E06",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E06",
+        "task": "A",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      },
+      {
+        "exp": "E06",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 0,
+        "seed": 0
+      },
+      {
+        "exp": "E06",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 1,
+        "seed": 0
+      },
+      {
+        "exp": "E06",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 2,
+        "seed": 0
+      },
+      {
+        "exp": "E06",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 3,
+        "seed": 0
+      },
+      {
+        "exp": "E06",
+        "task": "B",
+        "model": "resnet18",
+        "fold": 4,
+        "seed": 0
+      }
+    ]
+  },
+  "caches": {
+    "0": [
+      "E02",
+      "E03",
+      "E06"
+    ]
+  }
+}

@@ -288,7 +288,8 @@ def cmd_report(cfg: dict, args) -> dict:
 
     cmd_summary(cfg, args)
     runs = collect_runs(cfg)
-    runs = runs[runs["exp"] != "C6"]        # o C6 pertence às P1–P6 (etapa1-report), não às H1–H6 daqui
+    aula = cfg.get("stage_aula", {})         # C6 e técnicas de aula na ResNet-18 pertencem ao etapa1-report, não às H internas daqui
+    runs = runs[(runs["exp"] != "C6") & ~(runs["exp"].isin(aula.get("experiments", [])) & runs["model"].isin(aula.get("models", [])))]
     out, made = {}, []
     for model in sorted(set(runs["model"]) & {"probe", "simplecnn_fast", "resnet18", "simplecnn"}):
         v = verdicts(cfg, model)

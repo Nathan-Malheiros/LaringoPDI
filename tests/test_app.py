@@ -24,12 +24,15 @@ def test_app_all_tabs_with_example_frame():
     at = _app().run()
     assert not at.exception
     labels = [t.label for t in at.tabs]
-    assert labels[0].endswith("Técnicas de aula") and labels[-1].endswith("Resultados do estudo") and len(labels) == 7
+    assert labels[0].endswith("Realce") and labels[-1].endswith("Resultados do estudo") and len(labels) == 5
     metrics = {m.label for m in at.metric}
-    assert {"PSNR", "SSIM", "Dice"} <= metrics
+    assert {"PSNR", "SSIM", "Dice", "IoU"} <= metrics
     assert any(m.label.startswith("PSNR com σ") for m in at.metric)
-    assert any("Hipóteses apresentadas" in m.value for m in at.markdown)
-    assert any("MLP-18" in m.value for m in at.markdown)
+    text = " ".join(m.value for m in at.markdown)
+    for needle in ("Hipóteses da Etapa 1", "18 → 32 → 16 → 2", "limiar adaptativo + morfologia", "sensibilidade em primeiro lugar"):
+        assert needle in text
+    for gone in ("HOG", "SimpleCNN", "Laboratório", "M1", "E14"):
+        assert gone not in " ".join(labels) + text
 
 
 @pytest.mark.skipif(not _has_bagls(), reason="sem o BAGLS local")

@@ -1,0 +1,6 @@
+comparison,method_a,pre_a,method_b,pre_b,n_videos,dice_a,dice_b,delta_b_minus_a,p,p_holm
+adaptive_morph_vs_otsu,otsu,raw,adaptive_morph,raw,587,0.022758,0.280139,0.257381,0.0,0.0
+adaptive_morph_vs_adaptive,adaptive,raw,adaptive_morph,raw,587,0.253094,0.280139,0.027045,0.283177,0.283177
+adaptive_morph_vs_otsu_morph,otsu_morph,raw,adaptive_morph,raw,587,0.324124,0.280139,-0.043986,0.063731,0.127462
+clahe_vs_raw_in_adaptive_morph,adaptive_morph,raw,adaptive_morph,clahe,587,0.280139,0.142616,-0.137522,0.0,0.0
+region_grow_clahe_vs_best_adaptive_morph,adaptive_morph,bilat,region_grow,clahe,587,0.314632,0.614386,0.299753,0.0,0.0

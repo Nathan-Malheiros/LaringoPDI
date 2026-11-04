@@ -261,7 +261,9 @@ def verdicts(cfg: dict, model: str, tasks=("A", "B"), baseline: str = "E00", exp
 
     runs = collect_runs(cfg)
     runs = runs[runs["model"] == model]
-    exps = exps or [e for e in dict.fromkeys(cfg["stage1"]["experiments"] + cfg["stage2"]["experiments"]) if e != baseline]
+    aula = cfg.get("stage_aula", {})
+    skip = set(aula.get("experiments", [])) if model in aula.get("models", []) else set()       # família própria: etapa1.cmd_aula_study
+    exps = exps or [e for e in dict.fromkeys(cfg["stage1"]["experiments"] + cfg["stage2"]["experiments"]) if e != baseline and e not in skip]
     rows = []
     for t in tasks:
         base = runs[(runs["exp"] == baseline) & (runs["task"] == t)].set_index(["fold", "seed"])["video_f1_macro"]
@@ -347,32 +349,32 @@ def load_model(cfg: dict, exp: str, task: str, model_name: str, fold: int):
     return m.eval()
 
 
-def gradcam_maps(model, X: np.ndarray, batch: int = 32) -> np.ndarray:
+def gradcam_maps(model, X: np.ndarray, batch: int = 32, device: str = "cpu") -> np.ndarray:
     """Mapas Grad-CAM (N, 224, 224) para a classe prevista."""
     import torch
     from pytorch_grad_cam import GradCAM
 
     from laringopdi.models import gradcam_layer
     from laringopdi.train import _prep
+    dev = torch.device(device)
+    model = model.to(dev)
     cam = GradCAM(model=model, target_layers=[gradcam_layer(model)])
     out = []
     for i in range(0, len(X), batch):
-        xb = _prep(torch.from_numpy(np.array(X[i:i + batch])), torch.device("cpu"))
+        xb = _prep(torch.from_numpy(np.array(X[i:i + batch])), dev)
         out.append(cam(input_tensor=xb, targets=None))
     return np.concatenate(out)
 
 
-def cmd_gradcam(cfg: dict, args) -> dict:
-    """Para cada experimento do Estágio 2 com pesos salvos: Grad-CAM nos frames de teste de cada
-    fold → energia na glote (GT do próprio cache) e nos reflexos (máscara `spec` do E00; só para
-    pipelines sem recorte). Saída: results/tables/attention.csv (+ resumo por exp/modelo/tarefa)."""
+def gradcam_rows(cfg: dict, exps: list[str], models: list[str], tasks: list[str], folds: list[int]) -> list[dict]:
+    """Métricas de atenção por frame de teste, para os pesos salvos (na GPU, se houver)."""
+    import torch
+
     from laringopdi.features import _unpack
     from laringopdi.pdi.attention import attention_metrics
     from laringopdi.pdi.enhance import specular_mask
 
     size = cfg["data"]["image_size"]
-    st = cfg["stage2"]
-    exps = st["experiments"] if not args.exp else args.exp.split(",")
     X0, paths0, _ = D.load_cache(cfg, "E00")
     pos0 = {p: i for i, p in enumerate(paths0)}
     rows = []
@@ -380,19 +382,29 @@ def cmd_gradcam(cfg: dict, args) -> dict:
         X, paths, meta = D.load_cache(cfg, e)
         gt = _unpack(np.load(D.cache_paths(cfg, e)["masks"])["gt_mask_lb"], size)
         crops = any(s in meta["pipeline"] for s in ("roi",))
-        for model_name in [m for m in st["models"] if m != "probe"]:
-            for t in st["tasks"]:
-                for k in st["folds"]:
+        for model_name in models:
+            for t in tasks:
+                for k in folds:
                     m = load_model(cfg, e, t, model_name, k)
                     if m is None:
                         continue
                     idx = np.nonzero(np.isin(meta["video_ids"], D.load_splits(cfg)[k]["test"]))[0]
-                    cams = gradcam_maps(m, X[idx])
+                    cams = gradcam_maps(m, X[idx], device="cuda" if torch.cuda.is_available() else "cpu")
                     for j, i in enumerate(idx):
                         valid = X[i, ..., 0] > 0
                         spec = None if crops else specular_mask(np.ascontiguousarray(X0[pos0[paths[i]], ..., 0])) & valid
                         rows.append({"exp": e, "model": model_name, "task": t, "fold": k, "path": paths[i],
                                      "video_id": meta["video_ids"][i], **attention_metrics(cams[j], gt[i], spec, valid)})
+    return rows
+
+
+def cmd_gradcam(cfg: dict, args) -> dict:
+    """Para cada experimento do Estágio 2 com pesos salvos: Grad-CAM nos frames de teste de cada
+    fold → energia na glote (GT do próprio cache) e nos reflexos (máscara `spec` do E00; só para
+    pipelines sem recorte). Saída: results/tables/attention.csv (+ resumo por exp/modelo/tarefa)."""
+    st = cfg["stage2"]
+    exps = st["experiments"] if not args.exp else args.exp.split(",")
+    rows = gradcam_rows(cfg, exps, [m for m in st["models"] if m != "probe"], st["tasks"], st["folds"])
     if not rows:
         return {"gradcam": "sem pesos salvos (rode o Estágio 2 no Colab)"}
     df = pd.DataFrame(rows)

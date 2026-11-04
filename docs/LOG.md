@@ -175,3 +175,8 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 
 ## Etapa 2 — Equipe nos relatórios (2026-11-04)
 - Nomes completos e matrículas dos 5 integrantes nas capas dos PDFs (`EQUIPE` em `tools/relatorio_pdf.py`, reaproveitada por `relatorio_completo.py`). PDFs e zips regenerados.
+
+## Entrega fiel à Etapa 1: adaptativa + morfologia e app (2026-11-04)
+- `adaptive-morph-study`: Dice por vídeo 0,280 sem realce, sem diferença detectável contra `otsu_morph` (0,324; p_Holm 0,128) e contra `adaptive` (0,253). O CLAHE a piora (0,143). `segmentation_best.json` não mudou: `region_grow` + `clahe` segue em 0,614.
+- App reescrito com 5 abas, na ordem dos slides. Os resumos em linguagem simples por hipótese vêm do `etapa1-report`.
+- Hipóteses renumeradas como H1–H6 da apostila (`hypotheses_etapa1.json`).

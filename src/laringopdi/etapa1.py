@@ -484,13 +484,14 @@ P5_NOCROP = ["E01", "E04", "E05", "E10", "E11", "E14"]
 P5_CROP = ["E07", "E08"]
 
 
-def attention_video_ratio(cfg: dict, zero_energy_as_zero: bool = False) -> pd.DataFrame:
+def attention_video_ratio(cfg: dict, zero_energy_as_zero: bool = False, a: pd.DataFrame | None = None) -> pd.DataFrame:
     """Razão de atenção por vídeo (energia na glote ÷ área da glote; 1 = acaso). Só vídeos com rótulo na
     tarefa; frames sem glote são descartados porque a razão fica indefinida. Mapas sem energia dão
     `att_glottis` NaN: saem da análise principal e contam como 0 na sensibilidade."""
     from laringopdi.train import frame_labels
-    a = pd.read_csv(C.path(cfg, "tables") / "attention_frames.csv.gz", dtype={"video_id": str},
-                    usecols=["exp", "model", "task", "video_id", "att_glottis", "area_glottis"])
+    if a is None:
+        a = pd.read_csv(C.path(cfg, "tables") / "attention_frames.csv.gz", dtype={"video_id": str},
+                        usecols=["exp", "model", "task", "video_id", "att_glottis", "area_glottis"])
     lab = frame_labels(cfg).drop_duplicates("video_id").set_index("video_id")
     keep = {t: set(lab.index[lab[D.task_col(t)] >= 0]) for t in ("A", "B")}
     a = a[[v in keep[t] for v, t in zip(a["video_id"], a["task"])]]
@@ -651,22 +652,129 @@ def cmd_timing(cfg: dict, args) -> dict:
     return {"rows": len(df), "cpu": platform.processor(), "slow": df.sort_values("median_ms").tail(4)[["name", "median_ms"]].round(1).to_dict("records")}
 
 
-# ----------------------------------------------------------------------------- Bloco 7: relatório P1–P6
+# ----------------------------------------------------------------------------- entrega fiel à Etapa 1
+def cmd_adaptive_morph_study(cfg: dict, args) -> dict:
+    """Adaptativa + morfologia (slide 9): 6 realces, parâmetros pelo treino de cada fold. Não altera `segmentation_best.json`."""
+    from joblib import Parallel, delayed
+
+    from laringopdi.evaluate import _seg_frame, seg_per_fold
+    from laringopdi.pdi.segmentation import PARAM_GRID
+    t = C.path(cfg, "tables")
+    fr, raw, ws = D.load_frames(cfg), C.path(cfg, "raw"), cfg["data"]["work_size"]
+    grid = {"adaptive_morph": PARAM_GRID["adaptive_morph"]}
+    fp = t / "segmentation_adaptive_morph_frames.csv.gz"
+    if args.force or not fp.exists():
+        res = Parallel(n_jobs=args.jobs, batch_size=8)(delayed(_seg_frame)(raw / a, raw / b, list(SEG_ALL), grid, ws) for a, b in zip(fr["path"], fr["seg_path"]))
+        pd.concat([pd.DataFrame(r).assign(path=x) for r, x in zip(res, fr["path"])], ignore_index=True).to_csv(fp, index=False)
+    new = pd.read_csv(fp)
+    pf, _ = seg_per_fold(new, grid, D.load_splits(cfg), cfg["segmentation"]["tune_fold"], fr)
+    summ = pf.groupby(["method", "preprocess"]).agg(dice_mean=("dice", "mean"), dice_sd=("dice", "std"), iou_mean=("iou", "mean"), hd95_median=("hd95_median", "median"),
+                                                    fail_rate=("fail_rate", "mean")).reset_index().sort_values("dice_mean", ascending=False)
+    summ.round(4).to_csv(t / "segmentation_adaptive_morph_summary.csv", index=False)
+    vid = pd.concat([_video_dice(cfg, new, pf), _video_dice(cfg, pd.read_csv(t / "segmentation_etapa1_frames.csv.gz"), pd.read_csv(t / "segmentation_etapa1.csv"))])
+
+    def row(ma, pa, mb, pb, name):
+        x = pd.concat([vid.loc[ma][pa].rename("a"), vid.loc[mb][pb].rename("b")], axis=1).dropna()
+        return {"comparison": name, "method_a": ma, "pre_a": pa, "method_b": mb, "pre_b": pb, "n_videos": len(x), "dice_a": x["a"].mean(), "dice_b": x["b"].mean(),
+                "delta_b_minus_a": (x["b"] - x["a"]).mean(), "p": _wilcoxon(x["a"], x["b"])}
+    fam = pd.DataFrame([row(m, "raw", "adaptive_morph", "raw", f"adaptive_morph_vs_{m}") for m in ("otsu", "adaptive", "otsu_morph")])
+    fam["p_holm"] = _holm(fam["p"].to_numpy())
+    best_pre = summ.iloc[0]["preprocess"]
+    extra = pd.DataFrame([row("adaptive_morph", "raw", "adaptive_morph", "clahe", "clahe_vs_raw_in_adaptive_morph"),
+                          row("adaptive_morph", best_pre, "region_grow", "clahe", "region_grow_clahe_vs_best_adaptive_morph")])
+    extra["p_holm"] = extra["p"]
+    out = pd.concat([fam, extra], ignore_index=True)
+    out.round(6).to_csv(t / "seg_adaptive_morph.csv", index=False)
+    return {"summary": summ[["preprocess", "dice_mean", "fail_rate"]].round(3).to_dict("records"),
+            "tests": out[["comparison", "dice_a", "dice_b", "p_holm"]].round(4).to_dict("records")}
+
+
+PRESENTED_CNN = ["E01", "E02", "E03", "E04", "E06"]
+
+
+def bootstrap_delta_sens(y: np.ndarray, pa: np.ndarray, pb: np.ndarray, n_boot: int, seed: int = 0) -> tuple[float, float]:
+    """IC 95% (percentil) da diferença de sensibilidade (b − a), reamostrando vídeos."""
+    rng = np.random.default_rng(seed)
+    d = []
+    while len(d) < n_boot:
+        i = rng.integers(0, len(y), len(y))
+        pos = y[i] == 1
+        if pos.any():
+            d.append(float((pb[i][pos] == 1).mean() - (pa[i][pos] == 1).mean()))
+    return float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))
+
+
+def _classif_table(cfg: dict) -> pd.DataFrame:
+    """Sistemas apresentados, semente 0, média dos folds, nível de vídeo."""
+    from laringopdi.evaluate import collect_runs
+    r = collect_runs(cfg)
+    r = r[r["seed"] == 0]
+    keep = ((r["exp"] == "C6") & (r["model"] == "mlp18")) | (r["exp"].isin(["E00", *PRESENTED_CNN]) & (r["model"] == "resnet18"))
+    g = r[keep].groupby(["exp", "model", "task"])
+    t = g.agg(sensitivity=("video_sensitivity", "mean"), specificity=("video_specificity", "mean"), f1=("video_f1_macro", "mean"), auc=("video_auc", "mean"),
+              bal_acc=("video_bal_acc", "mean"), folds=("fold", "count")).reset_index()
+    t.insert(2, "pipeline", [("18 características + MLP" if e == "C6" else cfg["experiments"][e]["pipeline"]) for e in t["exp"]])
+    return t
+
+
+def _sens_tests(cfg: dict) -> pd.DataFrame:
+    from laringopdi.evaluate import mcnemar_p, oof_video_preds
+    rows = []
+    for task in ("A", "B"):
+        m = oof_video_preds(cfg, "E00", task, "resnet18", (0,)).merge(oof_video_preds(cfg, "C6", task, "mlp18", (0,)), on=["video_id", "y"], suffixes=("_a", "_b"))
+        y, pa, pb = m["y"].to_numpy(), m["pred_a"].to_numpy(), m["pred_b"].to_numpy()
+        pos = y == 1
+        lo, hi = bootstrap_delta_sens(y, pa, pb, cfg["stats"]["n_boot"])
+        rows.append({"task": task, "n_altered": int(pos.sum()), "sens_resnet18": float((pa[pos] == 1).mean()), "sens_c6": float((pb[pos] == 1).mean()),
+                     "delta": float((pb[pos] == 1).mean() - (pa[pos] == 1).mean()), "ci_low": lo, "ci_high": hi, "p": mcnemar_p(pa[pos] == 1, pb[pos] == 1)})
+    out = pd.DataFrame(rows)
+    out["p_holm"] = _holm(out["p"].to_numpy())
+    return out
+
+
+def cmd_aula_study(cfg: dict, args) -> dict:
+    """Depois dos 30 jobs: vereditos das técnicas apresentadas na ResNet-18, sensibilidade e Grad-CAM de E02, E03 e E06."""
+    from laringopdi.evaluate import cmd_summary, gradcam_rows, verdicts
+    from laringopdi.report import paired_compare
+    t = C.path(cfg, "tables")
+    cmd_summary(cfg, args)
+    v = verdicts(cfg, "resnet18", exps=PRESENTED_CNN)
+    v.round(4).to_csv(t / "verdicts_aula_resnet18.csv", index=False)
+    pd.DataFrame([{"task": k, **paired_compare(cfg, ("E02", "resnet18"), ("E03", "resnet18"), k)} for k in ("A", "B")]).round(4).to_csv(t / "he_clahe_resnet18.csv", index=False)
+    tab = _classif_table(cfg)
+    tab.round(4).to_csv(t / "classif_aula.csv", index=False)
+    sens = _sens_tests(cfg)
+    sens.round(4).to_csv(t / "sens_c6_resnet.csv", index=False)
+    fp = t / "attention_aula_frames.csv.gz"
+    st = cfg["stage_aula"]
+    if args.force or not fp.exists():
+        pd.DataFrame(gradcam_rows(cfg, st["experiments"], st["models"], st["tasks"], st["folds"])).to_csv(fp, index=False)
+    use = ["exp", "model", "task", "video_id", "att_glottis", "area_glottis"]
+    base = pd.read_csv(t / "attention_frames.csv.gz", usecols=use, dtype={"video_id": str})
+    base = base[(base["exp"] == "E00") & (base["model"] == "resnet18")]
+    att = pd.concat([base, pd.read_csv(fp, usecols=use, dtype={"video_id": str})], ignore_index=True)
+    a = p5_tests(attention_video_ratio(cfg, a=att), st["experiments"], "aula")
+    a.round(6).to_csv(t / "attention_aula.csv", index=False)
+    return {"verdicts": v[["task", "exp", "n_seeds", "oof_delta_f1", "ci_low", "ci_high", "mcnemar_p_holm", "verdict"]].round(3).to_dict("records"),
+            "sens": sens[["task", "sens_c6", "sens_resnet18", "ci_low", "ci_high", "p_holm"]].round(3).to_dict("records"),
+            "att": a[["task", "exp", "ratio_E00", "ratio_exp", "p_holm"]].round(3).to_dict("records")}
+
+
+# ----------------------------------------------------------------------------- Bloco 7: relatório H1–H6
 P_TEXT = {
-    "P1": ("CLAHE > equalização global", "a iluminação é desigual e a equalização global \"estoura\" o tecido",
+    "H1": ("CLAHE > equalização global", "a iluminação é desigual e a equalização global \"estoura\" o tecido",
            "Confirmada: CLAHE > HE no Dice do `region_grow` (p_Holm < 0,05), em pelo menos 3 dos 5 métodos, e fração saturada de HE > CLAHE. Parcial: vale só parte disso. Refutada: HE > CLAHE com significância no `region_grow`."),
-    "P2": ("mediana > média em sal e pimenta", "a mediana ignora valores extremos e preserva a borda",
+    "H2": ("mediana > média em sal e pimenta", "a mediana ignora valores extremos e preserva a borda",
            "Confirmada: mediana 3×3 > média 3×3 em PSNR e SSIM nas duas densidades (p_Holm < 0,05). Parcial: vale só em parte. Refutada: a média vence com significância e a mediana em nenhum teste."),
-    "P3": ("limiar adaptativo > global (Otsu)", "o reflexo desloca o limiar único",
+    "H3": ("limiar adaptativo > global (Otsu)", "o reflexo desloca o limiar único",
            "Confirmada: Dice por vídeo de `adaptive` > `otsu` sobre `raw`, com p < 0,05 e Δ ≥ 0,05. Parcial: p < 0,05 com Δ < 0,05. Refutada: Otsu > adaptativo com p < 0,05."),
-    "P4": ("MLP ≈ CNN em saudável × lesão estrutural (Tarefa B)", "a lesão deforma a glote",
+    "H4": ("MLP ≈ CNN em saudável × lesão estrutural (Tarefa B)", "a lesão deforma a glote",
            "Confirmada (\"competitiva\"): o IC 95% do ΔF1 por vídeo (C6 − ResNet-18 E00) contém 0 ou está acima de 0. Refutada: está todo abaixo de 0."),
-    "P5": ("PDI na entrada aumenta a atenção da CNN na glote", "menos reflexo, mais contraste",
+    "H5": ("PDI na entrada aumenta a atenção da CNN na glote", "menos reflexo, mais contraste",
            "Das 24 combinações técnica × modelo × tarefa sem recorte: confirmada se ≥ 50% sobem (p_Holm < 0,05) e nenhuma cai; parcial se 1 ou mais sobem; refutada se nenhuma sobe e alguma cai; inconclusiva se nenhuma é significativa."),
-    "P6": ("a forma da glote é o grupo de características mais importante", "nódulo e pólipo mudam o contorno",
+    "H6": ("a forma da glote é o grupo de características mais importante", "nódulo e pólipo mudam o contorno",
            "No C6, a queda média por permutação da família forma é a maior das 3 (e positiva): confirmada nas duas tarefas; parcial em uma; refutada em nenhuma."),
 }
-P_H_MAP = [("P1", "H2"), ("P2", "sem par"), ("P3", "H4, em parte"), ("P4", "H6, em parte"), ("P5", "H1 (atenção)"), ("P6", "sem par")]
 
 
 def _fp(p: float) -> str:
@@ -702,6 +810,10 @@ def _verdict_p1(cfg: dict, a: float) -> dict:
            "Logo, a condição (b) é atendida, mas não demonstra que o HE \"estoura\" o tecido. "
            f"Contexto, fora do veredito: na classificação do Estágio 1, ΔF1 (CLAHE − HE) varia de {_fn(ctx['delta'].min())} a {_fn(ctx['delta'].max())}, "
            f"com McNemar mínimo {_fp(ctx['mcnemar_p'].min())}.")
+    hc = t / "he_clahe_resnet18.csv"
+    if hc.exists():
+        r_ = pd.read_csv(hc)
+        txt += " Na ResNet-18: " + "; ".join(f"Tarefa {r['task']}: F1 HE {_fn(r['f1_a'])} × CLAHE {_fn(r['f1_b'])}, McNemar p {_fp(r['mcnemar_p'])}" for _, r in r_.iterrows()) + "."
     return {"verdict": v, "evidence": txt, "numbers": {"a_region_grow": va, "b_saturation": vb, "methods_clahe_wins": n, "methods_he_wins": n_he,
                                                        "dice_clahe": float(rg["dice_b"]), "dice_he": float(rg["dice_a"]), "p_holm": float(rg["p_holm"]),
                                                        "sat_he": float(sh), "sat_clahe": float(sc)}}
@@ -731,6 +843,12 @@ def _verdict_p3(cfg: dict, a: float) -> dict:
     txt = (f"Sobre `raw`, por vídeo (n = {len(x)}): `adaptive` {_fn(x['adaptive'].mean())} × `otsu` {_fn(x['otsu'].mean())}, Δ = {_fn(delta)}, p {_fp(p)}. "
            f"Nuance, fora do veredito: `otsu_morph` {_fn(m['otsu_morph'])} e `region_grow` {_fn(m['region_grow'])}. "
            "O Otsu puro praticamente não acerta a glote, e o adaptativo também é fraco; o resultado mostra a superioridade do adaptativo, mas não testa se a causa é o reflexo.")
+    am = t / "seg_adaptive_morph.csv"
+    if am.exists():
+        r_ = pd.read_csv(am).set_index("comparison")
+        o = r_.loc["adaptive_morph_vs_otsu_morph"]
+        txt += (f" Complemento, fora do veredito: a adaptativa + morfologia apresentada no slide 9 chega a {_fn(o['dice_b'])} sobre `raw`, contra {_fn(o['dice_a'])} do Otsu + morfologia "
+                f"(p_Holm {_fp(o['p_holm'])}).")
     return {"verdict": v, "evidence": txt, "numbers": {"dice_adaptive": float(x["adaptive"].mean()), "dice_otsu": float(x["otsu"].mean()), "delta": delta, "p": p,
                                                        "dice_otsu_morph": float(m["otsu_morph"]), "dice_region_grow": float(m["region_grow"])}}
 
@@ -747,6 +865,11 @@ def _verdict_p4(cfg: dict, a: float) -> dict:
            f"{int(r['only_resnet18_right'])} vídeos em que o C6 erra, contra {int(r['only_classic_right'])} no sentido inverso. Trate esta confirmação como frágil. "
            f"Contexto: C6, Tarefa A: {f(d.loc[('C6', 'A')])}. Extensão C1 (187 características), Tarefa B: {f(d.loc[('C1', 'B')])}. "
            "Comparação contra a semente 0 da ResNet-18, porque o C6 tem uma semente só.")
+    sp = C.path(cfg, "tables") / "sens_c6_resnet.csv"
+    if sp.exists():
+        z = pd.read_csv(sp).set_index("task")
+        txt += " Sensibilidade, a métrica prioritária: " + "; ".join(
+            f"Tarefa {k}: C6 {_fn(z.loc[k, 'sens_c6'])} × ResNet-18 {_fn(z.loc[k, 'sens_resnet18'])} [IC 95% do Δ {_fn(z.loc[k, 'ci_low'])}; {_fn(z.loc[k, 'ci_high'])}], p_Holm {_fp(z.loc[k, 'p_holm'])}" for k in z.index) + "."
     return {"verdict": v, "evidence": txt, "numbers": {k: float(r[k]) for k in ("f1_classic", "f1_resnet18", "delta", "ci_low", "ci_high", "ci_width", "mcnemar_p")}}
 
 
@@ -774,6 +897,11 @@ def _verdict_p5(cfg: dict, a: float) -> dict:
            f"Sensibilidade, contando esses frames como atenção 0: sobem {s_up}, caem {s_down}. "
            f"Pixels da glote com X = 0, que a medida exclui da energia: E00 {_pc(val['E00'])}, " + ", ".join(f"{e} {_pc(val[e])}" for e in val.index if e != "E00")
            + ". Com recorte, à parte e com a ressalva da área: " + "; ".join(f"{e} {_fn(r['ratio_exp'], 2)} (E00 {_fn(r['ratio_E00'], 2)})" for e, r in crop.iterrows()) + ".")
+    ap = t / "attention_aula.csv"
+    if ap.exists():
+        z = pd.read_csv(ap)
+        txt += " Complemento, fora das 24 combinações (ResNet-18): " + "; ".join(
+            f"{r['exp']} Tarefa {r['task']}: {_fn(r['ratio_exp'], 2)} × E00 {_fn(r['ratio_E00'], 2)}, p_Holm {_fp(r['p_holm'])}" for _, r in z.iterrows()) + "."
     return {"verdict": v, "evidence": txt, "numbers": {"n": len(n), "up": len(up), "down": len(down), "sens_up": s_up, "sens_down": s_down, "up_exps": sorted(set(up["exp"])), "down_exps": sorted(set(down["exp"]))}}
 
 
@@ -794,23 +922,61 @@ def _verdict_p6(cfg: dict, a: float) -> dict:
     return {"verdict": v, "evidence": txt, "numbers": {"shape_top": won}}
 
 
+def _plain(cfg: dict, res: dict, a: float) -> dict:
+    """Resumo de cada hipótese no vocabulário da apostila; os números vêm das tabelas. O detalhe técnico fica em `evidence`."""
+    t = C.path(cfg, "tables")
+    n1 = res["H1"]["numbers"]
+    txt1 = (f"No método escolhido, o CLAHE deu Dice {_fn(n1['dice_clahe'])} contra {_fn(n1['dice_he'])} da equalização global. "
+            f"Mas ele só venceu em {n1['methods_clahe_wins']} dos 5 métodos, e a equalização venceu em {n1['methods_he_wins']}: depende do método.")
+    if (t / "he_clahe_resnet18.csv").exists():
+        hc = pd.read_csv(t / "he_clahe_resnet18.csv")
+        txt1 += " Na classificação com a ResNet-18, " + ("não houve diferença detectável." if (hc["mcnemar_p"] >= a).all() else "houve diferença em ao menos uma tarefa.")
+    d = pd.read_csv(t / "denoise_p2.csv")
+    d = d[d["family"] == "P2"].set_index(["noise", "metric"])
+    txt2 = (f"Em sal e pimenta a 5%, a mediana 3×3 chegou a {_fn(d.loc[('sp_5', 'psnr'), 'mean_b'], 1)} dB contra {_fn(d.loc[('sp_5', 'psnr'), 'mean_a'], 1)} dB da média 3×3. "
+            f"A 10%, {_fn(d.loc[('sp_10', 'psnr'), 'mean_b'], 1)} contra {_fn(d.loc[('sp_10', 'psnr'), 'mean_a'], 1)} dB. O SSIM confirma.")
+    n3 = res["H3"]["numbers"]
+    txt3 = f"Sem realce, a adaptativa deu Dice {_fn(n3['dice_adaptive'])} contra {_fn(n3['dice_otsu'])} do Otsu, que quase não acerta a glote."
+    if (t / "seg_adaptive_morph.csv").exists():
+        o = pd.read_csv(t / "seg_adaptive_morph.csv").set_index("comparison").loc["adaptive_morph_vs_otsu_morph"]
+        rel = "sem diferença detectável" if o["p_holm"] >= a else ("acima" if o["delta_b_minus_a"] > 0 else "abaixo")
+        txt3 += f" Com morfologia nos dois, a adaptativa fica em {_fn(o['dice_b'])} e o Otsu em {_fn(o['dice_a'])}: {rel}. O 0,97 do slide 9 era o exemplo de uma imagem."
+    n4 = res["H4"]["numbers"]
+    txt4 = (f"Na Tarefa B, o F1 da MLP foi {_fn(n4['f1_classic'])} contra {_fn(n4['f1_resnet18'])} da ResNet-18. A regra confirma, porque o intervalo de confiança "
+            f"({_fn(n4['ci_low'])} a {_fn(n4['ci_high'])}) contém o zero, mas a confirmação é frágil: ele é quase todo negativo.")
+    if (t / "sens_c6_resnet.csv").exists():
+        z = pd.read_csv(t / "sens_c6_resnet.csv").set_index("task").loc["B"]
+        txt4 += f" Na sensibilidade, a métrica prioritária: {_fn(z['sens_c6'])} da MLP contra {_fn(z['sens_resnet18'])} da ResNet-18" + (", sem diferença detectável." if z["p_holm"] >= a else ", com diferença significativa.")
+    n5 = res["H5"]["numbers"]
+    txt5 = (f"Nas {n5['n']} combinações previstas pela regra, que incluem variantes além das apresentadas, {n5['up']} sobem e {n5['down']} caem: o efeito é misto.")
+    if (t / "attention_aula.csv").exists():
+        z = pd.read_csv(t / "attention_aula.csv")
+        c = z[z["exp"] == "E03"].set_index("task")
+        txt5 += " Com o CLAHE na ResNet-18: " + "; ".join(f"Tarefa {k}, {_fn(c.loc[k, 'ratio_exp'], 2)} contra {_fn(c.loc[k, 'ratio_E00'], 2)} sem PDI" + (" (sem diferença)" if c.loc[k, "p_holm"] >= a else "") for k in c.index) + ". O valor 1 é o nível do acaso."
+    imp = pd.read_csv(t / "importance_c6.csv")
+    fmt = lambda task: ", ".join(f"{F18_LABEL[r['family']]} {_fn(r['drop_mean'])}" for _, r in imp[imp["task"] == task].iterrows())
+    txt6 = f"Quanto a acurácia cai ao embaralhar cada grupo. Tarefa A: {fmt('A')}. Tarefa B: {fmt('B')}. A textura foi a primeira nas duas."
+    return {"H1": txt1, "H2": txt2, "H3": txt3, "H4": txt4, "H5": txt5, "H6": txt6}
+
+
 def cmd_etapa1_report(cfg: dict, args) -> dict:
-    """docs/hipoteses_etapa1.md + results/tables/hypotheses_etapa1.json, a partir das tabelas e das regras pré-registradas."""
+    """docs/hipoteses_etapa1.md + results/tables/hypotheses_etapa1.json (H1–H6 da apostila), a partir das tabelas e das regras pré-registradas."""
     a = cfg["stats"]["alpha"]
-    fn = {"P1": _verdict_p1, "P2": _verdict_p2, "P3": _verdict_p3, "P4": _verdict_p4, "P5": _verdict_p5, "P6": _verdict_p6}
+    fn = {"H1": _verdict_p1, "H2": _verdict_p2, "H3": _verdict_p3, "H4": _verdict_p4, "H5": _verdict_p5, "H6": _verdict_p6}
     res = {}
     for k, f in fn.items():
         st, why, rule = P_TEXT[k]
         res[k] = {"statement": st, "rationale": why, "rule": rule, **f(cfg, a)}
+    for k, txt in _plain(cfg, res, a).items():
+        res[k]["plain"] = txt
     C.write_json(C.path(cfg, "tables") / "hypotheses_etapa1.json", res)
-    md = ["# Hipóteses da apresentação da Etapa 1 (P1–P6)", "",
+    md = ["# Hipóteses da Etapa 1 (H1–H6, como na apostila da apresentação)", "",
           f"> Gerado por `python -m laringopdi etapa1-report` (git {C.git_sha()}). **Não edite à mão.**",
-          "> As regras foram fixadas em `docs/DECISIONS.md` (2026-11-04) antes de gerar os números novos. P1, P3, P4 e P6 já tinham evidência parcial vista, como a entrada registra.", "",
+          "> As regras foram fixadas em `docs/DECISIONS.md` (2026-11-04, onde aparecem como P1–P6) antes de gerar os números novos. H1, H3, H4 e H6 já tinham evidência parcial vista, como a entrada registra.", "",
           "## Resumo", "", "| ID | Hipótese | Veredito |", "|---|---|---|",
           *[f"| {k} | {r['statement']} | **{r['verdict']}** |" for k, r in res.items()], "", "## Detalhe", ""]
     for k, r in res.items():
         md += [f"### {k}: {r['statement']}", "", f"- **Por que esperávamos isso:** {r['rationale']}.", f"- **Regra pré-registrada:** {r['rule']}",
-               f"- **Evidência:** {r['evidence']}", f"- **Veredito: {r['verdict']}.**", ""]
-    md += ["## Correspondência com as hipóteses internas (`docs/hipoteses.md`)", "", "| Apresentada | Interna |", "|---|---|", *[f"| {p} | {h} |" for p, h in P_H_MAP], ""]
+               f"- **Em resumo:** {r['plain']}", f"- **Evidência técnica:** {r['evidence']}", f"- **Veredito: {r['verdict']}.**", ""]
     (C.path(cfg, "docs") / "hipoteses_etapa1.md").write_text("\n".join(md), encoding="utf-8")
     return {k: r["verdict"] for k, r in res.items()}

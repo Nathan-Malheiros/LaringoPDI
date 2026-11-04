@@ -11,7 +11,8 @@ from laringopdi import config as C
 
 COMMANDS = ["index", "eda", "splits", "gallery", "seg-study", "cache", "probe", "train",
             "classic", "gradcam", "shards", "summary", "report",
-            "denoise-study", "enhance-study", "mlp18-study", "attention-p5", "timing", "etapa1-report"]
+            "denoise-study", "enhance-study", "mlp18-study", "attention-p5", "timing", "etapa1-report",
+            "adaptive-morph-study", "aula-study"]
 
 
 def _exps(cfg: dict, arg: str | None) -> list[str]:
@@ -70,7 +71,8 @@ def main(argv: list[str] | None = None) -> None:
         mod = {"probe": "train", "train": "train",
                "classic": "train", "shards": "train", "gradcam": "evaluate", "summary": "evaluate",
                "report": "report", "denoise-study": "etapa1", "enhance-study": "etapa1", "mlp18-study": "etapa1",
-               "attention-p5": "etapa1", "timing": "etapa1", "etapa1-report": "etapa1"}[a.command]
+               "attention-p5": "etapa1", "timing": "etapa1", "etapa1-report": "etapa1",
+               "adaptive-morph-study": "etapa1", "aula-study": "etapa1"}[a.command]
         import importlib
         try:
             fn = getattr(importlib.import_module(f"laringopdi.{mod}"), "cmd_" + a.command.replace("-", "_"), None)

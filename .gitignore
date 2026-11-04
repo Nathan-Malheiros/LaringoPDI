@@ -30,3 +30,6 @@ results/tables/segmentation_etapa1_frames.csv.gz
 docs/figures/denoise_exemplo.png
 docs/figures/realce_exemplo.png
 entrega/
+results/tables/segmentation_adaptive_morph_frames.csv.gz
+results/tables/attention_aula_frames.csv.gz
+docs/figures/seg_passos_exemplo.png

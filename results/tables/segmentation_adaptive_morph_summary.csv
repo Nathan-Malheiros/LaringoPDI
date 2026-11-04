@@ -1,0 +1,7 @@
+method,preprocess,dice_mean,dice_sd,iou_mean,hd95_median,fail_rate
+adaptive_morph,bilat,0.3147,0.0476,0.2557,43.5665,0.0872
+adaptive_morph,raw,0.2802,0.0443,0.2299,54.2742,0.0555
+adaptive_morph,homo,0.2741,0.0301,0.2259,61.0442,0.0486
+adaptive_morph,he,0.2464,0.0441,0.2066,60.3284,0.0
+adaptive_morph,stretch,0.1957,0.0266,0.1597,61.5302,0.0046
+adaptive_morph,clahe,0.1426,0.0228,0.1107,65.971,0.0007

@@ -115,9 +115,30 @@ def seg_watershed(g: np.ndarray, blur: int = 5, fg_frac: float = 0.5) -> np.ndar
     return pick_central(markers > 1)
 
 
+def adaptive_morph_steps(g: np.ndarray, block: int = 51, C: int = 5, blur: int = 5, kernel: int = 5) -> dict:
+    """Máscaras de cada etapa: limiar adaptativo → abertura → fechamento → componente central."""
+    se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel, kernel))
+    limiar = seg_adaptive(g, block, C, blur).astype(np.uint8)
+    abertura = cv2.morphologyEx(limiar, cv2.MORPH_OPEN, se)
+    fechamento = cv2.morphologyEx(abertura, cv2.MORPH_CLOSE, se)
+    return {"limiar": limiar.astype(bool), "abertura": abertura.astype(bool), "fechamento": fechamento.astype(bool),
+            "componente": pick_central(fechamento.astype(bool))}
+
+
+def seg_adaptive_morph(g: np.ndarray, block: int = 51, C: int = 5, blur: int = 5, kernel: int = 5) -> np.ndarray:
+    """O que faz: limiar adaptativo + abertura (tira pontinhos) + fechamento (fecha buracos) + componente
+    conexo de área plausível mais próximo do centro.
+    Por que importa: é o método apresentado na Etapa 1. O limiar por região tolera a iluminação
+    desigual, e a morfologia transforma o resultado numa região única, que é o que a glote é.
+    Parâmetros padrão: janela 51, C=5, blur 5, elipse 5×5.
+    Referência: Gonzalez & Woods, Digital Image Processing, seções 9 e 10.3."""
+    return adaptive_morph_steps(g, block, C, blur, kernel)["componente"]
+
+
 SEGMENTERS = {"otsu": seg_otsu, "adaptive": seg_adaptive, "otsu_morph": seg_otsu_morph,
-              "region_grow": seg_region_grow, "watershed": seg_watershed}
+              "region_grow": seg_region_grow, "watershed": seg_watershed, "adaptive_morph": seg_adaptive_morph}
 PARAM_GRID = {
+    "adaptive_morph": [{"block": b, "C": c} for b in (31, 51, 101) for c in (5, 10)],
     "otsu": [{"blur": b} for b in (3, 5, 9)],
     "adaptive": [{"block": b, "C": c} for b in (31, 51, 101) for c in (5, 10)],
     "otsu_morph": [{"open_k": o, "close_k": c} for o in (3, 5) for c in (7, 15)],
