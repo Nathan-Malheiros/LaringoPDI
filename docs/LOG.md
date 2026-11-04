@@ -180,3 +180,11 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - `adaptive-morph-study`: Dice por vídeo 0,280 sem realce, sem diferença detectável contra `otsu_morph` (0,324; p_Holm 0,128) e contra `adaptive` (0,253). O CLAHE a piora (0,143). `segmentation_best.json` não mudou: `region_grow` + `clahe` segue em 0,614.
 - App reescrito com 5 abas, na ordem dos slides. Os resumos em linguagem simples por hipótese vêm do `etapa1-report`.
 - Hipóteses renumeradas como H1–H6 da apostila (`hypotheses_etapa1.json`).
+
+## Entrega fiel à Etapa 1: técnicas de aula na ResNet-18 e materiais finais (2026-11-04)
+- `stage_aula`: 30 jobs (E02, E03 e E06; Tarefas A e B; 5 folds; semente 0), na RTX 3060, com o protocolo fixo. `aula-study` gerou vereditos, sensibilidade e Grad-CAM.
+- Equalização, CLAHE e mediana ficaram neutras nas duas tarefas. A remoção de reflexo (E01) deu "melhora" na Tarefa A pela regra pré-registrada (p_Holm 0,033 na família de 5 técnicas); os mesmos dados deram 0,053 na família de 8 de `verdicts_resnet18.csv`, que não foi alterado. Evidência fraca, declarada assim no relatório.
+- Sensibilidade por vídeo (OOF, semente 0): Tarefa A, MLP 0,381 × ResNet-18 0,514 (p_Holm 0,005); Tarefa B, MLP 0,685 × 0,537 (p_Holm 0,022), com menor especificidade.
+- Atenção (razão pela área): o CLAHE sobe nas duas tarefas (A 1,52 → 1,64; B 1,36 → 1,44); a equalização cai na B (1,36 → 1,17); a mediana não muda.
+- Novos: `tools/relatorio_etapa2.py` (12 páginas com frames) e `tools/apostila_etapa2.py`. O relatório antigo virou `docs/registro_exploratorio.pdf`, fora do pacote.
+- Pacote: inclui os pesos E03, o relatório novo e exclui os documentos internos.

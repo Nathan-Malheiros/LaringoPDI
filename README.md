@@ -1,16 +1,15 @@
 # LaringoPDI
 
-Projeto extensionista de Processamento Digital de Imagens (PDI, UNIFOR): quais técnicas de PDI
-aplicadas a imagens de laringoscopia de luz branca melhoram, não alteram ou pioram a classificação
-de alterações das pregas vocais por redes neurais, e por quê? O classificador é o instrumento fixo;
-o PDI é a variável independente. **Ferramenta de apoio acadêmico. Não substitui avaliação médica.**
+Projeto extensionista de Processamento Digital de Imagens (PDI, UNIFOR): qual combinação de técnicas
+de realce, filtragem e segmentação delimita melhor a glote em imagens de laringoscopia, e em que medida
+as características extraídas dela distinguem pregas vocais saudáveis de alteradas? **Ferramenta de apoio acadêmico. Não substitui avaliação médica.**
 
 A especificação completa está em `docs/ESPECIFICACAO.md`. Decisões de método ficam em `docs/DECISIONS.md` e o
 diário das fases em `docs/LOG.md`.
 
 ## Como executar o protótipo (sem GPU e sem o BAGLS)
 
-Use o pacote `LaringoPDI_codigo_com_pesos.zip`, que já traz os pesos da ResNet-18 (E00) e da MLP-18 (C6):
+Use o pacote `LaringoPDI_codigo_com_pesos.zip`, que já traz os pesos da ResNet-18 (frame original e CLAHE) e da MLP de 18 características:
 
 ```powershell
 py -3.11 -m venv .venv
@@ -19,10 +18,10 @@ py -3.11 -m venv .venv
 .venv\Scripts\python -m streamlit run app\streamlit_app.py
 ```
 
-Na barra lateral, **Enviar arquivo** aceita um frame PNG ou JPG, que é convertido para cinza. A segmentação foi calibrada no BAGLS, então imagens de outra origem podem dar resultado pior. Com o pacote, escolha o experimento **E00** e o modelo **ResNet-18** para ter a predição com Grad-CAM; os demais pesos não são distribuídos, e o app avisa quando faltam.
+Na barra lateral, **Enviar arquivo** aceita um frame PNG ou JPG, que é convertido para cinza. A segmentação foi calibrada no BAGLS, então imagens de outra origem podem dar resultado pior. As abas seguem a ordem da apresentação: realce, filtragem e Fourier, segmentação, PDI + MLP × CNN e resultados. Na barra lateral, a entrada da CNN oferece as técnicas com pesos disponíveis.
 
-- **Pesos:** `results/runs/E00/{A,B}/resnet18/fold0_seed0/model.pt` e `results/runs/C6/{A,B}/mlp18/fold0_seed0/model.joblib`.
-- **Relatório técnico:** `docs/relatorio_tecnico.pdf`. **Hipóteses:** `docs/hipoteses_etapa1.md`. **Roteiro da demonstração:** `docs/ROTEIRO_DEMO.md`.
+- **Pesos:** `results/runs/{E00,E03}/{A,B}/resnet18/fold0_seed0/model.pt` e `results/runs/C6/{A,B}/mlp18/fold0_seed0/model.joblib`.
+- **Relatório:** `docs/relatorio_etapa2.pdf`. **Hipóteses:** `docs/hipoteses_etapa1.md`. **Roteiro da demonstração:** `docs/ROTEIRO_DEMO.md`.
 - **Dataset:** o BAGLS **não é redistribuído** (CC BY-NC-SA 4.0), nem no repositório nem no pacote. Para rodar os estudos, baixe-o conforme a seção Dados.
 
 ## Instalação (Windows, CPU, Python 3.11)
@@ -81,16 +80,22 @@ Estágio 2 e fechamento (GPU local; retomáveis, jobs concluídos são pulados):
 .venv\Scripts\python tools\final_chain.py  > logs\final_chain.log 2>&1    # stage2_hyp (E01/E07/E08) → gradcam → report → PDFs
 ```
 
-Fechamento da Etapa 1, sem treino de CNN (precisa do BAGLS e dos caches, nesta ordem):
+Estudos das hipóteses H1–H6 da Etapa 1 (precisam do BAGLS e dos caches, nesta ordem):
 
 ```powershell
-.venv\Scripts\python -m laringopdi denoise-study > logs\denoise.log 2>&1      # P2: PSNR, SSIM e borda com ruído sintético
-.venv\Scripts\python -m laringopdi enhance-study > logs\enhance.log 2>&1      # P1: saturação e segmentação com alargamento e HE
-.venv\Scripts\python -m laringopdi mlp18-study   > logs\mlp18.log 2>&1        # C6 (MLP 18–32–16–2), P4 e P6
-.venv\Scripts\python -m laringopdi attention-p5  > logs\attention_p5.log 2>&1 # P5, a partir do Grad-CAM já calculado
+.venv\Scripts\python -m laringopdi denoise-study > logs\denoise.log 2>&1      # H2: PSNR, SSIM e borda com ruído sintético
+.venv\Scripts\python -m laringopdi enhance-study > logs\enhance.log 2>&1      # H1: saturação e segmentação com alargamento e HE
+.venv\Scripts\python -m laringopdi mlp18-study   > logs\mlp18.log 2>&1        # C6 (MLP 18–32–16–2), H4 e H6
+.venv\Scripts\python -m laringopdi attention-p5  > logs\attention_p5.log 2>&1 # H5, a partir do Grad-CAM já calculado
 .venv\Scripts\python -m laringopdi timing        > logs\timing.log 2>&1       # tempo por técnica, pipeline e modelo
+.venv\Scripts\python -m laringopdi adaptive-morph-study > logs\adaptive.log 2>&1 # H3: adaptativa + morfologia
+.venv\Scripts\python -m laringopdi train --stage stage_aula --shard 0 > logs\stage_aula.log 2>&1  # 30 jobs: E02, E03 e E06 na ResNet-18 (GPU)
+.venv\Scripts\python -m laringopdi aula-study   > logs\aula.log 2>&1         # vereditos, sensibilidade e Grad-CAM desses jobs
 .venv\Scripts\python -m laringopdi etapa1-report > logs\etapa1_report.log 2>&1 # docs/hipoteses_etapa1.md
-.venv\Scripts\python tools\relatorio_pdf.py --out docs\relatorio_tecnico.pdf --publico
+.venv\Scripts\python tools\capturas_app.py                                   # capturas das abas
+.venv\Scripts\python tools\relatorio_etapa2.py --out docs\relatorio_etapa2.pdf --publico
+.venv\Scripts\python tools\relatorio_etapa2.py --out entrega\LaringoPDI_relatorio_etapa2.pdf
+.venv\Scripts\python tools\apostila_etapa2.py --out entrega\LaringoPDI_Apostila_Etapa2.pdf
 .venv\Scripts\python tools\pacote_entrega.py --with-weights                  # entrega/LaringoPDI_codigo_com_pesos.zip
 ```
 
@@ -106,6 +111,6 @@ app/              streamlit_app.py
 notebooks/        colab_runner.ipynb
 configs/          base.yaml, experiments.yaml
 data/             raw/ (ignorado), index.csv, groups.csv, splits/ (frames.json, folds.json)
-docs/             DECISIONS.md, LOG.md, dataset_report.md, hipoteses_etapa1.md, MUDANCAS_ETAPA1.md, ROTEIRO_DEMO.md, figures/
+docs/             relatorio_etapa2.pdf, hipoteses_etapa1.md, MUDANCAS_ETAPA1.md, ROTEIRO_DEMO.md, DECISIONS.md, LOG.md, dataset_report.md, figures/
 results/          runs/ (ignorado), pdi_quality.csv, tabelas
 ```

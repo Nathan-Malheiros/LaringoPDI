@@ -1,31 +1,33 @@
-# Mudanças em relação ao escopo aprovado na Etapa 1
+# Mudanças em relação à Etapa 1
 
-A orientação da Etapa 2 pede que mudanças relevantes na proposta original sejam justificadas. Esta tabela reúne todas elas; o histórico completo está em `docs/DECISIONS.md`.
+A orientação da Etapa 2 pede que mudanças relevantes na proposta original sejam justificadas. O histórico completo está em `docs/DECISIONS.md`.
 
-**O que foi prometido e está entregue:** BAGLS; técnicas de aula (histograma, alargamento, equalização, CLAHE, média, mediana, Fourier com passa-baixa gaussiano); segmentação Otsu × adaptativa + morfologia com Dice e IoU; PSNR, SSIM, contraste RMS, entropia e tempo de processamento; MLP 18–32–16–2; comparação com CNN pré-treinada em validação cruzada agrupada por vídeo; as hipóteses P1–P6, com veredito em `docs/hipoteses_etapa1.md`.
+**O que foi prometido e está entregue:** BAGLS; técnicas de aula (histograma, alargamento, equalização, CLAHE, média, mediana, Fourier com passa-baixa gaussiano); segmentação por Otsu e adaptativa com morfologia, com Dice e IoU; PSNR, SSIM, contraste RMS, entropia e tempo de processamento; 18 características e MLP 18–32–16–2; comparação com ResNet-18 pré-treinada e Grad-CAM, em validação cruzada agrupada por vídeo; hipóteses H1–H6, com veredito em `docs/hipoteses_etapa1.md`.
 
-## Acréscimos e ampliações
+## Mudanças
 
-| Mudança | Etapa 1 | Etapa 2 | Motivo | Evidência / arquivo |
+| Item | Etapa 1 | Etapa 2 | Justificativa | Arquivo |
 |---|---|---|---|---|
-| Características clássicas | 18 características e MLP 18–32–16–2 | As duas versões: C6 cumpre o prometido; C1–C5 usam 187 características (média e desvio por vídeo), com MLP 256–64, SVM e RF | Medir se um vetor maior muda o resultado, sem abandonar o prometido | `results/runs/C6/`, `results/tables/mlp18_p4.csv`, `classic_vs_cnn.csv` |
-| Técnicas de PDI | As técnicas de aula | + `spec`, `homo`, `bilat`, `lbp`, `edges`, M1/M2, `roi`/`roi_gt` e a combinação gulosa E14 | É a "pesquisa externa" prevista no Quadro 3 da Etapa 1; as técnicas de aula continuam como ponto de partida | `docs/pdi_tecnicas.md`, `configs/experiments.yaml` |
-| Experimento da CNN | CNN pré-treinada | + SimpleCNN do zero, linear probe, dois estágios (triagem e fine-tuning) e 3 sementes | Testar se o PDI ajuda mais uma rede sem pré-treino e controlar a variação entre sementes | `results/tables/stage1_ranking.csv`, `verdicts_*.csv` |
-| Hipóteses | P1–P6 | P1–P6 + H1–H6 internas | As H1–H6 detalham a pergunta de pesquisa para o desenho do experimento; a correspondência está no relatório das P1–P6 | `docs/hipoteses.md`, `docs/hipoteses_etapa1.md` |
-| Tarefa B | 47 vídeos estruturais | 54 vídeos | 47 ficava abaixo do mínimo de 50 do método; entraram 7 vídeos de alterações estruturais benignas (cicatriz, sulco, rigidez, irregularidade de mucosa) | `configs/label_map.yaml`, `DECISIONS.md` (2026-10-23) |
-| Unidade de avaliação | Validação agrupada por vídeo | Métricas por frame e **por vídeo** (média das probabilidades), e o nível de vídeo é o principal | O diagnóstico é do paciente, e os frames de um vídeo não são independentes | `src/laringopdi/evaluate.py` |
-| Grad-CAM | Hipótese de atenção (P5) | + métricas formais: energia na glote, energia nos reflexos e razão normalizada pela área | Sem normalizar pela área, as variantes com recorte não seriam comparáveis | `results/tables/attention.csv`, `attention_p5.csv` |
+| Método final de segmentação | Otsu e adaptativa + morfologia | As duas foram feitas; o melhor resultado foi crescimento de região com CLAHE | O Quadro 3 da Etapa 1 previa técnica externa caso as de aula não bastassem. A média da adaptativa + morfologia ficou bem abaixo | `results/tables/seg_adaptive_morph.csv` |
+| Tarefa B | Saudável × lesão estrutural (47 vídeos) | 54 vídeos | 47 ficava abaixo do mínimo de 50 do método; entraram 7 vídeos de alterações estruturais benignas (cicatriz, sulco, rigidez, irregularidade de mucosa) | `configs/label_map.yaml`, `DECISIONS.md` (2026-10-23) |
+| Unidade de avaliação | Validação agrupada por vídeo | Além do agrupamento, a nota principal é por vídeo (média das probabilidades) | Os frames de um vídeo não são independentes, e a decisão é sobre o paciente | `src/laringopdi/evaluate.py` |
 
-## O que não foi feito, e por quê
+## Testes além do prometido
 
-| Item | Decisão | Motivo | Evidência / arquivo |
-|---|---|---|---|
-| Laryngoscope8 | Não usado | O dataset ficou inacessível; a troca para o BAGLS ocorreu **antes** da entrega da Etapa 1 e não é mudança de escopo | `DECISIONS.md` (2026-10-22) |
-| Imagens coloridas | Tudo em escala de cinza | O BAGLS é quase todo em cinza (só 25 vídeos RGB), o que não sustenta um estudo de técnicas de cor. As técnicas `lab`, `hsv` e `vessel` e as características de cor saíram | `DECISIONS.md` (2026-10-22 e 2026-10-23) |
+Ficam no repositório, fora do protótipo e da apresentação: uma segunda CNN treinada do zero (SimpleCNN), triagem com a ResNet congelada, recortes pela região da glote, entradas de bordas e textura, combinações de técnicas, e um vetor maior de características com outros classificadores. Eles não substituem o que foi prometido. Registro em `docs/DECISIONS.md` e `docs/registro_exploratorio.pdf`.
 
-## Desvios a declarar no fechamento
+## Prometido, mas parcial
+
+| Item | O que aconteceu |
+|---|---|
+| Sobel e Canny como abordagem complementar | Aparecem no protótipo e nas características, mas não foram avaliados com Dice como método próprio de segmentação |
+
+## Desvios a declarar
 
 | Item | O que aconteceu | Tratamento |
 |---|---|---|
-| P5 | Frames com Grad-CAM sem energia não estavam previstos no pré-registro e saíram da análise principal depois de vistos os resultados | Sensibilidade contando-os como atenção 0: o veredito não muda (`attention_p5_sensitivity.csv`) |
-| P1, P3, P4 e P6 | As regras foram escritas com evidência parcial já conhecida | Declarado na entrada de 2026-11-04 do `DECISIONS.md` |
+| H5 | Frames com Grad-CAM sem energia não estavam previstos no pré-registro e saíram da análise principal depois de vistos os resultados | Sensibilidade contando-os como atenção 0: o veredito não muda (`attention_p5_sensitivity.csv`) |
+| H1, H3, H4 e H6 | As regras foram escritas com evidência parcial já conhecida | Declarado em `DECISIONS.md` (2026-11-04) |
+| Técnicas na ResNet-18 | Remoção de reflexo, equalização, CLAHE e mediana têm 1 semente; a homomórfica tem 3 | Declarado no relatório. A "melhora" da remoção de reflexo na Tarefa A depende da família de comparações (p corrigido 0,033 com 5 técnicas; 0,053 com 8) |
+
+**Nomes das hipóteses:** H1–H6 são as da apresentação da Etapa 1. O arquivo `docs/hipoteses.md` traz outro conjunto, de uso interno no desenho do experimento, com a mesma numeração; a nota sobre isso está em `DECISIONS.md` (2026-11-04).

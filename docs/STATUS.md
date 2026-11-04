@@ -1,23 +1,24 @@
 # Estado do projeto — 2026-11-04
 
-> Relatório técnico: `docs/relatorio_tecnico.pdf` (público). **Próximo passo: a apresentação final; ver `docs/PROXIMOS_PASSOS.md`.**
+> Relatório: `docs/relatorio_etapa2.pdf` (público; a versão com frames fica em `entrega/`). **Próximo passo: a apresentação final; ver `docs/PROXIMOS_PASSOS.md`.**
 
 ## Concluído
-- **Fases 0–8:** dados (5.870 frames, 587 vídeos, 5 folds por vídeo), PDI, segmentação (`region_grow` + `clahe`, Dice 0,614), Estágios 1 e 2 (420 jobs de CNN, probe e clássico), Grad-CAM, relatório e protótipo.
-- **Fechamento da Etapa 2 (`docs/ETAPA2_PLANO.md`, branch `etapa2/fechamento`):**
-  - técnicas de aula `stretch`, `mean` e `gauss_lpf`;
-  - estudos de ruído (PSNR/SSIM), realce (saturação e segmentação com HE e alargamento), MLP 18–32–16–2 (C6), atenção normalizada e tempo de processamento;
-  - relatório P1–P6 (`docs/hipoteses_etapa1.md`) e tabela de mudanças (`docs/MUDANCAS_ETAPA1.md`);
-  - app com 7 abas e roteiro de demonstração (`docs/ROTEIRO_DEMO.md`);
-  - pacote de entrega (`tools/pacote_entrega.py` → `entrega/`).
+- **Dados, PDI, segmentação, classificação, Grad-CAM e protótipo:** 5.870 frames, 587 vídeos, 5 folds por vídeo.
+- **Entrega fiel à Etapa 1 (branch `etapa2/fechamento`):**
+  - adaptativa + morfologia, sensibilidade nas tabelas, e equalização, CLAHE e mediana na ResNet-18 (30 jobs, semente 0);
+  - hipóteses H1–H6 da apostila (`docs/hipoteses_etapa1.md`);
+  - app com 5 abas, na ordem da apresentação (`docs/ROTEIRO_DEMO.md`);
+  - relatório curto (`tools/relatorio_etapa2.py`) e apostila (`tools/apostila_etapa2.py`);
+  - pacote de entrega (`tools/pacote_entrega.py`).
 
-## Resultados principais
-- **Classificação:** nenhuma técnica de PDI muda o F1 por vídeo de forma significativa (todos os vereditos do Estágio 2 são neutros).
-- **Segmentação:** o PDI tem efeito forte e dependente do método.
-- **Hipóteses da Etapa 1:** P1 parcial, P2 confirmada, P3 confirmada, P4 confirmada (com confirmação frágil), P5 parcial (efeito misto), P6 refutada.
+## Resultados principais (todos em `results/tables/`)
+- **Segmentação:** o PDI tem efeito forte e dependente do método. O melhor foi crescimento de região + CLAHE (Dice 0,614); a adaptativa + morfologia ficou em 0,280.
+- **Classificação:** MLP e ResNet-18 ficam próximas na Tarefa B (F1 0,713 × 0,762). Sensibilidade baixa na Tarefa A.
+- **PDI na ResNet-18:** equalização, CLAHE e mediana ficaram neutras. A remoção de reflexo melhora na Tarefa A, com evidência fraca (1 semente; depende da família de comparações).
+- **Hipóteses:** H1 parcial, H2 confirmada, H3 confirmada, H4 confirmada (frágil), H5 parcial, H6 refutada.
 
-## Intocado neste fechamento
-`results/runs/` dos experimentos existentes, caches E00–E14, `data/splits/*`, `segmentation_best.json`, `segmentation_summary.csv`, `stage1_ranking.csv`, `verdicts_*.csv`. Nenhuma CNN foi treinada.
+## Intocado
+Splits, caches E00–E14, `segmentation_best.json`, `stage1_ranking.csv` e os `verdicts_*.csv` anteriores. O único treino novo foi o de 30 jobs, com o protocolo fixo.
 
 ## Pendências
 Humanas, listadas em `docs/PROXIMOS_PASSOS.md`. A branch aguarda o pedido de merge na `main`.

@@ -45,7 +45,8 @@ def secoes(h1, P, table, fig, root: Path, start: int) -> None:
     T = root / "results" / "tables"
     F = root / "docs" / "figures"
     R = F / "relatorio"
-    hyp = json.loads((T / "hypotheses_etapa1.json").read_text(encoding="utf-8"))
+    # Este registro interno já usa H1–H6 para as hipóteses do desenho; aqui as da apostila seguem como P1–P6 (mesma ordem).
+    hyp = {k.replace("H", "P"): v for k, v in json.loads((T / "hypotheses_etapa1.json").read_text(encoding="utf-8")).items()}
     tag = lambda k: f"<b>{hyp[k]['verdict']}</b>"
 
     # ---------------------------------------------------------------- técnicas de aula
@@ -131,4 +132,4 @@ def secoes(h1, P, table, fig, root: Path, start: int) -> None:
     tbs = md_tables(root / "docs" / "MUDANCAS_ETAPA1.md")
     for tb in tbs:
         k = len(tb[0])
-        table(tb, {5: [.15, .16, .25, .27, .17], 4: [.16, .18, .42, .24], 3: [.15, .5, .35]}[k])
+        table(tb, {5: [.15, .16, .25, .27, .17], 4: [.16, .18, .42, .24], 3: [.15, .5, .35], 2: [.35, .65]}[k])

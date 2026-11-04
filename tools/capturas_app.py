@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "figures" / "app"
 PORT = 8599
 N_TABS = 5
+MIN_BYTES = 50_000
 CHROME = [r"C:\Program Files\Google\Chrome\Application\chrome.exe", r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"]
 
 
@@ -32,12 +33,15 @@ def main() -> None:
                 break
             except OSError:
                 time.sleep(1)
-        for i in [0, 0, *range(1, N_TABS), 0]:     # as primeiras passadas aquecem o servidor (saem em branco); a aba 0 fecha a lista
+        for i in range(N_TABS):
             shot = OUT / f"aba{i}.png"
-            shot.unlink(missing_ok=True)
-            subprocess.run([browser, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--window-size=1500,1500", f"--screenshot={shot}",
-                            "--virtual-time-budget=60000", f"http://localhost:{PORT}/?aba={i}&frame=1881"], check=False, timeout=180,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            for _ in range(4):        # enquanto o servidor aquece, a captura sai quase em branco
+                shot.unlink(missing_ok=True)
+                subprocess.run([browser, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--window-size=1500,1500", f"--screenshot={shot}",
+                                "--virtual-time-budget=60000", f"http://localhost:{PORT}/?aba={i}&frame=1881"], check=False, timeout=180,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if shot.exists() and shot.stat().st_size > MIN_BYTES:
+                    break
             print(shot.name, shot.stat().st_size if shot.exists() else "falhou")
     finally:
         server.terminate()

@@ -23,6 +23,7 @@ results/tables/attention_frames.csv.gz
 results/live/
 results/runs_quarantine_amp_aug/
 docs/figures/relatorio_completo/
+docs/figures/relatorio_etapa2/
 docs/figures/app/
 # Etapa 2: tabelas por frame e figuras com frames do BAGLS
 results/tables/denoise_frames.csv.gz

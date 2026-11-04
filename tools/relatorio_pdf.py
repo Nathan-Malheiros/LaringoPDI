@@ -1,8 +1,10 @@
-"""Gera o relatório técnico do LaringoPDI em PDF.
+"""Gera o registro exploratório do LaringoPDI em PDF: tudo o que foi testado, inclusive o que não foi prometido.
+
+Não faz parte da entrega; o relatório da Etapa 2 é o de tools/relatorio_etapa2.py.
 
 Uso:
-  python tools/relatorio_pdf.py --out docs/relatorio_tecnico.pdf --publico     # sem frames do BAGLS (vai para o Git)
-  python tools/relatorio_pdf.py --out "<Área de Trabalho>/LaringoPDI_relatorio.pdf"   # completo (local)
+  python tools/relatorio_pdf.py --out docs/registro_exploratorio.pdf --publico     # sem frames do BAGLS (vai para o Git)
+  python tools/relatorio_pdf.py --out "<Área de Trabalho>/LaringoPDI_registro.pdf"   # completo (local)
 
 Todos os números saem das tabelas em results/ e logs/ (nada é digitado à mão).
 """
@@ -432,7 +434,7 @@ def build(out: Path, publico: bool) -> None:
     story += [Spacer(1, 3.2 * cm), Paragraph("LaringoPDI", st["title"]), Spacer(1, 6),
               Paragraph("Efeito de técnicas de Processamento Digital de Imagens na segmentação da glote e na "
                         "classificação de distúrbios da voz em videoendoscopia laríngea", st["sub"]), Spacer(1, 18),
-              Paragraph("Relatório técnico de andamento", ParagraphStyle("x", parent=st["sub"], fontName="Arial-Bold", textColor=colors.HexColor(CY))),
+              Paragraph("Registro exploratório interno (não faz parte da entrega)", ParagraphStyle("x", parent=st["sub"], fontName="Arial-Bold", textColor=colors.HexColor(CY))),
               Spacer(1, 30)]
     fig(fig_pipeline(), "Figura 1. Desenho do estudo: o PDI é a variável independente; o classificador, o protocolo e os splits ficam fixos.")
     story += [Spacer(1, 26)]
