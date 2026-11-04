@@ -75,6 +75,10 @@ stats:
   n_boot: 2000
   neutral_band: 0.0   # veredito: p_holm >= alpha -> neutra; senão sinal da diferença mediana
 
+app:
+  # Frames da demonstração (docs/ROTEIRO_DEMO.md): escuro, em que o CLAHE salva a segmentação, e com reflexo.
+  demo_frames: ["1881", "21"]
+
 colab:
   drive_root: /content/drive/MyDrive/LaringoPDI
   n_accounts: 5

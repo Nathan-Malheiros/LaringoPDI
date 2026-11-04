@@ -54,7 +54,11 @@ FILTER_LABEL = {"none": "sem filtro", "mean3": "média 3", "mean7": "média 7", 
 
 
 def add_noise(g: np.ndarray, noise: str, rng: np.random.Generator) -> np.ndarray:
-    kind, v = NOISES[noise]
+    return noise_image(g, *NOISES[noise], rng)
+
+
+def noise_image(g: np.ndarray, kind: str, v: float, rng: np.random.Generator) -> np.ndarray:
+    """kind = "gauss" (v = σ na escala 0–255) ou "sp" (v = densidade total de sal e pimenta)."""
     if kind == "gauss":
         return np.clip(np.round(g + rng.normal(0, v, g.shape)), 0, 255).astype(np.uint8)
     r, out = rng.random(g.shape), g.copy()

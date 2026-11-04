@@ -342,7 +342,7 @@ def load_model(cfg: dict, exp: str, task: str, model_name: str, fold: int):
     rd = C.path(cfg, "runs") / exp / task / model_name / f"fold{fold}_seed0"
     if not (rd / "model.pt").exists():
         return None
-    m = build(model_name, len(D.task_names(cfg, task)), cfg)
+    m = build(model_name, len(D.task_names(cfg, task)), cfg, pretrained=False)     # os pesos vêm do model.pt, sem download
     m.load_state_dict(torch.load(rd / "model.pt", map_location="cpu"))
     return m.eval()
 

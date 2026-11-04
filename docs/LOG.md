@@ -154,3 +154,11 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - `python -m laringopdi etapa1-report` → `docs/hipoteses_etapa1.md` + `results/tables/hypotheses_etapa1.json`. `docs/MUDANCAS_ETAPA1.md` escrito; P1–P6 e os novos comandos acrescentados ao `docs/ESPECIFICACAO.md`.
 - **Vereditos:** P1 parcial; P2 confirmada; P3 confirmada; P4 confirmada; P5 parcial; P6 refutada.
 - **Ressalvas na evidência gerada:** P1, a fração saturada não demonstra o "estouro" do HE. P3, o Otsu puro quase não acerta a glote (0,023), e o mecanismo do reflexo não foi testado. P4, confirmação frágil: IC [−0,104; +0,009], mas a acurácia é 0,842 × 0,903 e McNemar p < 0,001 a favor da ResNet-18. P5, o veredito "parcial" esconde que mais combinações caem (9) do que sobem (5).
+
+## Etapa 2 — Bloco 8: protótipo para a demonstração (2026-11-04)
+- App com 7 abas: nova ① Técnicas de aula (realce com histogramas e fração saturada; ruído com controles, PSNR e SSIM ao vivo; Fourier com σ de 5 a 80) e nova ⑦ Resultados do estudo (P1–P6, Dice método × realce, vereditos, clássico × CNN), lidas das tabelas. Aba ⑥ ganhou o vetor das 18 características e a probabilidade do C6 (aviso, sem quebrar, se o modelo faltar).
+- `use_container_width` já não existia no app: nada a trocar.
+- **Correção:** `load_model` não baixa mais os pesos da ImageNet para carregar um `model.pt`; antes, o app falhava em máquina sem internet e sem os pesos em cache.
+- Upload aceita PNG/JPG e informa que a segmentação foi calibrada no BAGLS. Sem o peso do E04, o experimento padrão passa a ser o E00.
+- Frames da demonstração em `configs/base.yaml`: test/1881 (Dice 0,000 → 0,929) e test/21 (reflexo 3,5%). O caso "0,00 → 0,93" da Etapa 1 não está identificado nos arquivos; test/1881 é o mais próximo. Roteiro em `docs/ROTEIRO_DEMO.md`.
+- `tools/capturas_app.py` regenera `docs/figures/app/aba0–6.png` com Chrome headless; o log antigo `app_test.log` vinha do AppTest, que não gera imagens. `tests/test_app.py` cobre as abas e os controles de ruído.

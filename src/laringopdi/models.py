@@ -30,9 +30,9 @@ class SimpleCNN(nn.Module):
         return self.head(self.features(x))
 
 
-def build(name: str, n_classes: int, cfg: dict) -> nn.Module:
+def build(name: str, n_classes: int, cfg: dict, pretrained: bool = True) -> nn.Module:
     if name == "resnet18":
-        return resnet18(n_classes)
+        return resnet18(n_classes, pretrained)
     if name in ("simplecnn", "simplecnn_fast"):
         return SimpleCNN(n_classes, cfg["simplecnn"]["filters"], cfg["simplecnn"]["dropout"])
     raise ValueError(f"modelo desconhecido: {name}")
