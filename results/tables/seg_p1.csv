@@ -1,0 +1,16 @@
+comparison,method,n_videos,dice_a,dice_b,delta_b_minus_a,p,p_holm
+clahe_vs_he,adaptive,587,0.136198,0.149454,0.013256,0.000923,0.001846
+clahe_vs_he,otsu,587,0.023908,0.02345,-0.000458,0.005522,0.005522
+clahe_vs_he,otsu_morph,587,0.368261,0.171525,-0.196737,0.0,0.0
+clahe_vs_he,region_grow,587,0.476335,0.614386,0.138051,0.0,0.0
+clahe_vs_he,watershed,587,0.38605,0.18156,-0.20449,0.0,0.0
+stretch_vs_he,adaptive,587,0.136198,0.179063,0.042865,0.0,0.0
+stretch_vs_he,otsu,587,0.023908,0.022843,-0.001065,0.0,0.0
+stretch_vs_he,otsu_morph,587,0.368261,0.325596,-0.042666,2e-06,4e-06
+stretch_vs_he,region_grow,587,0.476335,0.483958,0.007623,0.030079,0.030079
+stretch_vs_he,watershed,587,0.38605,0.336056,-0.049994,0.0,0.0
+stretch_vs_raw,adaptive,587,0.253094,0.179063,-0.074031,0.0,0.0
+stretch_vs_raw,otsu,587,0.022758,0.022843,8.5e-05,0.0,0.0
+stretch_vs_raw,otsu_morph,587,0.324124,0.325596,0.001471,0.621621,0.775945
+stretch_vs_raw,region_grow,587,0.466634,0.483958,0.017324,0.018978,0.056933
+stretch_vs_raw,watershed,587,0.333642,0.336056,0.002414,0.387973,0.775945

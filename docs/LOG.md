@@ -124,3 +124,10 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - **Contraste gaussiano, contra a expectativa do plano:** a mediana 3 não perde da média 3 (σ=10: 35,3 × 35,0 dB; σ=20: 30,22 × 30,20 dB, praticamente igual). Só o passa-baixa σ40 supera a mediana 3, e só em σ=20 (31,3 × 30,2 dB; SSIM 0,64 × 0,56).
 - **Limitação:** a referência é o próprio frame do BAGLS, que já tem ruído; o PSNR mede fidelidade ao original, não a um sinal verdadeiro.
 - `seg_per_fold` foi extraída do `seg_study`, sem mudança de comportamento (conferida no Bloco 3 contra o `segmentation_summary.csv`).
+
+## Etapa 2 — Bloco 3: realce (P1) (2026-11-04)
+- `python -m laringopdi enhance-study`: qualidade nos 5.870 frames (`enhance_quality.csv`) e segmentação com `stretch` e `he` somados a raw/clahe/homo/bilat (`segmentation_etapa1*.csv`, `seg_p1.csv`, `realce_classif_context.csv`, `docs/figures/relatorio/realce.png`). `segmentation_best.json` e `segmentation_summary.csv` não foram tocados.
+- **Conferências:** o novo resumo reproduz o `segmentation_summary.csv` (20 linhas, diferença 0,0) e 60 frames recalculados batem com os salvos (2.280 linhas, diferença 0,0).
+- **CLAHE × HE no Dice por vídeo:** `region_grow` 0,614 × 0,476 e `adaptive` 0,150 × 0,136 favorecem o CLAHE; `otsu_morph` 0,172 × 0,368, `watershed` 0,182 × 0,386 e `otsu` (0,023 × 0,024) favorecem o HE. Todos com p_Holm < 0,01. O efeito **depende do método**.
+- **Fração saturada:** raw 18,1%, HE 18,2%, alargamento 18,9%, CLAHE 1,5%, homomórfica 1,7%. **Ressalva:** quase tudo é preto que já existia no frame (raw já tem 16,6% em 0). O HE só soma 0,1 ponto; o CLAHE fica baixo por tirar esses pixels do zero. A condição (b) do P1 é atendida, mas não demonstra o "estouro" suposto na hipótese.
+- **Classificação (contexto):** E02 × E03 sem diferença (McNemar p ≥ 0,076, todos os IC contêm 0).
