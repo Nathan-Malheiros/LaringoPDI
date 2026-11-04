@@ -74,3 +74,55 @@ Registro cronológico. Cada decisão: data, contexto, decisão, motivo.
 - **H3:** compara o ΔF1 (técnica − E00) da SimpleCNN com o da ResNet-18 nas mesmas técnicas (Estágio 2: 5 técnicas; Estágio 1: SimpleCNN rápida × probe, 13 técnicas), por Wilcoxon pareado sobre as técnicas × tarefas. Suporte se a mediana da diferença for > 0 e p < 0,05.
 - **H1 (atenção):** fração da energia do Grad-CAM sobre os reflexos, E01 × E00, por frame pareado (Wilcoxon). Só se E01 tiver pesos (não está no top-4; se ficar de fora, H1 de atenção é reportada como não testada no Estágio 2 e a parte do F1 vem do Estágio 1).
 - **Complemento `stage2_hyp`:** E01, E07 e E08 com fine-tuning (ResNet-18 e SimpleCNN, 1 semente, 60 jobs ≈ 2,5 h) só para testar H1 (Grad-CAM sobre reflexos exige pesos do E01) e H5 (`roi` × `roi_gt` com fine-tuning). Não entram no ranking nem no E14; nos vereditos, o par com E00 usa só a semente 0 (5 pares, McNemar OOF).
+
+## 2026-11-04 — Pré-registro das regras de veredito de P1–P6 (hipóteses da apresentação da Etapa 1)
+Fixadas **antes** de gerar qualquer número novo dos Blocos 2–5 do `docs/ETAPA2_PLANO.md`.
+
+**Transparência sobre o que já era conhecido.** As regras foram escritas com evidência parcial já vista: P3 (o estudo de segmentação já existia, e `region_grow` + `clahe` já era o melhor); P4 (C1–C5 empatam com a CNN, RF 0,811 na Tarefa B); P6 (nas 187 características, o HOG domina e a forma fica perto de 0). P1 também tinha contexto parcial: E02 × E03 neutros na classificação e o efeito do CLAHE no Dice em relação ao `raw`. Ainda não existiam números de HE na segmentação nem de fração saturada. P2 e P5 (a razão normalizada por área, com teste formal) não tinham resultado visto, embora a tabela `attention.csv` já existisse com as frações brutas.
+
+### Regras (cópia da Seção 4 do plano)
+Nível α = 0,05, com correção de Holm dentro de cada família de testes, como descrito em cada item.
+
+- **P1 (CLAHE > HE):**
+  - **Confirmada** se (a) o Dice por vídeo de CLAHE for maior que o de HE com p_Holm < 0,05 no método escolhido (`region_grow`) **e** (b) a fração saturada média de HE for maior que a de CLAHE.
+  - **Parcialmente confirmada** se só (a) ou só (b) valer, ou se (a) valer em menos da metade dos 5 métodos.
+  - **Refutada** se HE > CLAHE com significância no `region_grow`.
+  - O resultado de classificação (E02 × E03) é reportado como contexto e não entra no veredito.
+- **P2 (mediana > média em sal e pimenta):**
+  - **Confirmada** se a mediana 3×3 superar a média 3×3 em PSNR **e** SSIM, com p_Holm < 0,05, nas duas densidades.
+  - **Parcialmente confirmada** se valer só em parte.
+  - **Refutada** se a média superar a mediana com significância.
+- **P3 (adaptativo > Otsu):**
+  - **Confirmada** se o Dice por vídeo do `adaptive` for maior que o do `otsu` (ambos sobre `raw`) com p < 0,05 **e** Δ ≥ 0,05.
+  - Reporte, sem mudar o veredito, que `otsu_morph` e `region_grow` superam ambos.
+- **P4 (MLP ≈ CNN na Tarefa B):**
+  - **Confirmada** ("competitiva") se o IC 95% bootstrap do ΔF1 por vídeo (C6 − ResNet-18 E00) contiver 0 ou estiver acima de 0.
+  - **Refutada** se estiver todo abaixo de 0.
+  - Reporte C1 da mesma forma, como extensão.
+- **P5 (PDI aumenta a atenção na glote):** conte as combinações técnica × modelo × tarefa sem recorte (6 × 2 × 2 = 24) em que a razão de atenção sobe com p_Holm < 0,05.
+  - **Confirmada** se ≥ 50% das combinações subirem e nenhuma cair com significância.
+  - **Parcialmente confirmada** se 1 ou mais subirem.
+  - **Refutada** se nenhuma subir e alguma cair.
+  - **Inconclusiva** se nenhuma for significativa.
+- **P6 (forma é a família mais importante):**
+  - **Confirmada** se, no C6, a queda média por permutação da família forma for a maior entre as 3 famílias **nas duas tarefas**.
+  - **Parcialmente confirmada** se for a maior em uma tarefa.
+  - **Refutada** caso contrário.
+  - Reporte também o C1–C5 (187 características), onde o HOG domina, como evidência complementar.
+
+### Esclarecimentos (o plano não define estes casos; fixados agora, sem resultado à vista)
+- **P1, "metade dos métodos":** o Holm é aplicado aos 5 métodos. Para **confirmar**, (a) e (b) precisam valer no `region_grow` **e** CLAHE > HE com p_Holm < 0,05 em pelo menos 3 dos 5 métodos; com 1 ou 2 métodos, é parcial. Se nem (a) nem (b) valerem e HE não superar CLAHE com significância no `region_grow`: **inconclusiva**. Se (b) valer e HE > CLAHE com significância no `region_grow`, a regra de refutação prevalece.
+- **P2:** Holm sobre os 4 testes (PSNR e SSIM × 5% e 10%). Se a média vencer com significância em algum teste e a mediana em nenhum: **refutada**. Se houver vitórias significativas dos dois lados: **parcialmente confirmada**. Se nenhum teste for significativo: **inconclusiva**.
+- **P3:** um único teste, sem Holm. Se adaptativo > Otsu com p < 0,05 mas Δ < 0,05: **parcialmente confirmada**. Se Otsu > adaptativo com p < 0,05: **refutada**. Nos demais casos: **inconclusiva**.
+- **P4:**
+  - `report.paired_compare` usa as sementes comuns. Como o C6 só tem a semente 0, a comparação é contra a semente 0 da ResNet-18 (sem o ensemble de 3 sementes). O mesmo vale para o C1.
+  - **Limitação declarada:** a regra é permissiva. "O IC contém 0" não prova equivalência, e um IC largo também confirma a hipótese. Por isso, o relatório mostra a largura do IC e não trata "competitiva" como "equivalente".
+- **P5:**
+  - **Vídeos considerados:** só os que têm rótulo na tarefa. O Grad-CAM foi calculado em todos os 587 vídeos de teste, inclusive nos 156 funcionais sob os modelos da Tarefa B, que não pertencem a ela; eles ficam fora da análise da Tarefa B.
+  - **Frames excluídos:** os de área glótica 0, porque a razão fica indefinida (27 frames, ou 185 no E08).
+  - **Agregação:** razão por frame, depois média por vídeo.
+  - **Pareamento:** por vídeo presente nas duas variantes.
+  - **Teste:** Wilcoxon bilateral; "sobe" significa p_Holm < 0,05 e Δ médio > 0. Holm sobre as 6 técnicas, dentro de cada modelo × tarefa.
+  - **Limitação de medida:** o `gradcam` definiu a área válida como `X > 0`. Nas variantes que zeram pixels da imagem (`homo`, LBP), parte dos pixels escuros da glote sai da energia, mas continua contada na área, o que pode **reduzir** a razão artificialmente. O `gradcam` não será refeito. O relatório informa, por experimento, a fração dos pixels da glote com `X = 0`, e o veredito deve ser lido junto com ela.
+- **P6:** "maior" compara as médias sobre os 5 folds, sem teste de significância, como manda a regra. Se a família forma tiver queda média ≤ 0, ela não conta como "a maior", mesmo sendo numericamente a primeira.
+- **Vocabulário:** os vereditos possíveis são sempre confirmada, parcialmente confirmada, refutada e inconclusiva.
