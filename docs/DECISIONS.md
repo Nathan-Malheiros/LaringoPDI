@@ -135,3 +135,16 @@ Nível α = 0,05, com correção de Holm dentro de cada família de testes, como
 
 ## 2026-11-04 — P5: desvio do pré-registro (frames com Grad-CAM de energia zero)
 O pré-registro só previa excluir frames de área glótica 0. Ao rodar o teste, apareceu um segundo caso de razão indefinida: mapas sem energia, com `att_glottis` NaN (zero na ResNet-18; na SimpleCNN, até 38,9% no E11 e 29,1% no E14). A análise principal os excluiu, **decisão tomada depois de ver os resultados**. Para não depender dela, `attention_p5_sensitivity.csv` conta esses frames como atenção 0. O veredito não muda: principal, 5 sobem e 9 caem; sensibilidade, 4 sobem e 10 caem.
+
+## 2026-11-04 — Entrega fiel ao apresentado na Etapa 1 (decisão do Nathan)
+Registrado **antes** de gerar os números novos desta entrada. Supera a proibição de treino do `docs/ETAPA2_PLANO.md` só para os 30 jobs abaixo, com autorização do Nathan.
+
+**Escopo da entrega.** Relatório, app e apostila seguem o documento e os slides da Etapa 1. Os experimentos que não foram apresentados (187 características, HOG, Gabor, SimpleCNN, probe como resultado, bilateral, M1/M2, E14, ROI) continuam no repositório, inalterados, e ficam fora da apresentação. O relatório declara a existência deles em um parágrafo, para não haver relato seletivo.
+
+**Numeração.** A entrega usa os nomes da apostila: H1 = CLAHE > equalização global; H2 = mediana > média; H3 = adaptativo > Otsu; H4 = MLP ≈ CNN na Tarefa B; H5 = PDI aumenta a atenção na glote; H6 = forma é a família mais importante. Correspondem, na mesma ordem, às P1–P6 das entradas anteriores; as regras não mudam. As H1–H6 antigas de `docs/hipoteses.md` são internas e ficam fora do pacote de entrega.
+
+**Complementos fixados agora; nenhum altera os vereditos de H1–H6:**
+1. **Adaptativa + morfologia (slide 9, objetivo específico 2), que não existia no código:** limiar adaptativo (mesma grade do `adaptive`, inclusive a janela 51 apresentada), abertura e fechamento com elipse 5×5, componente central. Roda nos 6 realces com parâmetros escolhidos no treino de cada fold. Testes em `raw`, Dice por vídeo: contra `otsu`, `adaptive` e `otsu_morph` (Wilcoxon, Holm sobre os 3); e CLAHE × raw no próprio método. O veredito de H3 continua pela regra original (`adaptive` × `otsu`). **`segmentation_best.json` não muda, mesmo que este método vença:** ele já alimentou a máscara do C6 e os experimentos; se vencer, isso será reportado.
+2. **Sensibilidade (métrica prioritária do Quadro 4):** tabela por sistema (média dos folds, semente 0). C6 × ResNet-18 E00 em cada tarefa: OOF, semente 0, ΔSensibilidade com IC 95% bootstrap por vídeo e McNemar exato só nos vídeos alterados, com Holm sobre as 2 tarefas.
+3. **CLAHE, equalização e mediana na ResNet-18:** E02, E03 e E06, Tarefas A e B, 5 folds, semente 0, com o protocolo fixo (30 jobs). Vereditos pela regra de 2026-10-24, com Holm por tarefa na família das 5 técnicas apresentadas que têm ResNet-18 (E01, E02, E03, E04, E06). E01 e E04 já tinham resultado conhecido, neutro. `verdicts_*.csv` existentes não mudam: a tabela nova é `verdicts_aula_resnet18.csv`, e o `report` ignora esses jobs.
+4. **Atenção (H5), complemento:** Grad-CAM de E02, E03 e E06 na ResNet-18, razão por vídeo contra o E00 (Holm sobre os 3, por tarefa). Reportado à parte: as 24 combinações da regra de H5 não mudam.
