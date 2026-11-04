@@ -476,15 +476,18 @@ P5_NOCROP = ["E01", "E04", "E05", "E10", "E11", "E14"]
 P5_CROP = ["E07", "E08"]
 
 
-def attention_video_ratio(cfg: dict) -> pd.DataFrame:
+def attention_video_ratio(cfg: dict, zero_energy_as_zero: bool = False) -> pd.DataFrame:
     """Razão de atenção por vídeo (energia na glote ÷ área da glote; 1 = acaso). Só vídeos com rótulo na
-    tarefa; frames sem glote são descartados porque a razão fica indefinida."""
+    tarefa; frames sem glote são descartados porque a razão fica indefinida. Mapas sem energia dão
+    `att_glottis` NaN: saem da análise principal e contam como 0 na sensibilidade."""
     from laringopdi.train import frame_labels
     a = pd.read_csv(C.path(cfg, "tables") / "attention_frames.csv.gz", dtype={"video_id": str},
                     usecols=["exp", "model", "task", "video_id", "att_glottis", "area_glottis"])
     lab = frame_labels(cfg).drop_duplicates("video_id").set_index("video_id")
     keep = {t: set(lab.index[lab[D.task_col(t)] >= 0]) for t in ("A", "B")}
     a = a[[v in keep[t] for v, t in zip(a["video_id"], a["task"])]]
+    if zero_energy_as_zero:
+        a = a.assign(att_glottis=a["att_glottis"].fillna(0.0))
     a = a[(a["area_glottis"] > 0) & a["att_glottis"].notna()].copy()
     a["ratio"] = a["att_glottis"] / a["area_glottis"]
     return a.groupby(["exp", "model", "task", "video_id"])["ratio"].mean().reset_index()
@@ -531,21 +534,19 @@ def _p5_figure(cfg: dict, df: pd.DataFrame, cfg_alpha: float) -> None:
         for c, task in enumerate(("A", "B")):
             ax = axes[r, c]
             s = df[(df["model"] == model) & (df["task"] == task)].set_index("exp").loc[P5_NOCROP]
-            base = s["ratio_E00"].mean()
-            ax.axvline(base, color=SERIES["ref"], lw=1.6, label="E00 (sem PDI)")
-            ax.axvline(1, color=INK, lw=0.7, ls=":", label="acaso (razão = 1)")
+            ax.axvline(0, color=INK, lw=0.9, label="igual ao E00")
             sig = s["p_holm"] < cfg_alpha
-            ax.scatter(s["ratio_exp"], y, s=46, color=[SERIES["median"] if b else SERIES["mean"] for b in sig], zorder=3)
+            ax.scatter(s["delta"], y, s=46, color=[SERIES["median"] if b else SERIES["mean"] for b in sig], zorder=3)
             for yi, e in zip(y, P5_NOCROP):
-                ax.annotate(f"{s.loc[e, 'ratio_exp']:.2f}" + (" *" if s.loc[e, "p_holm"] < cfg_alpha else ""), (s.loc[e, "ratio_exp"], yi),
-                            xytext=(6, 3), textcoords="offset points", fontsize=7.5, color=DIM)
+                ax.annotate(f"{s.loc[e, 'delta']:+.2f}" + (" *" if s.loc[e, "p_holm"] < cfg_alpha else "") + f"  (n={int(s.loc[e, 'n_videos'])})", (s.loc[e, "delta"], yi),
+                            xytext=(0, 6), textcoords="offset points", fontsize=7, color=DIM, ha="center")
             ax.set_yticks(y, [names[e] for e in P5_NOCROP])
             ax.grid(axis="x", color=GRID, lw=0.5, alpha=0.6)
             ax.set_axisbelow(True)
             ax.tick_params(length=0)
             ax.set_title(f"{'ResNet-18' if model == 'resnet18' else 'SimpleCNN'}, Tarefa {task}")
             if r == 1:
-                ax.set_xlabel("razão de atenção na glote (média por vídeo)")
+                ax.set_xlabel("Δ da razão de atenção na glote, técnica − E00 (pareado por vídeo)")
     h, l = axes[0, 0].get_legend_handles_labels()
     dot = [plt.Line2D([], [], ls="", marker="o", color=SERIES["mean"]), plt.Line2D([], [], ls="", marker="o", color=SERIES["median"])]
     fig.legend(h + dot, l + ["técnica, sem diferença", "técnica, p_Holm < 0,05 (*)"], loc="lower center", ncol=4, frameon=False, bbox_to_anchor=(0.5, -0.04))
@@ -559,6 +560,10 @@ def cmd_attention_p5(cfg: dict, args) -> dict:
     v = attention_video_ratio(cfg)
     df = pd.concat([p5_tests(v, P5_NOCROP, "sem_recorte"), p5_tests(v, P5_CROP, "recorte")], ignore_index=True)
     df.round(6).to_csv(t / "attention_p5.csv", index=False)
+    sens = p5_tests(attention_video_ratio(cfg, True), P5_NOCROP, "sem_recorte")
+    sens.round(6).to_csv(t / "attention_p5_sensitivity.csv", index=False)
+    raw_att = pd.read_csv(t / "attention_frames.csv.gz", usecols=["exp", "model", "task", "att_glottis"])
+    raw_att.assign(zero_energy=raw_att["att_glottis"].isna()).groupby(["exp", "model", "task"])["zero_energy"].mean().round(5).reset_index()         .to_csv(t / "attention_p5_zero_energy.csv", index=False)
     val = _p5_validity(cfg, ["E00"] + P5_NOCROP)
     val.round(5).to_csv(t / "attention_p5_validity.csv", index=False)
     a = cfg["stats"]["alpha"]
@@ -739,13 +744,22 @@ def _verdict_p5(cfg: dict, a: float) -> dict:
     v = "confirmada" if (len(up) >= len(n) / 2 and down.empty) else "parcialmente confirmada" if len(up) else "refutada" if len(down) else "inconclusiva"
     val = pd.read_csv(t / "attention_p5_validity.csv").set_index("exp")["gt_zero_frac"]
     crop = d[d["family"] == "recorte"].groupby("exp")[["ratio_E00", "ratio_exp"]].mean()
+    sens = pd.read_csv(t / "attention_p5_sensitivity.csv")
+    s_up, s_down = int(((sens["p_holm"] < a) & (sens["delta"] > 0)).sum()), int(((sens["p_holm"] < a) & (sens["delta"] < 0)).sum())
+    ze = pd.read_csv(t / "attention_p5_zero_energy.csv")
+    ze = ze[ze["exp"].isin(["E00"] + P5_NOCROP)].groupby("model")["zero_energy"].max()
+    per = lambda f: ", ".join(f"{m}: {int((f['model'] == m).sum())}" for m in ("resnet18", "simplecnn"))
     txt = (f"Sobem com significância: {len(up)} de {len(n)} combinações"
            + (f" ({', '.join(sorted(set(up['exp'])))})" if len(up) else "") + f"; caem: {len(down)}"
            + (f" ({', '.join(sorted(set(down['exp'])))})" if len(down) else "")
-           + f". Razão média no E00: {_fn(n['ratio_E00'].mean(), 2)} (1 = acaso). "
+           + f". Por modelo, sobem {per(up)}; caem {per(down)}. Mais combinações caem do que sobem, e o efeito muda de sinal conforme técnica, modelo e tarefa. "
+           f"Razão média no E00: {_fn(n['ratio_E00'].mean(), 2)} (1 = acaso). "
+           f"Desvio do pré-registro: frames com mapa de energia zero (até {ze['resnet18']:.1%} na ResNet-18 e {ze['simplecnn']:.1%} na SimpleCNN) têm razão indefinida e saíram da análise principal, "
+           f"decisão tomada depois de ver os resultados, e por isso a queda no número de vídeos pareados da SimpleCNN (mínimo {int(n[n['model'] == 'simplecnn']['n_videos'].min())}). "
+           f"Sensibilidade, contando esses frames como atenção 0: sobem {s_up}, caem {s_down}. "
            f"Pixels da glote com X = 0, que a medida exclui da energia: E00 {val['E00']:.2%}, " + ", ".join(f"{e} {val[e]:.2%}" for e in val.index if e != "E00")
            + ". Com recorte, à parte e com a ressalva da área: " + "; ".join(f"{e} {_fn(r['ratio_exp'], 2)} (E00 {_fn(r['ratio_E00'], 2)})" for e, r in crop.iterrows()) + ".")
-    return {"verdict": v, "evidence": txt, "numbers": {"n": len(n), "up": len(up), "down": len(down), "up_exps": sorted(set(up["exp"])), "down_exps": sorted(set(down["exp"]))}}
+    return {"verdict": v, "evidence": txt, "numbers": {"n": len(n), "up": len(up), "down": len(down), "sens_up": s_up, "sens_down": s_down, "up_exps": sorted(set(up["exp"])), "down_exps": sorted(set(down["exp"]))}}
 
 
 def _verdict_p6(cfg: dict, a: float) -> dict:

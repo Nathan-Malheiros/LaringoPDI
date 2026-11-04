@@ -138,3 +138,10 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - **P4 (OOF, semente 0):** Tarefa B, C6 0,713 × ResNet-18 0,762, IC 95% do ΔF1 [−0,104; +0,009]. Contém o 0 por pouco; a regra confirma, mas o IC é largo e quase todo negativo. C1 (187 características): 0,764, IC [−0,057; +0,063].
 - **P6:** a forma não é a maior em nenhuma tarefa (A: forma 0,027, intensidade 0,027, textura 0,036; B: 0,017, 0,037, 0,061).
 - `stage1_ranking.csv` não mudou; `results/summary.csv` só ganhou as 10 linhas do C6.
+
+## Etapa 2 — Bloco 5: atenção na glote (P5) (2026-11-04)
+- `python -m laringopdi attention-p5`, sem refazer o `gradcam`. Saídas: `attention_p5.csv`, `attention_p5_sensitivity.csv`, `attention_p5_zero_energy.csv`, `attention_p5_validity.csv`, `docs/figures/relatorio/atencao_p5.png`.
+- **24 combinações sem recorte:** 5 sobem (ResNet-18: E04 na A, E10 e E14 na B; SimpleCNN: E10 na A, E14 na B) e 9 caem (ResNet-18: E14 na A; SimpleCNN: E01, E04, E05 e E14 na A; E01, E04, E05 e E11 na B). O sinal do efeito depende da técnica, do modelo e da tarefa; o E14 sobe e cai conforme a combinação.
+- **Nível:** na ResNet-18, o E00 já fica acima do acaso (razão 1,52 na A, 1,36 na B). Na SimpleCNN, a Tarefa B fica abaixo do acaso (0,63, mediana 0).
+- **Artefato de `X > 0`:** desprezível. Pixels da glote com X = 0 são 0,38% no E04 e 0 nas demais.
+- **Desvio registrado em `DECISIONS.md`:** frames com Grad-CAM sem energia saíram da análise principal, com sensibilidade que mantém o veredito.

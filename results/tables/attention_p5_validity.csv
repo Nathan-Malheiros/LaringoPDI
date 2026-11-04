@@ -1,0 +1,8 @@
+exp,pipeline,gt_zero_frac
+E00,raw,3e-05
+E01,spec,3e-05
+E04,homo,0.00381
+E05,bilat,1e-05
+E10,edges,3e-05
+E11,lbp,0.0
+E14,homo>lbp,0.0

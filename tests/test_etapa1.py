@@ -75,3 +75,16 @@ def test_features18_empty_mask():
     f = features18(g, np.zeros_like(g, dtype=bool))
     assert len(f) == 18 and f["f18int_contrast"] == 0.0 and f["f18shape_area_rel"] == 0.0
     assert all(np.isfinite(v) for v in f.values())
+
+
+def test_p5_tests_holm_within_model_task():
+    from laringopdi.etapa1 import p5_tests
+    rng = np.random.default_rng(0)
+    rows = []
+    for v in range(40):
+        base = rng.random() + 1
+        rows += [("E00", "m", "A", str(v), base), ("E01", "m", "A", str(v), base + 0.5 + rng.random() * 0.01), ("E04", "m", "A", str(v), base + rng.normal(0, 0.1))]
+    v = pd.DataFrame(rows, columns=["exp", "model", "task", "video_id", "ratio"])
+    r = p5_tests(v, ["E01", "E04"], "sem_recorte").set_index("exp")
+    assert r.loc["E01", "delta"] > 0.4 and r.loc["E01", "p_holm"] < 0.05 and r.loc["E01", "n_videos"] == 40
+    assert (r["p_holm"] >= r["p"]).all()

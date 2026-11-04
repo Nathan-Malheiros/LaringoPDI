@@ -132,3 +132,6 @@ Nível α = 0,05, com correção de Holm dentro de cada família de testes, como
 - **Máscara e imagem:** E00 (cinza 224) + `glottis_mask_lb` do E13, as mesmas do C1. "Tecido" são os pixels no retângulo da imagem (fora do pad), fora da máscara. GLCM, Canny e Sobel usam a imagem 224 inteira, como `texture_features` e `edge_hog_features` já faziam.
 - **Protocolo do C1 mantido:** mesmos folds, z-score do treino, sobreamostragem aleatória do treino. Isso herda uma limitação do C1: o `early_stopping` do scikit-learn separa 10% do treino já sobreamostrado, de modo que cópias podem cair nos dois lados; afeta só o ponto de parada, não o teste.
 - **Separação do relatório interno:** o `report` (H1–H6) ignora o C6, para que seu resultado não mude ao reexecutar o comando.
+
+## 2026-11-04 — P5: desvio do pré-registro (frames com Grad-CAM de energia zero)
+O pré-registro só previa excluir frames de área glótica 0. Ao rodar o teste, apareceu um segundo caso de razão indefinida: mapas sem energia, com `att_glottis` NaN (zero na ResNet-18; na SimpleCNN, até 38,9% no E11 e 29,1% no E14). A análise principal os excluiu, **decisão tomada depois de ver os resultados**. Para não depender dela, `attention_p5_sensitivity.csv` conta esses frames como atenção 0. O veredito não muda: principal, 5 sobem e 9 caem; sensibilidade, 4 sobem e 10 caem.
