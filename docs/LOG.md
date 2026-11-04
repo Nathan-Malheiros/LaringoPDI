@@ -105,3 +105,9 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - **Resultado principal:** 420/420 jobs. Estágio 2: os **32 vereditos são neutros** (ResNet-18 e SimpleCNN, A e B). O maior ganho bruto (E04 `homo`, ResNet-18, A: 0,643 → 0,680) não passou no teste. Somando os estágios, nenhuma técnica de PDI mudou a classificação de forma significativa; o PDI só teve efeito na segmentação (H4).
 - **H1 (atenção):** a energia sobre os reflexos já fica no nível do acaso (~3%) no E00. O `spec` a reduz na ResNet-18 (0,036 → 0,034), mas a mediana por frame é 0, porque a maioria dos frames quase não tem reflexo.
 - **Pendências:** revisar `docs/hipoteses.md` e o PDF (cópia completa na Área de Trabalho do OneDrive); Fase 8 (app com os pesos `fold0_seed0`); o `gradcam` roda na CPU (2,5 h) e poderia usar a GPU.
+
+## Etapa 2 — Bloco 0: preparação (2026-11-04)
+- Branch `etapa2/fechamento` criada a partir da `main` (já atualizada). Os dois documentos do plano, ainda sem commit, entraram **na branch**, para não adicionar nada à `main`.
+- Verificado: `data/raw/bagls/{training,test}`; caches E00, E08 e E13 (o nome leva o hash do pipeline: `data/processed/cache/E00_ff5107162d.*`, e não uma pasta `E00/` como o plano supunha); pesos `fold0_seed0/model.pt` de E00 e E04 (A e B × resnet18 e simplecnn); `attention_frames.csv.gz` com as colunas `exp,model,task,fold,path,video_id,att_glottis,area_glottis,att_spec,area_spec`.
+- Cobertura da atenção: 9 experimentos × 2 modelos × 2 tarefas, 5.870 frames e 587 vídeos em cada combinação. Frames com área glótica 0: 27 (0 no E07; 185 no E08).
+- `pytest`: 67 passando.
