@@ -1,0 +1,27 @@
+{
+  "per_task": [
+    {
+      "task": "A",
+      "bal_acc_mean": 0.6108621553884712,
+      "f1_macro_mean": 0.6121202695599619,
+      "sensitivity_mean": 0.38095238095238093,
+      "specificity_mean": 0.8407719298245613,
+      "auc_mean": 0.6232506265664162,
+      "f1_sd": 0.04046954461523034,
+      "n_features": 18
+    },
+    {
+      "task": "B",
+      "bal_acc_mean": 0.7742392344497608,
+      "f1_macro_mean": 0.7123862792133497,
+      "sensitivity_mean": 0.6836363636363636,
+      "specificity_mean": 0.864842105263158,
+      "auc_mean": 0.7995062200956937,
+      "f1_sd": 0.025644794680130523,
+      "n_features": 18
+    }
+  ],
+  "empty_mask_frame_rate": 0.02061328790459966,
+  "videos_all_empty": 4,
+  "n_frames": 5870
+}

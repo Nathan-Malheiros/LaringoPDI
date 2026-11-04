@@ -307,6 +307,10 @@ def _classic_model(name: str, cfg: dict, seed: int):
     if name == "mlp":
         return MLPClassifier(hidden_layer_sizes=tuple(cc["mlp"]["hidden_layer_sizes"]), alpha=cc["mlp"]["alpha"],
                              max_iter=cc["mlp"]["max_iter"], early_stopping=cc["mlp"]["early_stopping"], random_state=seed)
+    if name == "mlp18":
+        m = cc["mlp18"]
+        return MLPClassifier(hidden_layer_sizes=tuple(m["hidden_layer_sizes"]), activation=m["activation"], solver=m["solver"],
+                             early_stopping=m["early_stopping"], max_iter=m["max_iter"], random_state=seed)
     if name == "svm":
         return SVC(C=cc["svm"]["C"], gamma=cc["svm"]["gamma"], probability=True, class_weight="balanced", random_state=seed)
     if name == "rf":
@@ -321,7 +325,7 @@ def _balance(idx: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
     return np.concatenate([rng.choice(idx[y == c], n, replace=True) for c in np.unique(y)])
 
 
-def family_importance(clf, Xte: np.ndarray, yte: np.ndarray, cols: list[str], repeats: int, seed: int) -> dict:
+def family_importance(clf, Xte: np.ndarray, yte: np.ndarray, cols: list[str], repeats: int, seed: int, families=None) -> dict:
     """Queda da acurácia balanceada ao permutar, em conjunto, todas as colunas de uma família."""
     from sklearn.metrics import balanced_accuracy_score
 
@@ -329,7 +333,7 @@ def family_importance(clf, Xte: np.ndarray, yte: np.ndarray, cols: list[str], re
     rng = np.random.default_rng(seed)
     base = balanced_accuracy_score(yte, clf.predict(Xte))
     out = {}
-    for fam in FAMILIES:
+    for fam in families or FAMILIES:
         j = [i for i, c in enumerate(cols) if c.startswith(fam)]
         drops = []
         for _ in range(repeats):
@@ -357,7 +361,7 @@ def classic_job(cfg: dict, cid: str, task: str, fold: int, V: pd.DataFrame, labe
     sc = StandardScaler().fit(V.iloc[tr].to_numpy())                    # escala só do treino
     Xtr, Xte = sc.transform(V.iloc[tr].to_numpy()), sc.transform(V.iloc[te].to_numpy())
     clf = _classic_model(spec["model"], cfg, seed)
-    if spec["model"] == "mlp":
+    if spec["model"] in ("mlp", "mlp18"):
         b = _balance(np.arange(len(tr)), y[tr], seed)
         clf.fit(Xtr[b], y[tr][b])
     else:
@@ -367,26 +371,32 @@ def classic_job(cfg: dict, cid: str, task: str, fold: int, V: pd.DataFrame, labe
     for k in range(prob.shape[1]):
         preds[f"p{k}"] = prob[:, k]
     vm = compute_metrics(y[te], prob)
+    from laringopdi.features import FAMILIES_18
+    fams = FAMILIES_18 if spec.get("features") == "f18" else None
     m = {"frame": vm, "video": vm, "unit": "video", "n_features": V.shape[1],
-         "perm_importance": family_importance(clf, Xte, y[te], list(V.columns), cfg["classic"]["permutation_repeats"], seed),
+         "perm_importance": family_importance(clf, Xte, y[te], list(V.columns), cfg["classic"]["permutation_repeats"], seed, fams),
          "seconds": time.time() - t0}
     conf = {"exp": cid, "task": task, "model": spec["model"], "fold": fold, "seed": seed, "git_sha": C.git_sha(),
             "pipeline": f"classic:{spec['region']}/{spec['mask']}", "pipeline_hash": "-", "classic": cfg["classic"]}
     _save(rd, m, preds, conf)
+    if spec.get("features") == "f18" and fold == 0:                     # modelo e escala do fold 0, para o app
+        import joblib
+        joblib.dump({"model": clf, "scaler": sc, "columns": list(V.columns)}, rd / "model.joblib")
     return {"video_f1": vm["f1_macro"]}
 
 
 def cmd_classic(cfg: dict, args) -> dict:
-    from laringopdi.features import build_features, video_features
+    from laringopdi.features import build_features, video_features, video_features18
 
     lab = frame_labels(cfg).drop_duplicates("video_id").set_index("video_id")
     ids = list(cfg["classic_experiments"]) if not args.exp else args.exp.split(",")
     cache, res = {}, {}
     for cid in ids:
         spec = cfg["classic_experiments"][cid]
-        var = CLASSIC_VARIANT[(spec["region"], spec["mask"])]
+        var = spec.get("features") or CLASSIC_VARIANT[(spec["region"], spec["mask"])]
         if var not in cache:
-            cache[var] = video_features(build_features(cfg, var, args.jobs))
+            agg = video_features18 if var == "f18" else video_features
+            cache[var] = agg(build_features(cfg, var, args.jobs))
         for t in ("A", "B"):
             f1 = [classic_job(cfg, cid, t, k, cache[var], lab[D.task_col(t)], 0, args.force).get("video_f1")
                   for k in cfg["stage1"]["folds"]]

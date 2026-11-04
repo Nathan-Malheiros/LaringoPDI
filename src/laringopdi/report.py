@@ -288,6 +288,7 @@ def cmd_report(cfg: dict, args) -> dict:
 
     cmd_summary(cfg, args)
     runs = collect_runs(cfg)
+    runs = runs[runs["exp"] != "C6"]        # o C6 pertence às P1–P6 (etapa1-report), não às H1–H6 daqui
     out, made = {}, []
     for model in sorted(set(runs["model"]) & {"probe", "simplecnn_fast", "resnet18", "simplecnn"}):
         v = verdicts(cfg, model)

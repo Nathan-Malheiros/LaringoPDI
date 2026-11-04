@@ -19,7 +19,9 @@ VARIANTS = {   # variante → (experimento da imagem, experimento da máscara, c
     "full_classic": ("E00", "E13", "glottis_mask_lb"),
     "roi_classic": ("E08", "E08", "glottis_mask_lb"),
     "full_gt": ("E00", "E00", "gt_mask_lb"),
+    "f18": ("E00", "E13", "glottis_mask_lb"),     # as 18 características da Etapa 1 (C6), com a máscara do C1
 }
+FAMILIES_18 = ("f18shape_", "f18int_", "f18tex_")
 
 
 def shape_features(m: np.ndarray) -> dict:
@@ -92,6 +94,52 @@ def frame_features(g: np.ndarray, m: np.ndarray) -> dict:
     return {**shape_features(m), **texture_features(g), **edge_hog_features(g)}
 
 
+def _letterbox_region(g: np.ndarray) -> np.ndarray:
+    """Área da imagem fora do pad: o menor retângulo com pixels > 0 (o pad são linhas ou colunas zeradas)."""
+    out = np.zeros(g.shape, bool)
+    rows, cols = np.nonzero((g > 0).any(1))[0], np.nonzero((g > 0).any(0))[0]
+    if rows.size:
+        out[rows[0]:rows[-1] + 1, cols[0]:cols[-1] + 1] = True
+    return out
+
+
+def _hist_entropy(values: np.ndarray, bins: int, max_value: int) -> float:
+    """Entropia de Shannon (bits) do histograma."""
+    h = np.bincount(values.astype(int).ravel(), minlength=max_value + 1)[:bins].astype(float)
+    p = h[h > 0] / max(h.sum(), 1.0)
+    return float(-(p * np.log2(p)).sum())
+
+
+def features18(g: np.ndarray, m: np.ndarray) -> dict:
+    """As 18 características prometidas na Etapa 1: forma (6), intensidade do tecido (6) e textura (6).
+    Com máscara vazia, a forma vai a 0 e o contraste glote × tecido também; não há indicador no
+    vetor, para manter exatamente 18 entradas."""
+    from scipy.stats import kurtosis, skew
+
+    from laringopdi.pdi.texture import auto_canny, sobel_mag
+
+    s = shape_features(m)
+    out = {f"f18shape_{k}": s[f"shape_{k}"] for k in ("area_rel", "perimeter_rel", "eccentricity", "solidity", "aspect", "symmetry")}
+    region = _letterbox_region(g)
+    tissue, glottis = g[region & ~m], g[region & m]
+    if tissue.size:
+        v = tissue.astype(np.float64)
+        flat = v.min() == v.max()
+        out |= {"f18int_mean": float(v.mean()), "f18int_std": float(v.std()), "f18int_entropy": _hist_entropy(tissue, 256, 255),
+                "f18int_skew": 0.0 if flat else float(skew(v)), "f18int_kurtosis": 0.0 if flat else float(kurtosis(v))}
+    else:
+        out |= {f"f18int_{k}": 0.0 for k in ("mean", "std", "entropy", "skew", "kurtosis")}
+    out["f18int_contrast"] = float((tissue.mean() - glottis.mean()) / 255.0) if tissue.size and glottis.size else 0.0
+    b = cv2.GaussianBlur(g, (5, 5), 0)
+    out |= {"f18tex_canny_density": float((auto_canny(b) > 0).mean()), "f18tex_sobel_mean": float(sobel_mag(b).mean())}
+    glcm = graycomatrix((g // 4).astype(np.uint8), distances=[1], angles=[0, np.pi / 4, np.pi / 2, 3 * np.pi / 4], levels=64,
+                        symmetric=True, normed=True)
+    for p in ("contrast", "homogeneity", "energy"):
+        out[f"f18tex_glcm_{p}"] = float(graycoprops(glcm, p).mean())
+    out["f18tex_lbp_entropy"] = _hist_entropy(local_binary_pattern(g, 8, 1, method="uniform")[g > 0], 10, 9)
+    return out
+
+
 def _unpack(packed: np.ndarray, size: int) -> np.ndarray:
     return np.unpackbits(packed, axis=-1)[..., :size * size].reshape(-1, size, size).astype(bool)
 
@@ -106,7 +154,8 @@ def build_features(cfg: dict, variant: str, n_jobs: int = -1) -> pd.DataFrame:
     img_exp, mask_exp, mkey = VARIANTS[variant]
     X, paths, meta = D.load_cache(cfg, img_exp)
     masks = _unpack(np.load(D.cache_paths(cfg, mask_exp)["masks"])[mkey], cfg["data"]["image_size"])
-    feats = Parallel(n_jobs=n_jobs, batch_size=32)(delayed(frame_features)(np.ascontiguousarray(X[i, ..., 0]), masks[i])
+    fn = features18 if variant == "f18" else frame_features
+    feats = Parallel(n_jobs=n_jobs, batch_size=32)(delayed(fn)(np.ascontiguousarray(X[i, ..., 0]), masks[i])
                                                    for i in range(len(paths)))
     df = pd.DataFrame(feats)
     df.insert(0, "video_id", meta["video_ids"])
@@ -122,3 +171,9 @@ def video_features(df: pd.DataFrame) -> pd.DataFrame:
     agg = df.groupby("video_id")[cols].agg(["mean", "std"])
     agg.columns = [f"{c}_{s}" for c, s in agg.columns]
     return agg.fillna(0.0)
+
+
+def video_features18(df: pd.DataFrame) -> pd.DataFrame:
+    """Um vetor por vídeo com exatamente 18 entradas: só a média dos frames (C6)."""
+    cols = [c for c in df.columns if c.startswith(FAMILIES_18)]
+    return df.groupby("video_id")[cols].mean().fillna(0.0)

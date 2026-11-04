@@ -65,6 +65,7 @@ simplecnn:
 
 classic:
   mlp: {hidden_layer_sizes: [256, 64], alpha: 1.0e-3, max_iter: 500, early_stopping: true}
+  mlp18: {hidden_layer_sizes: [32, 16], activation: relu, solver: adam, early_stopping: true, max_iter: 2000}
   svm: {C: 1.0, gamma: scale}
   rf: {n_estimators: 500}
   permutation_repeats: 10

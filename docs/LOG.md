@@ -131,3 +131,10 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - **CLAHE × HE no Dice por vídeo:** `region_grow` 0,614 × 0,476 e `adaptive` 0,150 × 0,136 favorecem o CLAHE; `otsu_morph` 0,172 × 0,368, `watershed` 0,182 × 0,386 e `otsu` (0,023 × 0,024) favorecem o HE. Todos com p_Holm < 0,01. O efeito **depende do método**.
 - **Fração saturada:** raw 18,1%, HE 18,2%, alargamento 18,9%, CLAHE 1,5%, homomórfica 1,7%. **Ressalva:** quase tudo é preto que já existia no frame (raw já tem 16,6% em 0). O HE só soma 0,1 ponto; o CLAHE fica baixo por tirar esses pixels do zero. A condição (b) do P1 é atendida, mas não demonstra o "estouro" suposto na hipótese.
 - **Classificação (contexto):** E02 × E03 sem diferença (McNemar p ≥ 0,076, todos os IC contêm 0).
+
+## Etapa 2 — Bloco 4: MLP-18 (2026-11-04)
+- `features18` (6 forma, 6 intensidade, 6 textura), C6 em `configs/experiments.yaml` e `python -m laringopdi mlp18-study`. Saídas: `results/runs/C6/`, `importance_c6.csv`, `importance_classic.csv`, `mlp18_p4.csv`, `mlp18_summary.json`, `docs/figures/relatorio/importancia_c6.png`. Modelo e escala do fold 0 em `model.joblib` (fora do Git).
+- **Desempenho (média dos folds):** F1 por vídeo 0,612 (A) e 0,712 (B). Máscaras vazias: 2,06% dos frames.
+- **P4 (OOF, semente 0):** Tarefa B, C6 0,713 × ResNet-18 0,762, IC 95% do ΔF1 [−0,104; +0,009]. Contém o 0 por pouco; a regra confirma, mas o IC é largo e quase todo negativo. C1 (187 características): 0,764, IC [−0,057; +0,063].
+- **P6:** a forma não é a maior em nenhuma tarefa (A: forma 0,027, intensidade 0,027, textura 0,036; B: 0,017, 0,037, 0,061).
+- `stage1_ranking.csv` não mudou; `results/summary.csv` só ganhou as 10 linhas do C6.

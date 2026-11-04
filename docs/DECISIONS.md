@@ -126,3 +126,9 @@ Nível α = 0,05, com correção de Holm dentro de cada família de testes, como
   - **Limitação de medida:** o `gradcam` definiu a área válida como `X > 0`. Nas variantes que zeram pixels da imagem (`homo`, LBP), parte dos pixels escuros da glote sai da energia, mas continua contada na área, o que pode **reduzir** a razão artificialmente. O `gradcam` não será refeito. O relatório informa, por experimento, a fração dos pixels da glote com `X = 0`, e o veredito deve ser lido junto com ela.
 - **P6:** "maior" compara as médias sobre os 5 folds, sem teste de significância, como manda a regra. Se a família forma tiver queda média ≤ 0, ela não conta como "a maior", mesmo sendo numericamente a primeira.
 - **Vocabulário:** os vereditos possíveis são sempre confirmada, parcialmente confirmada, refutada e inconclusiva.
+
+## 2026-11-04 — MLP-18 (C6): decisões de implementação
+- **Agregação por vídeo:** só a média dos 10 frames, para manter exatamente 18 entradas (o C1 usa média e desvio).
+- **Máscara e imagem:** E00 (cinza 224) + `glottis_mask_lb` do E13, as mesmas do C1. "Tecido" são os pixels no retângulo da imagem (fora do pad), fora da máscara. GLCM, Canny e Sobel usam a imagem 224 inteira, como `texture_features` e `edge_hog_features` já faziam.
+- **Protocolo do C1 mantido:** mesmos folds, z-score do treino, sobreamostragem aleatória do treino. Isso herda uma limitação do C1: o `early_stopping` do scikit-learn separa 10% do treino já sobreamostrado, de modo que cópias podem cair nos dois lados; afeta só o ponto de parada, não o teste.
+- **Separação do relatório interno:** o `report` (H1–H6) ignora o C6, para que seu resultado não mude ao reexecutar o comando.

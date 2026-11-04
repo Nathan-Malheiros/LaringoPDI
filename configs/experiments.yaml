@@ -41,6 +41,7 @@ classic_experiments:
   C3: {model: svm, region: full, mask: classic}
   C4: {model: rf,  region: full, mask: classic}
   C5: {model: mlp, region: full, mask: gt}       # referência superior (forma pelo ground truth)
+  C6: {model: mlp18, region: full, mask: classic, features: f18}   # MLP 18–32–16–2 prometida na Etapa 1
 
 # Complemento do Estágio 2 só para as hipóteses pré-registradas (DECISIONS.md, 2026-10-24):
 # E01 (H1: atenção nos reflexos), E07/E08 (H5: roi × roi_gt). 1 semente; não entra no ranking.
