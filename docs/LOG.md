@@ -116,3 +116,11 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - `stretch` e `gauss_lpf` em `pdi/enhance.py`; `mean` em `pdi/filters.py`; `saturated_frac` em `pdi/quality.py` (coluna nova, sem mexer nas existentes). As técnicas novas ficam fora da matriz E00–E14 e os hashes dos caches não mudam.
 - `homo_transfer` e `gauss_lpf_transfer` agora compartilham `_freq_d2`, com a fórmula inalterada. Conferido antes da refatoração: `homo` reproduz o frame 0 do cache E04 byte a byte.
 - `docs/pdi_tecnicas.md` regenerado só pelo `pdi_doc`, sem refazer a galeria.
+
+## Etapa 2 — Bloco 2: redução de ruído (P2) (2026-11-04)
+- `python -m laringopdi denoise-study`: 300 frames, 1 por vídeo (193 saudáveis, 80 funcionais, 27 estruturais, na proporção dos vídeos), 4 ruídos × 9 filtros. Saídas: `denoise_summary.csv/.tex`, `denoise_p2.csv`, `denoise_sample.json`, `docs/figures/relatorio/denoise.png`; `denoise_frames.csv.gz` e `denoise_exemplo.png` ficam fora do Git.
+- **P2, sal e pimenta (mediana 3 × média 3):** 5%: PSNR 41,4 × 25,9 dB, SSIM 0,97 × 0,44. 10%: PSNR 39,2 × 22,5 dB, SSIM 0,97 × 0,27. Os 4 testes têm p_Holm < 0,001.
+- **Preservação de borda (F1 do Canny), sal e pimenta:** mediana 3 fica em 0,67 e 0,62; média 3 em 0,11 e 0,07.
+- **Contraste gaussiano, contra a expectativa do plano:** a mediana 3 não perde da média 3 (σ=10: 35,3 × 35,0 dB; σ=20: 30,22 × 30,20 dB, praticamente igual). Só o passa-baixa σ40 supera a mediana 3, e só em σ=20 (31,3 × 30,2 dB; SSIM 0,64 × 0,56).
+- **Limitação:** a referência é o próprio frame do BAGLS, que já tem ruído; o PSNR mede fidelidade ao original, não a um sinal verdadeiro.
+- `seg_per_fold` foi extraída do `seg_study`, sem mudança de comportamento (conferida no Bloco 3 contra o `segmentation_summary.csv`).

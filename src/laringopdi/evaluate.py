@@ -30,6 +30,33 @@ def _seg_frame(p, seg, pres, grid, work_size):
     return rows
 
 
+def seg_per_fold(long: pd.DataFrame, grid: dict, folds: list[dict], tune_fold: int, fr: pd.DataFrame | None = None) -> tuple[pd.DataFrame, dict]:
+    """Por fold: escolhe os parâmetros de cada método × realce só pelo Dice no treino e mede no teste.
+    Devolve a tabela por fold e a melhor configuração no treino do `tune_fold`."""
+    if "video_id" not in long.columns:
+        long = long.merge(fr[["path", "video_id"]], on="path")
+    rows, chosen = [], {}
+    for f in folds:
+        tr_v = set(f["train"]) | set(f["val"])
+        te_v = set(f["test"])
+        tr = long[long["video_id"].isin(tr_v)]
+        te = long[long["video_id"].isin(te_v)]
+        best = tr.groupby(["preprocess", "method", "param_id"])["dice"].mean().reset_index() \
+                 .sort_values("dice", ascending=False).drop_duplicates(["preprocess", "method"])
+        for _, b in best.iterrows():
+            t = te[(te["preprocess"] == b["preprocess"]) & (te["method"] == b["method"]) & (te["param_id"] == b["param_id"])]
+            rows.append({"fold": f["fold"], "preprocess": b["preprocess"], "method": b["method"],
+                         "param_id": int(b["param_id"]), "params": json.dumps(grid[b["method"]][int(b["param_id"])]),
+                         "train_dice": b["dice"], "dice": t["dice"].mean(), "iou": t["iou"].mean(),
+                         "hd95_median": t["hd95"].median(), "fail_rate": t["fail"].mean(), "n_test_frames": len(t)})
+        if f["fold"] == tune_fold:
+            top = best.iloc[0]
+            chosen = {"method": top["method"], "preprocess": top["preprocess"],
+                      "params": grid[top["method"]][int(top["param_id"])], "train_dice": float(top["dice"]),
+                      "selected_on": f"treino+val do fold {f['fold']} (só máscaras de glote)", "git_sha": C.git_sha()}
+    return pd.DataFrame(rows), chosen
+
+
 def seg_study(cfg: dict, n_jobs: int = -1, force: bool = False) -> dict:
     """Roda todos os métodos × pré-processamentos × grade de parâmetros em cada frame amostrado
     (uma vez) e, por fold, escolhe os parâmetros só pelo Dice médio no treino e reporta no teste."""
@@ -49,27 +76,8 @@ def seg_study(cfg: dict, n_jobs: int = -1, force: bool = False) -> dict:
             for p, s in zip(fr["path"], fr["seg_path"]))
         long = pd.concat([pd.DataFrame(r).assign(path=p) for r, p in zip(res, fr["path"])], ignore_index=True)
         long.to_csv(long_p, index=False)
-    long = pd.read_csv(long_p).merge(fr[["path", "video_id"]], on="path")
-    rows, chosen = [], {}
-    for f in D.load_splits(cfg):
-        tr_v = set(f["train"]) | set(f["val"])
-        te_v = set(f["test"])
-        tr = long[long["video_id"].isin(tr_v)]
-        te = long[long["video_id"].isin(te_v)]
-        best = tr.groupby(["preprocess", "method", "param_id"])["dice"].mean().reset_index() \
-                 .sort_values("dice", ascending=False).drop_duplicates(["preprocess", "method"])
-        for _, b in best.iterrows():
-            t = te[(te["preprocess"] == b["preprocess"]) & (te["method"] == b["method"]) & (te["param_id"] == b["param_id"])]
-            rows.append({"fold": f["fold"], "preprocess": b["preprocess"], "method": b["method"],
-                         "param_id": int(b["param_id"]), "params": json.dumps(grid[b["method"]][int(b["param_id"])]),
-                         "train_dice": b["dice"], "dice": t["dice"].mean(), "iou": t["iou"].mean(),
-                         "hd95_median": t["hd95"].median(), "fail_rate": t["fail"].mean(), "n_test_frames": len(t)})
-        if f["fold"] == sc["tune_fold"]:
-            top = best.iloc[0]
-            chosen = {"method": top["method"], "preprocess": top["preprocess"],
-                      "params": grid[top["method"]][int(top["param_id"])], "train_dice": float(top["dice"]),
-                      "selected_on": f"treino+val do fold {f['fold']} (só máscaras de glote)", "git_sha": C.git_sha()}
-    per_fold = pd.DataFrame(rows)
+    long = pd.read_csv(long_p)
+    per_fold, chosen = seg_per_fold(long, grid, D.load_splits(cfg), sc["tune_fold"], fr)
     per_fold.to_csv(tables / "segmentation.csv", index=False)
     summ = per_fold.groupby(["method", "preprocess"]).agg(
         dice_mean=("dice", "mean"), dice_sd=("dice", "std"), iou_mean=("iou", "mean"),

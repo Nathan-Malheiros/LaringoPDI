@@ -1,0 +1,13 @@
+family,noise,metric,a,b,n,mean_a,mean_b,delta_b_minus_a,p,p_holm
+P2,sp_5,psnr,mean3,median3,300,25.886334,41.443977,15.557643,0.0,0.0
+P2,sp_5,ssim,mean3,median3,300,0.444709,0.968701,0.523992,0.0,0.0
+P2,sp_10,psnr,mean3,median3,300,22.511164,39.160343,16.649179,0.0,0.0
+P2,sp_10,ssim,mean3,median3,300,0.269892,0.965405,0.695513,0.0,0.0
+contraste,gauss_s10,psnr,mean3,median3,300,34.973921,35.276985,0.303063,0.0,0.0
+contraste,gauss_s10,ssim,mean3,median3,300,0.743636,0.80001,0.056374,0.0,0.0
+contraste,gauss_s20,psnr,mean3,median3,300,30.197282,30.218647,0.021365,0.0,0.0
+contraste,gauss_s20,ssim,mean3,median3,300,0.545996,0.557613,0.011616,0.000379,0.000758
+contraste,gauss_s10,psnr,lpf40,median3,300,35.070326,35.276985,0.206659,0.02749,0.02749
+contraste,gauss_s10,ssim,lpf40,median3,300,0.776363,0.80001,0.023647,1e-06,2e-06
+contraste,gauss_s20,psnr,lpf40,median3,300,31.323076,30.218647,-1.104428,0.0,0.0
+contraste,gauss_s20,ssim,lpf40,median3,300,0.640378,0.557613,-0.082765,0.0,0.0

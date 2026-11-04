@@ -24,3 +24,9 @@ results/live/
 results/runs_quarantine_amp_aug/
 docs/figures/relatorio_completo/
 docs/figures/app/
+# Etapa 2: tabelas por frame e figuras com frames do BAGLS
+results/tables/denoise_frames.csv.gz
+results/tables/segmentation_etapa1_frames.csv.gz
+docs/figures/denoise_exemplo.png
+docs/figures/realce_exemplo.png
+entrega/
