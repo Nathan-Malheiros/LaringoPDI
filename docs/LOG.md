@@ -188,3 +188,4 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - Atenção (razão pela área): o CLAHE sobe nas duas tarefas (A 1,52 → 1,64; B 1,36 → 1,44); a equalização cai na B (1,36 → 1,17); a mediana não muda.
 - Novos: `tools/relatorio_etapa2.py` (12 páginas com frames) e `tools/apostila_etapa2.py`. O relatório antigo virou `docs/registro_exploratorio.pdf`, fora do pacote.
 - Pacote: inclui os pesos E03, o relatório novo e exclui os documentos internos.
+- Testes: 101 aprovados no repositório. Pacote com pesos em venv nova com torch CPU, sem o BAGLS e com `TORCH_HOME` vazio: 3 aprovados e 2 pulados (exigem o BAGLS), sem baixar pesos.
