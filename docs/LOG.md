@@ -189,3 +189,8 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - Novos: `tools/relatorio_etapa2.py` (12 páginas com frames) e `tools/apostila_etapa2.py`. O relatório antigo virou `docs/registro_exploratorio.pdf`, fora do pacote.
 - Pacote: inclui os pesos E03, o relatório novo e exclui os documentos internos.
 - Testes: 101 aprovados no repositório. Pacote com pesos em venv nova com torch CPU, sem o BAGLS e com `TORCH_HOME` vazio: 3 aprovados e 2 pulados (exigem o BAGLS), sem baixar pesos.
+
+
+## 2026-11-05: renomeação para LaringoPDI
+- Repositório renomeado de PDIZip para LaringoPDI e movido para a raiz da pasta; histórico reescrito só nas mensagens. Correspondência de SHAs em `docs/MAPA_COMMITS.md`.
+- `tools/*.bat` e `pausar_retomar.ps1` passam a localizar a raiz do projeto a partir do próprio arquivo.

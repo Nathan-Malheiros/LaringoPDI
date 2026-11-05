@@ -1,5 +1,5 @@
 # LaringoPDI - pausa ou retoma o treino (Estagio 2 + fechamento). Jobs concluidos ficam salvos.
-$root = 'D:\DocumentosHD\Projetos\ProjetoPDIZIP'
+$root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 $pat = 'stage2_chain|final_chain|laringopdi train'
 $procs = @(Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Where-Object { $_.CommandLine -match $pat })
