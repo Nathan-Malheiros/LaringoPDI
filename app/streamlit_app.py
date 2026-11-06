@@ -18,7 +18,7 @@ from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 from laringopdi import config as C
 from laringopdi.etapa1 import noise_image
 from laringopdi.features import features18
-from laringopdi.pdi import run_pipeline
+from laringopdi.pdi import letterbox, run_pipeline
 from laringopdi.pdi.enhance import gauss_lpf_transfer
 from laringopdi.pdi.quality import image_quality
 from laringopdi.pdi.registry import DEFAULTS, TECHNIQUES, to_work_size
@@ -247,8 +247,10 @@ def f18_vector(img_bytes: bytes) -> dict:
     """As 18 características sobre o frame e a máscara clássica, como no treino da MLP."""
     g_ = _decode(img_bytes, cv2.IMREAD_GRAYSCALE)
     o_, _ = run_pipeline(g_, "raw", None, SIZE, WORK)
-    _, cx = run_pipeline(g_, "m2", None, SIZE, WORK)
-    return features18(np.ascontiguousarray(o_[..., 0]), cx.get("glottis_mask_lb", np.zeros((SIZE, SIZE), bool)))
+    bc = best_config()
+    m_ = apply_best(to_work_size(g_, WORK), bc["method"], bc["params"], bc.get("preprocess", "raw"))
+    mask_lb = letterbox(m_.astype(np.uint8), SIZE, cv2.INTER_NEAREST)[0].astype(bool)
+    return features18(np.ascontiguousarray(o_[..., 0]), mask_lb)
 
 
 F18_PT = {"shape_area_rel": "área relativa", "shape_perimeter_rel": "perímetro", "shape_eccentricity": "excentricidade",

@@ -3,18 +3,10 @@ import numpy as np
 import pandas as pd
 import torch
 
-from laringopdi import config as C
 from laringopdi.evaluate import compute_metrics, metrics_both_levels
-from laringopdi.features import FAMILIES, frame_features, shape_features
-from laringopdi.models import SimpleCNN, gradcam_layer
-from laringopdi.train import _balance, make_shards, stage_jobs
+from laringopdi.features import shape_features
+from laringopdi.train import balance, study_jobs
 from tests.conftest import synth_glottis
-
-CFG = C.load()
-
-
-def test_config_keeps_classic_hyperparams():
-    assert "mlp" in CFG["classic"] and "C1" in CFG["classic_experiments"]
 
 
 def test_compute_metrics_binary_and_multiclass():
@@ -32,33 +24,10 @@ def test_video_level_averages_frames():
     assert m["video"]["n"] == 2 and m["video"]["bal_acc"] == 1.0 and m["frame"]["n"] == 4
 
 
-def test_simplecnn_forward_and_gradcam_layer():
-    net = SimpleCNN(3)
-    assert net(torch.zeros(2, 3, 224, 224)).shape == (2, 3)
-    assert isinstance(gradcam_layer(net), torch.nn.Conv2d)
-
-
-def test_features_families_and_shape():
-    img, gt = synth_glottis()
-    g = cv2.resize(img, (224, 224))
-    m = cv2.resize(gt.astype(np.uint8), (224, 224), interpolation=cv2.INTER_NEAREST).astype(bool)
-    f = frame_features(g, m)
-    assert all(k.startswith(FAMILIES) for k in f) and all(np.isfinite(v) for v in f.values())
-    s = shape_features(m)
-    assert s["shape_symmetry"] > 0.8 and s["shape_aspect"] > 2 and s["shape_empty"] == 0
-    assert shape_features(np.zeros((50, 50), bool))["shape_empty"] == 1
-
-
 def test_balance_oversamples_minority():
     y = np.array([0] * 8 + [1] * 2)
-    b = _balance(np.arange(10), y, 0)
+    b = balance(np.arange(10), y, 0)
     assert np.bincount(y[b]).tolist() == [8, 8]
-
-
-def test_shards_cover_all_jobs_once(tmp_cfg):
-    out = make_shards(tmp_cfg, "stage1", 5)
-    jobs = [tuple(j.values()) for v in out["shards"].values() for j in v]
-    assert len(jobs) == len(set(jobs)) == len(stage_jobs(tmp_cfg, "stage1")) == 140
 
 
 def test_augmentation_is_not_corrupted_by_autocast():
@@ -78,3 +47,24 @@ def test_augmentation_is_not_corrupted_by_autocast():
         x01 = x * torch.tensor((0.229, 0.224, 0.225), device=dev).view(1, 3, 1, 1) + torch.tensor((0.485, 0.456, 0.406), device=dev).view(1, 3, 1, 1)
         sat.append((x01 >= 0.999).float().mean().item())
     assert sat[1] <= sat[0] + 0.01
+
+
+def test_shape_features():
+    img, gt = synth_glottis()
+    m = cv2.resize(gt.astype(np.uint8), (224, 224), interpolation=cv2.INTER_NEAREST).astype(bool)
+    s = shape_features(m)
+    assert s["shape_symmetry"] > 0.8 and s["shape_aspect"] > 2 and s["shape_empty"] == 0
+    assert shape_features(np.zeros((50, 50), bool))["shape_empty"] == 1
+
+
+def test_study_jobs_cover_matrix_and_finish_seed_zero_first(tmp_cfg):
+    jobs = study_jobs(tmp_cfg)
+    keys = [tuple(j.values()) for j in jobs]
+    assert len(keys) == len(set(keys)) == 9 * 2 * 5 * 3
+    assert [j["seed"] for j in jobs[:90]] == [0] * 90
+
+
+def test_hardware_reports_machine():
+    from laringopdi import config as C
+    h = C.hardware()
+    assert {"cpu", "cpu_threads", "ram_gb", "gpu", "gpu_mem_gb", "torch", "os"} <= set(h)

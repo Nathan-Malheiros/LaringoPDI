@@ -9,15 +9,12 @@ import sys
 
 from laringopdi import config as C
 
-COMMANDS = ["index", "eda", "splits", "gallery", "seg-study", "cache", "probe", "train",
-            "classic", "gradcam", "shards", "summary", "report",
-            "denoise-study", "enhance-study", "mlp18-study", "attention-p5", "timing", "etapa1-report",
-            "adaptive-morph-study", "aula-study"]
+COMMANDS = ["index", "eda", "splits", "gallery", "seg-study", "cache", "train", "gradcam", "summary", "denoise-study"]
 
 
 def _exps(cfg: dict, arg: str | None) -> list[str]:
-    if not arg or arg == "stage1":
-        return cfg["stage1"]["experiments"]
+    if not arg or arg == "study":
+        return cfg["study"]["experiments"]
     if arg == "all":
         return [e for e, v in cfg["experiments"].items() if v.get("pipeline")]
     return arg.split(",")
@@ -31,14 +28,13 @@ def _print(obj) -> None:
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(prog="laringopdi", description=__doc__)
     ap.add_argument("command", choices=COMMANDS)
-    ap.add_argument("--exp", help="E00, lista E01,E02, 'stage1' ou 'all'")
+    ap.add_argument("--exp", help="E00, lista E01,E02, 'study' ou 'all'")
     ap.add_argument("--task", default="A", choices=["A", "B", "C"])
     ap.add_argument("--model", default="resnet18")
     ap.add_argument("--fold", type=int, default=0)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--stage", default="stage1")
-    ap.add_argument("--shard", type=int)
-    ap.add_argument("--n-shards", type=int, default=5)
+    ap.add_argument("--all", action="store_true", help="train: roda todos os jobs do estudo; os concluídos são pulados")
+    ap.add_argument("--seed-only", type=int, help="train --all: só esta semente")
     ap.add_argument("--jobs", type=int, default=-1)
     ap.add_argument("--epochs", type=int, help="sobrescreve o nº máximo de épocas (só para teste/medição)")
     ap.add_argument("--force", action="store_true", help="sobrescreve saídas existentes (cuidado)")
@@ -68,11 +64,7 @@ def main(argv: list[str] | None = None) -> None:
         quality_summary(cfg)
         _print(out)
     else:
-        mod = {"probe": "train", "train": "train",
-               "classic": "train", "shards": "train", "gradcam": "evaluate", "summary": "evaluate",
-               "report": "report", "denoise-study": "etapa1", "enhance-study": "etapa1", "mlp18-study": "etapa1",
-               "attention-p5": "etapa1", "timing": "etapa1", "etapa1-report": "etapa1",
-               "adaptive-morph-study": "etapa1", "aula-study": "etapa1"}[a.command]
+        mod = {"train": "train", "gradcam": "evaluate", "summary": "evaluate", "denoise-study": "etapa1"}[a.command]
         import importlib
         try:
             fn = getattr(importlib.import_module(f"laringopdi.{mod}"), "cmd_" + a.command.replace("-", "_"), None)

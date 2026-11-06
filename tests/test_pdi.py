@@ -14,10 +14,9 @@ PIPES = [(e, v["pipeline"], v.get("params")) for e, v in CFG["experiments"].item
 
 
 def test_all_spec_techniques_registered():
-    for t in ["raw", "fov", "spec", "he", "clahe", "homo", "bilat", "median", "roi_gt", "roi",
-              "edges", "lbp", "m1", "m2"]:
+    for t in ["raw", "stretch", "spec", "he", "clahe", "homo", "mean", "median", "gauss_lpf"]:
         assert t in TECHNIQUES and "Por que importa" in TECHNIQUES[t].__doc__
-    for t in ("lab", "hsv", "vessel"):
+    for t in ("bilat", "roi", "roi_gt", "fov", "edges", "lbp", "m1", "m2"):
         assert t not in TECHNIQUES
     for f in SEGMENTERS.values():
         assert "Por que importa" in f.__doc__
@@ -54,24 +53,6 @@ def test_spec_removes_highlights(glottis):
     out, ctx = run_pipeline(img, "spec", work_size=None, size=256)
     assert ctx["spec_frac"] > 0
     assert (out[..., 0] >= 250).mean() < 0.1 * (img >= 250).mean()
-
-
-def test_roi_gt_contains_glottis(glottis):
-    img, gt = glottis
-    _, ctx = run_pipeline(img, "roi_gt", gt_mask=gt)
-    assert not ctx["roi_fallback"] and ctx["gt_mask"].sum() == gt.sum()
-
-
-def test_roi_classic_finds_glottis(glottis):
-    img, gt = glottis
-    _, ctx = run_pipeline(img, "roi", gt_mask=gt)
-    assert not ctx["roi_fallback"]
-    assert ctx["gt_mask"].sum() >= 0.9 * gt.sum()      # o recorte mantém a glote
-
-
-def test_roi_fallback_on_flat_image():
-    _, ctx = run_pipeline(np.full((200, 200), 150, np.uint8), "roi")
-    assert ctx["roi_fallback"]
 
 
 @pytest.mark.parametrize("method", list(SEGMENTERS))
@@ -144,6 +125,6 @@ def test_saturated_frac():
 
 def test_determinism(glottis):
     img, gt = glottis
-    a, _ = run_pipeline(img, "spec>clahe>m1", gt_mask=gt)
-    b, _ = run_pipeline(img, "spec>clahe>m1", gt_mask=gt)
+    a, _ = run_pipeline(img, "spec>clahe", gt_mask=gt)
+    b, _ = run_pipeline(img, "spec>clahe", gt_mask=gt)
     assert np.array_equal(a, b)

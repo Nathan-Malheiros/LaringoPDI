@@ -31,10 +31,10 @@ def test_smoke_pipeline(tmp_cfg, monkeypatch):
 
     monkeypatch.setattr(S, "best_config", lambda: best)
     R.gallery(tmp_cfg)
-    for e in ("E00", "E07", "E08", "E13"):
+    for e in ("E00", "E03", "E01", "E04"):
         r = D.build_cache(tmp_cfg, e, n_jobs=1)
         assert r["shape"] == [81, 224, 224, 3]
-    X, paths, meta = D.load_cache(tmp_cfg, "E07")
+    X, paths, meta = D.load_cache(tmp_cfg, "E03")
     assert X.dtype == np.uint8 and "gt_mask_lb" in meta["mask_keys"]
-    assert D.build_cache(tmp_cfg, "E07", n_jobs=1)["skipped"]
+    assert D.build_cache(tmp_cfg, "E03", n_jobs=1)["skipped"]
     assert len(D.quality_summary(tmp_cfg)) == 4

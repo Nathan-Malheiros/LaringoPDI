@@ -148,3 +148,31 @@ Registrado **antes** de gerar os números novos desta entrada. Supera a proibiç
 2. **Sensibilidade (métrica prioritária do Quadro 4):** tabela por sistema (média dos folds, semente 0). C6 × ResNet-18 E00 em cada tarefa: OOF, semente 0, ΔSensibilidade com IC 95% bootstrap por vídeo e McNemar exato só nos vídeos alterados, com Holm sobre as 2 tarefas.
 3. **CLAHE, equalização e mediana na ResNet-18:** E02, E03 e E06, Tarefas A e B, 5 folds, semente 0, com o protocolo fixo (30 jobs). Vereditos pela regra de 2026-10-24, com Holm por tarefa na família das 5 técnicas apresentadas que têm ResNet-18 (E01, E02, E03, E04, E06). E01 e E04 já tinham resultado conhecido, neutro. `verdicts_*.csv` existentes não mudam: a tabela nova é `verdicts_aula_resnet18.csv`, e o `report` ignora esses jobs.
 4. **Atenção (H5), complemento:** Grad-CAM de E02, E03 e E06 na ResNet-18, razão por vídeo contra o E00 (Holm sobre os 3, por tarefa). Reportado à parte: as 24 combinações da regra de H5 não mudam.
+
+
+## 2026-11-06 — Reestruturação e regras do novo estudo (antes de qualquer número novo)
+**Por quê:** o projeto se afastou do que foi apresentado na Etapa 1 e ficou difícil de acompanhar e explicar. O fluxo volta a ser o da apresentação, com o PDI como objeto de estudo.
+
+**Saiu do fluxo (arquivado, nada apagado):** SimpleCNN, linear probe, recortes pela glote, bordas/LBP/fusões como entrada, combinação gulosa, bilateral, vetor de 187 características, SVM e RF. Treinos passam do Colab para o PC do Nathan (RTX 3060), para que o custo seja comparável.
+
+**Técnicas:** `raw` (referência), `stretch`, `he`, `clahe`, `mean`, `median`, `gauss_lpf`, `spec`, `homo`, com os parâmetros padrão já registrados. Nada é escolhido olhando o teste.
+
+**Etapa 1, PDI isolado.** Realce (`stretch`, `he`, `clahe`, `spec`, `homo`): **melhora visual** = contraste RMS maior, entropia não menor e fração saturada até 1 ponto percentual acima da referência, com Wilcoxon pareado por vídeo e Holm. Filtros (`mean`, `median`, `gauss_lpf`): PSNR e SSIM com ruído sintético. As métricas são medidas objetivas de imagem, sem validação clínica.
+
+**Etapa 2, segmentação clássica.** Métodos: `otsu`, `adaptive`, `otsu_morph`, `adaptive_morph`, `region_grow`, `watershed`, cada um × as 9 técnicas. Parâmetros ajustados só no treino. Veredito por método: Dice por vídeo contra `raw`, com Wilcoxon e Holm. Custo: tempo por frame de técnica + segmentação.
+
+**Etapa 3, MLP na segmentação (acréscimo).** Classifica cada pixel como glote ou não a partir de uma vizinhança de 15×15 pixels da imagem 224×224, seguida da seleção do componente central usada nos métodos clássicos. Pixels de treino balanceados, só de vídeos do treino do fold. Mesma arquitetura para todas as técnicas. Métricas: Dice, IoU, curva e tempo de treino.
+
+**Etapa 4, MLP na classificação.** Técnica T → segmentação pelo método fixado em `segmentation_best.json` (crescimento de região) sobre a imagem com T → 18 características sobre a imagem com T → média por vídeo → MLP 18–32–16–2. Com `raw`, é a comparação principal "sem realce nem filtro". A segmentação é ela própria PDI, então um "sem PDI" absoluto não existe nesse formato; a **referência sem nenhum PDI** é uma MLP sobre os pixels da imagem reduzida a 32×32, cinza, com arquitetura fixa 1024–256–64–2.
+
+**Etapa 5, CNN.** Protocolo fixo da Seção 4 do `docs/ESPECIFICACAO.md`, 3 sementes × 5 folds.
+
+**Vereditos de classificação (Etapas 4 e 5).** F1-macro por vídeo contra `raw`; melhora ou piora só se o IC 95% excluir 0 e o McNemar (ou, com pelo menos 10 pares, o Wilcoxon) corrigido por Holm for < 0,05. A mesma regra vale para a sensibilidade, métrica prioritária, reportada ao lado.
+
+**Vereditos de custo e convergência.** Medidas: épocas até a melhor validação, segundos de treino até a melhor validação, segundos por época, milissegundos de PDI por frame e custo total (PDI × nº de frames de treino + treino até a melhor validação). Wilcoxon pareado (fold×semente) com Holm dentro de cada tarefa e modelo: "converge antes", "igual" ou "converge depois"; "mais barata", "igual" ou "mais cara". Um PDI mais caro pode compensar se reduzir o treino: é isso que o custo total mede.
+
+**Curvas de treino.** Perda e F1 no treino e na validação, por época, para medir sobreajuste (distância entre as curvas) por técnica.
+
+**Hardware.** Cada job registra CPU, RAM, GPU e versões. Tempos de PDI e MLP medidos na CPU; os da CNN, na GPU. Tempos de máquinas diferentes não são comparados.
+
+**Declaração de evidência já vista:** os resultados anteriores, com menos técnicas e sementes, indicavam classificação majoritariamente neutra e efeito forte do PDI na segmentação. As regras acima foram escritas conhecendo isso. As curvas, o custo e a MLP por técnica ainda não tinham sido vistos.

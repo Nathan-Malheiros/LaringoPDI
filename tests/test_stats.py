@@ -13,7 +13,7 @@ def _preds(cfg, exp, k, s, p1):
 
 
 def test_oof_ensemble_and_common_seeds(tmp_cfg):
-    folds = tmp_cfg["stage1"]["folds"]
+    folds = tmp_cfg["study"]["folds"]
     for k in folds:
         _preds(tmp_cfg, "E00", k, 0, 0.8)   # semente 0 acerta
         _preds(tmp_cfg, "E00", k, 1, 0.1)   # semente 1 erra com mais confiança → média 0,45 → erra

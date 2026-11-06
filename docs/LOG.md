@@ -194,3 +194,10 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 ## 2026-11-05: renomeação para LaringoPDI
 - Repositório renomeado de PDIZip para LaringoPDI e movido para a raiz da pasta; histórico reescrito só nas mensagens. Correspondência de SHAs em `docs/MAPA_COMMITS.md`.
 - `tools/*.bat` e `pausar_retomar.ps1` passam a localizar a raiz do projeto a partir do próprio arquivo.
+
+
+## Reestruturação (2026-11-06)
+- Projeto movido para `D:\DocumentosHD\Unifor\PDI\LaringoPDI`.
+- Fora do fluxo, arquivado em `D:\DocumentosHD\Unifor\PDI\Projeto em desuso LaringoPDI`: 83 itens de treinos e caches, além de ferramentas e tabelas; `git bundle` e tag `pre-reestruturacao`.
+- Código: cerca de 5.400 linhas a menos. O treino agora salva métricas por época, custo e hardware. Pesos pré-treinados passam a ficar no HD.
+- 86 testes passando. Regras do novo estudo em `DECISIONS.md`. Próximo: Fase B, tabela única do PDI.

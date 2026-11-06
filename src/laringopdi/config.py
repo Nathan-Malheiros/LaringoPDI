@@ -3,12 +3,53 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
+# Pesos pré-treinados ficam no HD, junto do projeto, e não no SSD (cache padrão do PyTorch fica em C:).
+os.environ.setdefault("TORCH_HOME", str(ROOT / "data" / "processed" / "torch_home"))
+
+
+def hardware() -> dict:
+    """Máquina em que o job rodou: o custo computacional só é comparável com isto registrado."""
+    import platform
+
+    cpu, ram_gb = platform.processor(), None
+    if sys.platform == "win32":
+        import ctypes
+        import winreg
+
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0") as k:
+            cpu = winreg.QueryValueEx(k, "ProcessorNameString")[0].strip()
+
+        class _Mem(ctypes.Structure):
+            _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                        ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                        ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                        ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                        ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+
+        mem = _Mem()
+        mem.dwLength = ctypes.sizeof(_Mem)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(mem)):
+            ram_gb = round(mem.ullTotalPhys / 2**30, 1)
+    out = {"cpu": cpu, "cpu_threads": os.cpu_count(), "ram_gb": ram_gb, "gpu": None, "gpu_mem_gb": None,
+           "torch": None, "cuda": None, "os": platform.platform(), "python": platform.python_version()}
+    try:
+        import torch
+
+        out["torch"], out["cuda"] = torch.__version__, torch.version.cuda
+        if torch.cuda.is_available():
+            out["gpu"] = torch.cuda.get_device_name(0)
+            out["gpu_mem_gb"] = round(torch.cuda.get_device_properties(0).total_memory / 2**30, 1)
+    except ImportError:
+        pass
+    return out
 
 
 def load(base: str = "configs/base.yaml", experiments: str = "configs/experiments.yaml",

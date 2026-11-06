@@ -34,3 +34,5 @@ entrega/
 results/tables/segmentation_adaptive_morph_frames.csv.gz
 results/tables/attention_aula_frames.csv.gz
 docs/figures/seg_passos_exemplo.png
+# Etapa 1: apresentação e PDFs com frames do BAGLS
+docs/ETAPA1/

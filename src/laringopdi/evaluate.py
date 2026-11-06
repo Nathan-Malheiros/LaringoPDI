@@ -182,26 +182,12 @@ def collect_runs(cfg: dict) -> pd.DataFrame:
 
 
 def cmd_summary(cfg: dict, args) -> dict:
-    """results/summary.csv (todos os runs) + results/tables/stage1_ranking.csv."""
+    """results/summary.csv: todos os runs, uma linha por job."""
     df = collect_runs(cfg)
     if df.empty:
         return {"runs": 0}
     df.sort_values(["exp", "task", "model", "fold", "seed"]).to_csv(C.path(cfg, "results") / "summary.csv", index=False)
-    s1 = df[df["exp"].isin(cfg["stage1"]["experiments"]) & df["model"].isin(cfg["stage1"]["models"])]
-    out = {"runs": len(df)}
-    if not s1.empty:
-        # A ESCOLHA usa só a validação interna (val_video_f1); o teste aparece só para registro.
-        rk = s1.groupby(["exp", "task", "model"]).agg(val_f1=("val_video_f1_macro", "mean"), val_f1_sd=("val_video_f1_macro", "std"),
-                                                       test_f1=("video_f1_macro", "mean"), n=("fold", "count")).reset_index()
-        base = rk[rk["exp"] == "E00"].set_index(["task", "model"])["val_f1"]
-        rk["delta_vs_E00"] = rk["val_f1"] - rk.set_index(["task", "model"]).index.map(base).to_numpy()
-        # ranking: média do Δ de validação vs E00 entre tarefas e modelos (E00 e o limite superior E07 fora da escolha)
-        score = rk.groupby("exp")["delta_vs_E00"].mean().rename("mean_delta").reset_index()
-        rk = rk.merge(score, on="exp").sort_values(["mean_delta", "exp", "task", "model"], ascending=[False, True, True, True])
-        rk.round(4).to_csv(C.path(cfg, "tables") / "stage1_ranking.csv", index=False)
-        top = [e for e in score.sort_values("mean_delta", ascending=False)["exp"] if e not in ("E00", "E07")]
-        out["top4"] = top[:cfg["stage1"]["top_k"]]
-    return out
+    return {"runs": len(df)}
 
 
 # ----------------------------------------------------------------------------- estatística
@@ -209,7 +195,7 @@ def run_seeds(cfg: dict, exp: str, task: str, model: str) -> set[int]:
     """Sementes com preds.csv em **todos** os folds."""
     root = C.path(cfg, "runs") / exp / task / model
     per_fold = [{int(d.name.split("_seed")[1]) for d in root.glob(f"fold{k}_seed*") if (d / "preds.csv").exists()}
-                for k in cfg["stage1"]["folds"]]
+                for k in cfg["study"]["folds"]]
     return set.intersection(*per_fold) if per_fold else set()
 
 
@@ -217,7 +203,7 @@ def oof_video_preds(cfg: dict, exp: str, task: str, model: str, seeds=(0,)) -> p
     """Predições out-of-fold por vídeo (concatena o teste dos 5 folds). Com várias sementes, a
     probabilidade por vídeo é a média entre elas (ensemble) antes do argmax."""
     rows = []
-    for k in cfg["stage1"]["folds"]:
+    for k in cfg["study"]["folds"]:
         vs = []
         for s in seeds:
             p = C.path(cfg, "runs") / exp / task / model / f"fold{k}_seed{s}" / "preds.csv"
@@ -261,9 +247,7 @@ def verdicts(cfg: dict, model: str, tasks=("A", "B"), baseline: str = "E00", exp
 
     runs = collect_runs(cfg)
     runs = runs[runs["model"] == model]
-    aula = cfg.get("stage_aula", {})
-    skip = set(aula.get("experiments", [])) if model in aula.get("models", []) else set()       # família própria: etapa1.cmd_aula_study
-    exps = exps or [e for e in dict.fromkeys(cfg["stage1"]["experiments"] + cfg["stage2"]["experiments"]) if e != baseline and e not in skip]
+    exps = exps or [e for e in cfg["study"]["experiments"] if e != baseline]
     rows = []
     for t in tasks:
         base = runs[(runs["exp"] == baseline) & (runs["task"] == t)].set_index(["fold", "seed"])["video_f1_macro"]
@@ -381,7 +365,6 @@ def gradcam_rows(cfg: dict, exps: list[str], models: list[str], tasks: list[str]
     for e in exps:
         X, paths, meta = D.load_cache(cfg, e)
         gt = _unpack(np.load(D.cache_paths(cfg, e)["masks"])["gt_mask_lb"], size)
-        crops = any(s in meta["pipeline"] for s in ("roi",))
         for model_name in models:
             for t in tasks:
                 for k in folds:
@@ -392,21 +375,20 @@ def gradcam_rows(cfg: dict, exps: list[str], models: list[str], tasks: list[str]
                     cams = gradcam_maps(m, X[idx], device="cuda" if torch.cuda.is_available() else "cpu")
                     for j, i in enumerate(idx):
                         valid = X[i, ..., 0] > 0
-                        spec = None if crops else specular_mask(np.ascontiguousarray(X0[pos0[paths[i]], ..., 0])) & valid
+                        spec = specular_mask(np.ascontiguousarray(X0[pos0[paths[i]], ..., 0])) & valid
                         rows.append({"exp": e, "model": model_name, "task": t, "fold": k, "path": paths[i],
                                      "video_id": meta["video_ids"][i], **attention_metrics(cams[j], gt[i], spec, valid)})
     return rows
 
 
 def cmd_gradcam(cfg: dict, args) -> dict:
-    """Para cada experimento do Estágio 2 com pesos salvos: Grad-CAM nos frames de teste de cada
-    fold → energia na glote (GT do próprio cache) e nos reflexos (máscara `spec` do E00; só para
-    pipelines sem recorte). Saída: results/tables/attention.csv (+ resumo por exp/modelo/tarefa)."""
-    st = cfg["stage2"]
+    """Para cada experimento do estudo com pesos salvos: Grad-CAM nos frames de teste de cada
+    fold → energia na glote (GT do próprio cache) e nos reflexos (máscara `spec` do E00). Saída: results/tables/attention.csv (+ resumo por exp/modelo/tarefa)."""
+    st = cfg["study"]
     exps = st["experiments"] if not args.exp else args.exp.split(",")
-    rows = gradcam_rows(cfg, exps, [m for m in st["models"] if m != "probe"], st["tasks"], st["folds"])
+    rows = gradcam_rows(cfg, exps, st["models"], st["tasks"], st["folds"])
     if not rows:
-        return {"gradcam": "sem pesos salvos (rode o Estágio 2 no Colab)"}
+        return {"gradcam": "sem pesos salvos (rode `train --all`)"}
     df = pd.DataFrame(rows)
     tables = C.path(cfg, "tables")
     df.to_csv(tables / "attention_frames.csv.gz", index=False)

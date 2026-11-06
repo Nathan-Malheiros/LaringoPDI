@@ -162,7 +162,7 @@ def gallery(cfg: dict) -> dict:
     samp = _sample(cfg, 2, seed=1)
     items = [(r["family"], D.imread(raw / r["path"], gray=True), D.imread(raw / r["seg_path"], gray=True) > 127)
              for _, r in samp.iterrows()]
-    exps = cfg["stage1"]["experiments"]
+    exps = cfg["study"]["experiments"]
 
     fig, axes = plt.subplots(len(exps), len(items), figsize=(1.7 * len(items), 1.7 * len(exps)), squeeze=False)
     for i, e in enumerate(exps):
@@ -198,23 +198,7 @@ def gallery(cfg: dict) -> dict:
         a.imshow(im, cmap=cm); a.set_title(t, fontsize=8); a.axis("off")
     fig.tight_layout(); fig.savefig(figs / "gallery_homo.png", dpi=110); plt.close(fig)
 
-    b = best_config()
-    fig, axes = plt.subplots(len(picks), 4, figsize=(11, 2.6 * len(picks)), squeeze=False)
-    for i, (_, g, gt) in enumerate(picks):
-        x = to_work_size(g, ws)
-        gtw = cv2.resize(gt.astype(np.uint8), x.shape[::-1], interpolation=cv2.INTER_NEAREST).astype(bool)
-        m = segment(x, b["method"], **b["params"])
-        c1, c2 = {"gt_mask": gtw}, {}
-        from laringopdi.pdi.geometry import roi, roi_gt
-        roi_gt(x, c1); roi(x, c2, method=b["method"], seg_params=b["params"], seg_pre=b.get("preprocess", "raw"))
-        vis = np.dstack([x, x, x]).copy()
-        for (bx, by, bw, bh), col in ((c1["roi_bbox"], (0, 255, 0)), (c2["roi_bbox"], (255, 0, 0))):
-            cv2.rectangle(vis, (bx, by), (bx + bw, by + bh), col, 2)
-        for a, im, t in zip(axes[i], [x, gtw, m, vis], ["original", "ground truth", f"clássica: {b['method']}",
-                                                         "caixas: verde=roi_gt, vermelho=roi"]):
-            a.imshow(im, cmap="gray"); a.set_title(t, fontsize=8); a.axis("off")
-    fig.tight_layout(); fig.savefig(figs / "gallery_roi.png", dpi=110); plt.close(fig)
-    return {"figures": ["gallery_grid.png", "gallery_spec_steps.png", "gallery_homo.png", "gallery_roi.png"]}
+    return {"figures": ["gallery_grid.png", "gallery_spec_steps.png", "gallery_homo.png"]}
 
 
 # ----------------------------------------------------------------------------- doc das técnicas
@@ -250,7 +234,7 @@ def pdi_doc(cfg: dict) -> str:
                f"- **Parâmetros padrão:** {p['Parâmetros padrão']}", f"- **Referência:** {p['Referência']}", ""]
     b = best_config()
     md += ["## Segmentação clássica da glote (Fase 3)", "",
-           f"Melhor configuração atual (usada por `roi` e `m2`): **{b['method']}** sobre **{b.get('preprocess', 'raw')}**, "
+           f"Melhor configuração atual (a que alimenta as 18 características): **{b['method']}** sobre **{b.get('preprocess', 'raw')}**, "
            f"parâmetros `{json.dumps(b['params'])}`" + (f" — {b['selected_on']}." if b.get("selected_on") else " (padrão, antes da Fase 3)."), ""]
     for name, f in SEGMENTERS.items():
         p = parts(f)
@@ -259,7 +243,7 @@ def pdi_doc(cfg: dict) -> str:
                f"- **Referência:** {p['Referência']}", ""]
     md += ["## Figuras para revisão (Marcos Vinicius; segmentação: Marcos Mendes e Tales)", "",
            "Geradas localmente em `docs/figures/` e **não versionadas** (contêm frames do BAGLS): "
-           "`gallery_grid.png`, `gallery_spec_steps.png`, `gallery_homo.png`, `gallery_roi.png`, `segmentation_examples.png`.", ""]
+           "`gallery_grid.png`, `gallery_spec_steps.png`, `gallery_homo.png`, `segmentation_examples.png`.", ""]
     out = C.path(cfg, "docs") / "pdi_tecnicas.md"
     out.write_text("\n".join(md), encoding="utf-8")
     return str(out)
@@ -280,207 +264,3 @@ def _save_table(cfg, df: pd.DataFrame, name: str, caption: str) -> None:
     t = C.path(cfg, "tables")
     df.round(4).to_csv(t / f"{name}.csv", index=False)
     to_latex(df.round(3), t / f"{name}.tex", caption)
-
-
-def cmd_report(cfg: dict, args) -> dict:
-    """Gera vereditos, H4 da segmentação, clássico × CNN e docs/hipoteses.md com o que já existe."""
-    from laringopdi.evaluate import cmd_summary, collect_runs, seg_h4_test, verdicts
-
-    cmd_summary(cfg, args)
-    runs = collect_runs(cfg)
-    aula = cfg.get("stage_aula", {})         # C6 e técnicas de aula na ResNet-18 pertencem ao etapa1-report, não às H internas daqui
-    runs = runs[(runs["exp"] != "C6") & ~(runs["exp"].isin(aula.get("experiments", [])) & runs["model"].isin(aula.get("models", [])))]
-    out, made = {}, []
-    for model in sorted(set(runs["model"]) & {"probe", "simplecnn_fast", "resnet18", "simplecnn"}):
-        v = verdicts(cfg, model)
-        if not v.empty:
-            _save_table(cfg, v, f"verdicts_{model}", f"Vereditos do PDI vs E00 ({model}, F1-macro por vídeo)")
-            out[model] = v.groupby(["task", "verdict"]).size().unstack(fill_value=0).to_dict("index")
-            made.append(model)
-    h4 = seg_h4_test(cfg)
-    _save_table(cfg, h4, "seg_h4", "H4: Dice por vídeo com realce vs raw (Wilcoxon, Holm)")
-    cls = runs[runs["exp"].str.startswith("C")]
-    cnn = runs[runs["model"].isin(["probe", "resnet18", "simplecnn"]) & (runs["exp"] == "E00")]
-    cmp_ = pd.concat([cls, cnn]).groupby(["exp", "model", "task"]).agg(
-        f1=("video_f1_macro", "mean"), f1_sd=("video_f1_macro", "std"), auc=("video_auc", "mean"),
-        bal_acc=("video_bal_acc", "mean"), n=("fold", "count")).reset_index()
-    if not cmp_.empty:
-        _save_table(cfg, cmp_, "classic_vs_cnn", "Braço clássico × CNN (E00), por vídeo")
-    _hypotheses_doc(cfg, runs, h4, cmp_, made)
-    return {"verdicts": out, "h4_melhora": int((h4["verdict"] == "melhora").sum()), "h4_total": len(h4)}
-
-
-def paired_compare(cfg: dict, a: tuple, b: tuple, task: str) -> dict:
-    """Compara dois sistemas (exp, modelo) por vídeo, OOF, nas sementes comuns: ΔF1 = b − a,
-    IC 95% bootstrap e McNemar. Usado em H5 (roi × roi_gt) e H6 (clássico × CNN)."""
-    from sklearn.metrics import f1_score
-    from laringopdi.evaluate import bootstrap_delta_f1, mcnemar_p, oof_video_preds, run_seeds
-
-    seeds = sorted(run_seeds(cfg, a[0], task, a[1]) & run_seeds(cfg, b[0], task, b[1]))
-    if not seeds:
-        return {}
-    m = oof_video_preds(cfg, a[0], task, a[1], seeds).merge(
-        oof_video_preds(cfg, b[0], task, b[1], seeds), on=["video_id", "y"], suffixes=("_a", "_b"))
-    y, pa, pb = m["y"].to_numpy(), m["pred_a"].to_numpy(), m["pred_b"].to_numpy()
-    lo, hi = bootstrap_delta_f1(y, pa, pb, cfg["stats"]["n_boot"])
-    fa, fb = f1_score(y, pa, average="macro"), f1_score(y, pb, average="macro")
-    return {"f1_a": fa, "f1_b": fb, "delta": fb - fa, "ci_low": lo, "ci_high": hi,
-            "mcnemar_p": mcnemar_p(pa == y, pb == y), "n_seeds": len(seeds), "n_videos": len(y)}
-
-
-def _fmt_cmp(r: dict) -> str:
-    return "—" if not r else (f"F1 {r['f1_a']:.3f} → {r['f1_b']:.3f}, Δ={r['delta']:+.3f} "
-                              f"[IC {r['ci_low']:+.3f}; {r['ci_high']:+.3f}], McNemar p={r['mcnemar_p']:.2g}")
-
-
-def _hypotheses_doc(cfg, runs, h4, cmp_, made) -> None:
-    """docs/hipoteses.md: evidência e conclusão explícita de H1–H6, com as regras fixadas em DECISIONS.md."""
-    from scipy.stats import wilcoxon
-    from laringopdi.evaluate import verdicts
-
-    t = C.path(cfg, "tables")
-    V = {m: pd.read_csv(t / f"verdicts_{m}.csv") for m in made if (t / f"verdicts_{m}.csv").exists()}
-    labels = {"probe": "probe (ResNet congelada)", "simplecnn_fast": "SimpleCNN rápida", "resnet18": "ResNet-18 fine-tuning",
-              "simplecnn": "SimpleCNN completa"}
-    main = next((m for m in ("resnet18", "probe") if m in V), None)
-
-    def row(m, e, task):
-        df = V.get(m, pd.DataFrame())
-        r = df[(df["exp"] == e) & (df["task"] == task)] if not df.empty else df
-        return None if r.empty else r.iloc[0]
-
-    def fmt(r):
-        return "—" if r is None else (f"ΔF1={r['oof_delta_f1']:+.3f} [IC {r['ci_low']:+.3f}; {r['ci_high']:+.3f}], "
-                                      f"{int(r['n_pairs'])} pares, **{r['verdict']}**")
-
-    def ev(e):
-        return [f"  - {labels[m]}: A {fmt(row(m, e, 'A'))}; B {fmt(row(m, e, 'B'))}." for m in V if row(m, e, "A") is not None]
-
-    L = ["# Hipóteses — estado da evidência", "",
-         f"Gerado por `python -m laringopdi report` (git {C.git_sha()}). Não edite à mão. Modelos com resultados: "
-         f"{', '.join(labels.get(m, m) for m in made) or 'nenhum'}. Hipóteses pré-registradas e regras de veredito em DECISIONS.md.", "",
-         "Veredito de cada técnica contra o E00 (F1-macro por vídeo): **melhora/piora** só se o IC 95% bootstrap excluir 0 "
-         "e o McNemar OOF (ou, com ≥ 10 pares fold×semente, o Wilcoxon) corrigido por Holm der p < 0,05; senão **neutra**.", "",
-         "## Resumo dos vereditos", "", "| modelo | tarefa | melhora | neutra | piora |", "|---|---|---:|---:|---:|"]
-    for m, df in V.items():
-        for task, g in df.groupby("task"):
-            c = g["verdict"].value_counts()
-            L.append(f"| {labels[m]} | {task} | {c.get('melhora', 0)} | {c.get('neutra', 0)} | {c.get('piora', 0)} |")
-    concl = {}
-
-    # H1 ---------------------------------------------------------------------------------------
-    L += ["", "## H1 — `spec` mantém ou melhora o F1 e reduz a atenção sobre os reflexos", "- F1 (E01 × E00):", *ev("E01")]
-    f1_ok = main is not None and all(row(main, "E01", k) is None or row(main, "E01", k)["verdict"] != "piora" for k in "AB")
-    att_p = t / "attention_frames.csv.gz"
-    att_ok = None
-    if att_p.exists():
-        af = pd.read_csv(att_p)
-        for m in sorted(set(af["model"])):
-            for task in ("A", "B"):
-                g = af[(af["model"] == m) & (af["task"] == task)]
-                pr = g[g["exp"] == "E00"].merge(g[g["exp"] == "E01"], on=["fold", "path"], suffixes=("_0", "_1"))
-                pr = pr.dropna(subset=["att_spec_0", "att_spec_1"])
-                if len(pr) < 10:
-                    continue
-                d = pr["att_spec_1"] - pr["att_spec_0"]
-                p = float(wilcoxon(pr["att_spec_1"], pr["att_spec_0"]).pvalue) if (d != 0).any() else 1.0
-                L.append(f"- Atenção nos reflexos, {labels.get(m, m)} {task}: E00 {pr['att_spec_0'].mean():.3f} → E01 "
-                         f"{pr['att_spec_1'].mean():.3f} (área dos reflexos {pr['area_spec_0'].mean():.3f} = nível do acaso; "
-                         f"mediana Δ {d.median():+.4f}; Wilcoxon p={p:.2g}; {len(pr)} frames).")
-                ok = d.median() < 0 and p < 0.05
-                att_ok = ok if att_ok is None else (att_ok and ok)
-    if att_ok is None:
-        L.append("- Atenção (Grad-CAM): sem pares E00 × E01 (`python -m laringopdi gradcam` com pesos do E01).")
-    concl["H1"] = ("não testada (atenção)" if att_ok is None else
-                   "suportada" if (att_ok and f1_ok) else "parcialmente suportada" if (att_ok or f1_ok) else "não suportada")
-
-    # H2 ---------------------------------------------------------------------------------------
-    L += ["", "## H2 — CLAHE/homomórfica > HE global (classificação e segmentação)", "- Contra o E00:",
-          *ev("E02"), *ev("E03"), *ev("E04"), "- Confronto direto contra o HE (E02 como baseline):"]
-    h2_cls = []
-    for m in [m for m in ("probe", "simplecnn_fast") if m in V]:
-        vh = verdicts(cfg, m, baseline="E02", exps=["E03", "E04"])
-        for r in vh.itertuples():
-            L.append(f"  - {labels[m]} {r.task}, {r.pipeline} − he: ΔF1={r.oof_delta_f1:+.3f} "
-                     f"[IC {r.ci_low:+.3f}; {r.ci_high:+.3f}], **{r.verdict}**.")
-            h2_cls.append(r.verdict)
-    s4 = h4.set_index(["method", "preprocess"])
-    L.append(f"- Segmentação (crescimento de região, método escolhido): Δ Dice vs raw — clahe "
-             f"{s4.loc[('region_grow', 'clahe'), 'delta']:+.3f}, homo {s4.loc[('region_grow', 'homo'), 'delta']:+.3f}. "
-             "O HE não entrou no estudo de segmentação (escopo da Seção 5).")
-    concl["H2"] = ("suportada" if h2_cls and all(v == "melhora" for v in h2_cls) else
-                   "parcialmente suportada" if "melhora" in h2_cls else
-                   "não suportada (sem diferença detectável na classificação)" if h2_cls else "não testada")
-
-    # H3 ---------------------------------------------------------------------------------------
-    L += ["", "## H3 — o PDI ajuda mais a SimpleCNN do que a ResNet",
-          "Diferença de ΔF1 (técnica − E00) entre a SimpleCNN e a ResNet nas mesmas técnicas × tarefas (Wilcoxon pareado)."]
-    h3 = []
-    for sm, rm in (("simplecnn", "resnet18"), ("simplecnn_fast", "probe")):
-        if sm in V and rm in V:
-            mm = V[sm].merge(V[rm], on=["task", "exp"], suffixes=("_s", "_r"))
-            if len(mm) < 3:
-                continue
-            d = mm["oof_delta_f1_s"] - mm["oof_delta_f1_r"]
-            p = float(wilcoxon(mm["oof_delta_f1_s"], mm["oof_delta_f1_r"]).pvalue) if (d != 0).any() else 1.0
-            L.append(f"- {labels[sm]} × {labels[rm]}: ΔF1 médio {mm['oof_delta_f1_s'].mean():+.3f} × "
-                     f"{mm['oof_delta_f1_r'].mean():+.3f}; mediana da diferença {d.median():+.3f}; p={p:.2g}; "
-                     f"{len(mm)} pares técnica×tarefa.")
-            h3.append(bool(d.median() > 0 and p < 0.05))
-    concl["H3"] = "não testada" if not h3 else "suportada" if all(h3) else "parcialmente suportada" if any(h3) else "não suportada"
-
-    # H4 ---------------------------------------------------------------------------------------
-    L += ["", "## H4 — o realce melhora o Dice da segmentação clássica", "",
-          "| método | pré | Dice raw | Dice pré | Δ | p (Holm) | veredito |", "|---|---|---:|---:|---:|---:|---|",
-          *[f"| {r.method} | {r.preprocess} | {r.dice_raw:.3f} | {r.dice_pre:.3f} | {r.delta:+.3f} | {r.p_holm:.2g} | {r.verdict} |"
-            for r in h4.itertuples()], "",
-          "- Com ~587 vídeos pareados, p pequenos acompanham efeitos desprezíveis (Otsu, |Δ| ≤ 0,002); leia o Δ."]
-    nm, npi = int((h4["verdict"] == "melhora").sum()), int((h4["verdict"] == "piora").sum())
-    best = h4.loc[h4["dice_pre"].idxmax()]
-    concl["H4"] = (f"parcialmente suportada (depende do par método × realce: {nm} melhoram, {npi} pioram; "
-                   f"melhor = {best['method']} + {best['preprocess']}, Δ {best['delta']:+.3f})")
-
-    # H5 ---------------------------------------------------------------------------------------
-    L += ["", "## H5 — a ROI ajuda mais na Tarefa B do que na A, e `roi` se aproxima de `roi_gt`",
-          "- E08 (`roi`) × E00:", *ev("E08"), "- E07 (`roi_gt`) × E00:", *ev("E07"), "- `roi` × `roi_gt` (E07 como referência):"]
-    h5a, h5b = [], []
-    for m in V:
-        rA, rB = row(m, "E08", "A"), row(m, "E08", "B")
-        if rA is not None and rB is not None:
-            L.append(f"  - {labels[m]}: ΔF1(B) − ΔF1(A) do `roi` = {rB['oof_delta_f1'] - rA['oof_delta_f1']:+.3f}.")
-            h5a.append(bool(rB["oof_delta_f1"] > rA["oof_delta_f1"]))
-        for task in ("A", "B"):
-            r = paired_compare(cfg, ("E07", m), ("E08", m), task)
-            if r:
-                L.append(f"  - {labels[m]} {task}: roi_gt → roi {_fmt_cmp(r)}.")
-                h5b.append(bool(r["ci_low"] <= 0 <= r["ci_high"] or r["delta"] > 0))
-    concl["H5"] = ("não testada" if not h5a else "suportada" if all(h5a) and all(h5b) else
-                   "parcialmente suportada" if any(h5a) or any(h5b) else "não suportada")
-    L.append("- Ressalva: \"ajuda mais em B\" compara efeitos que, isoladamente, podem ser neutros; \"se aproxima\" é a leitura "
-             "de um IC que cruza 0 (ausência de diferença detectável, não equivalência demonstrada).")
-
-    # H6 ---------------------------------------------------------------------------------------
-    cnn = "resnet18" if "resnet18" in V else "probe"
-    L += ["", "## H6 — forma glótica + MLP é competitiva com a CNN na Tarefa A e inferior na B",
-          f"Referência CNN: E00 com {labels[cnn]}. Competitiva = IC do ΔF1 (clássico − CNN) contém 0 ou é > 0; inferior = IC < 0."]
-    if not cmp_.empty:
-        L += ["", "| exp | modelo | tarefa | F1 vídeo | dp | AUC |", "|---|---|---|---:|---:|---:|",
-              *[f"| {r.exp} | {r.model} | {r.task} | {r.f1:.3f} | {r.f1_sd:.3f} | {r.auc:.3f} |" for r in cmp_.itertuples()], ""]
-    res6 = {}
-    for task in ("A", "B"):
-        r = paired_compare(cfg, ("E00", cnn), ("C1", "mlp"), task)
-        if r:
-            L.append(f"- C1 (forma + textura + MLP) × E00 {labels[cnn]}, {task}: {_fmt_cmp(r)}.")
-            res6[task] = "inferior" if r["ci_high"] < 0 else "competitiva"
-    concl["H6"] = ("não testada" if len(res6) < 2 else
-                   "suportada" if res6 == {"A": "competitiva", "B": "inferior"} else
-                   f"parcialmente suportada (A: {res6['A']}; B: {res6['B']})" if res6["A"] == "competitiva" else
-                   f"não suportada (A: {res6['A']}; B: {res6['B']})")
-    if cnn != "resnet18":
-        L.append("- Provisório: a comparação final usa a ResNet-18 do Estágio 2.")
-
-    L += ["", "## Conclusões", "", "| hipótese | conclusão |", "|---|---|", *[f"| {k} | {v} |" for k, v in concl.items()], "",
-          "> Resultado neutro é resultado: com ~118 vídeos de teste por fold e efeitos de ±0,03 no F1, o estudo só tem poder para "
-          "efeitos grandes. As conclusões descrevem a evidência deste desenho, não um efeito nulo provado."]
-    (C.path(cfg, "docs") / "hipoteses.md").write_text("\n".join(L), encoding="utf-8")
-    C.write_json(t / "hypotheses.json", concl)

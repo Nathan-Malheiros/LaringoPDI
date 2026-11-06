@@ -34,40 +34,28 @@ tasks:
   C: {name: healthy_functional_structural, labels: [healthy, functional, structural]}
 
 segmentation:
-  methods: [otsu, adaptive, otsu_morph, region_grow, watershed]
-  preprocess: [raw, clahe, homo, bilat]
-  tune_fold: 0            # fold cujo treino fixa método/parâmetros da técnica `roi`
+  methods: [otsu, adaptive, otsu_morph, adaptive_morph, region_grow, watershed]
+  preprocess: [raw, stretch, he, clahe, mean, median, gauss_lpf, spec, homo]
+  tune_fold: 0            # fold cujo treino fixa o melhor método e seus parâmetros
   max_train_frames: 1500  # subamostra do treino para o ajuste (CPU)
 
 train:
   augment: {hflip: 0.5, rotate_deg: 15, scale: [0.9, 1.1]}   # só geométrico
   loss: weighted_ce
   optimizer: adamw
-  lr: {resnet18: 1.0e-4, simplecnn: 1.0e-3}
+  lr: {resnet18: 1.0e-4}
   weight_decay: 1.0e-4
   scheduler: cosine
   batch_size: 32
   epochs: 30
-  epochs_fast: 10
   patience: 7
   monitor: f1_macro
   amp: true
   num_workers: 0
   seeds: [0, 1, 2]
 
-probe:
-  C: 1.0
-  max_iter: 2000
-
-simplecnn:
-  filters: [32, 64, 128, 256]
-  dropout: 0.3
-
 classic:
-  mlp: {hidden_layer_sizes: [256, 64], alpha: 1.0e-3, max_iter: 500, early_stopping: true}
   mlp18: {hidden_layer_sizes: [32, 16], activation: relu, solver: adam, early_stopping: true, max_iter: 2000}
-  svm: {C: 1.0, gamma: scale}
-  rf: {n_estimators: 500}
   permutation_repeats: 10
 
 stats:
@@ -78,8 +66,3 @@ stats:
 app:
   # Frames da demonstração (docs/ROTEIRO_DEMO.md): escuro, em que o CLAHE salva a segmentação, e com reflexo.
   demo_frames: ["1881", "21"]
-
-colab:
-  drive_root: /content/drive/MyDrive/LaringoPDI
-  n_accounts: 5
-  t4_budget_hours: 6
