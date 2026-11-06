@@ -39,3 +39,23 @@ def test_sampler_measures_busy_process():
         sum(i * i for i in range(1000))
     r = m.stop()
     assert r["amostras"] >= 2 and r["cpu_nucleos_medio"] > 0 and r["ram_processo_pico_gb"] > 0
+
+
+def test_gpu_of_other_programs_is_not_charged_to_the_stage(monkeypatch):
+    monkeypatch.setattr("laringopdi.custo._gpu_sample", lambda: (40.0, 900.0, 30.0))
+    monkeypatch.setattr("laringopdi.custo._gpu_pids", lambda: {999999})
+    r = Medidor(interval=0.05).start().stop()
+    assert r["gpu_usada_pelo_processo"] == "não" and r["gpu_energia_liquida_wh"] is None
+    assert r["gpu_sistema_util_pct_media"] == 40.0
+
+
+def test_gpu_used_by_the_process_gets_net_energy(monkeypatch):
+    import os
+    samples = iter([(5.0, 900.0, 30.0)])
+    monkeypatch.setattr("laringopdi.custo._gpu_sample", lambda: next(samples, (90.0, 3000.0, 130.0)))
+    monkeypatch.setattr("laringopdi.custo._gpu_pids", lambda: {os.getpid()})
+    m = Medidor(interval=0.05).start()
+    time.sleep(0.2)
+    r = m.stop()
+    assert r["gpu_usada_pelo_processo"] == "sim" and r["gpu_potencia_inicio_w"] == 30.0
+    assert r["gpu_energia_liquida_wh"] == pytest.approx(100 * r["duracao_s"] / 3600, abs=0.002)

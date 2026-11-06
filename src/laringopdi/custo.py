@@ -3,6 +3,9 @@
 Todo comando da CLI é medido, e os estudos medem também suas etapas internas. Cada medição vira uma
 linha em results/tables/custo/etapas.csv; a máquina fica em results/tables/custo/hardware.json.
 Medições repetidas acrescentam linhas: a mais recente de cada etapa é a que vale (`latest_stages`).
+
+A leitura de GPU do nvidia-smi é da placa inteira e inclui outros programas (colunas `gpu_sistema_*`). Só há custo
+de GPU da etapa quando `gpu_usada_pelo_processo` é "sim"; a energia líquida desconta a potência lida no início.
 """
 from __future__ import annotations
 
@@ -21,8 +24,9 @@ from laringopdi import config as C
 INTERVAL_S = 3.0
 GPU_QUERY = "utilization.gpu,memory.used,power.draw"
 COLUMNS = ["etapa", "descricao", "status", "inicio", "fim", "duracao_s", "n_itens", "ms_por_item", "cpu_nucleos_medio",
-           "cpu_nucleos_pico", "cpu_sistema_pct_medio", "ram_processo_pico_gb", "ram_sistema_pico_gb", "gpu_util_pct_media",
-           "gpu_util_pct_pico", "gpu_mem_pico_mb", "gpu_potencia_w_media", "gpu_energia_wh", "disco_delta_gb", "amostras", "git_sha"]
+           "cpu_nucleos_pico", "cpu_sistema_pct_medio", "ram_processo_pico_gb", "ram_sistema_pico_gb", "gpu_usada_pelo_processo",
+           "gpu_sistema_util_pct_media", "gpu_sistema_util_pct_pico", "gpu_sistema_mem_pico_mb", "gpu_sistema_potencia_w_media",
+           "gpu_potencia_inicio_w", "gpu_sistema_energia_wh", "gpu_energia_liquida_wh", "disco_delta_gb", "amostras", "git_sha"]
 
 
 def _gpu_sample() -> tuple[float, float, float] | None:
@@ -36,6 +40,16 @@ def _gpu_sample() -> tuple[float, float, float] | None:
         return None
 
 
+def _gpu_pids() -> set[int]:
+    """Processos com contexto de computação na GPU. Um processo só aparece depois de alocar memória nela."""
+    try:
+        out = subprocess.run(["nvidia-smi", "--query-compute-apps=pid", "--format=csv,noheader"], capture_output=True,
+                             text=True, timeout=5, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        return {int(v) for v in out.stdout.split() if v.isdigit()}
+    except Exception:
+        return set()
+
+
 class Medidor:
     """Amostra, em uma thread, o processo atual com seus filhos, o sistema e a GPU."""
 
@@ -46,6 +60,7 @@ class Medidor:
         self._me = psutil.Process()
         self._procs: dict[int, psutil.Process] = {}
         self.cpu, self.cpu_sys, self.rss, self.ram, self.gpu = [], [], [], [], []
+        self.used_gpu = False
 
     def _tree_sample(self) -> tuple[float, float]:
         cores, rss = 0.0, 0.0
@@ -71,6 +86,7 @@ class Medidor:
         g = _gpu_sample()
         if g:
             self.gpu.append(g)
+            self.used_gpu = self.used_gpu or bool(_gpu_pids() & set(self._procs))
 
     def _loop(self) -> None:
         while not self._stop.wait(self.interval):
@@ -79,7 +95,7 @@ class Medidor:
     def start(self) -> "Medidor":
         self.t0, self.started = time.perf_counter(), datetime.now()
         self._disk0 = shutil.disk_usage(C.ROOT).used
-        self._gpu0 = _gpu_sample()                      # memória da GPU antes da etapa
+        self._gpu0 = _gpu_sample()                      # a potência antes da etapa é o fundo descontado na energia líquida
         self._tree_sample()
         psutil.cpu_percent(None)                        # primeira leitura só zera os contadores
         self._thread.start()
@@ -88,16 +104,21 @@ class Medidor:
     def stop(self) -> dict:
         self._stop.set()
         self._thread.join(timeout=self.interval + 6)
+        self._sample()                                  # etapas curtas também ficam com ao menos uma amostra
         dur = time.perf_counter() - self.t0
         mean = lambda v: round(sum(v) / len(v), 2) if v else None
         peak = lambda v: round(max(v), 2) if v else None
         util, mem, power = zip(*self.gpu) if self.gpu else ((), (), ())
+        p0 = self._gpu0[2] if self._gpu0 else None
+        gross = sum(power) / len(power) * dur / 3600 if power else None
         return {"inicio": self.started.isoformat(timespec="seconds"), "fim": datetime.now().isoformat(timespec="seconds"),
                 "duracao_s": round(dur, 2), "cpu_nucleos_medio": mean(self.cpu), "cpu_nucleos_pico": peak(self.cpu),
                 "cpu_sistema_pct_medio": mean(self.cpu_sys), "ram_processo_pico_gb": peak(self.rss),
-                "ram_sistema_pico_gb": peak(self.ram), "gpu_util_pct_media": mean(util), "gpu_util_pct_pico": peak(util),
-                "gpu_mem_pico_mb": peak(mem), "gpu_potencia_w_media": mean(power),
-                "gpu_energia_wh": round(sum(power) / len(power) * dur / 3600, 3) if power else None,
+                "ram_sistema_pico_gb": peak(self.ram), "gpu_usada_pelo_processo": "sim" if self.used_gpu else "não",
+                "gpu_sistema_util_pct_media": mean(util), "gpu_sistema_util_pct_pico": peak(util),
+                "gpu_sistema_mem_pico_mb": peak(mem), "gpu_sistema_potencia_w_media": mean(power), "gpu_potencia_inicio_w": p0,
+                "gpu_sistema_energia_wh": round(gross, 3) if power else None,
+                "gpu_energia_liquida_wh": round(max(0.0, sum(power) / len(power) - p0) * dur / 3600, 3) if self.used_gpu and p0 is not None and power else None,
                 "disco_delta_gb": round((shutil.disk_usage(C.ROOT).used - self._disk0) / 2**30, 3), "amostras": len(self.cpu)}
 
 

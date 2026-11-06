@@ -201,3 +201,14 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - Fora do fluxo, arquivado em `D:\DocumentosHD\Unifor\PDI\Projeto em desuso LaringoPDI`: 83 itens de treinos e caches, além de ferramentas e tabelas; `git bundle` e tag `pre-reestruturacao`.
 - Código: cerca de 5.400 linhas a menos. O treino agora salva métricas por época, custo e hardware. Pesos pré-treinados passam a ficar no HD.
 - 86 testes passando. Regras do novo estudo em `DECISIONS.md`. Próximo: Fase B, tabela única do PDI.
+
+## 2026-11-06, Fase B: PDI isolado e segmentação
+- `pdi-study`: 5.870 frames, 587 vídeos, 9 técnicas, 6 métodos, 71,7 min em até 10 núcleos (Ryzen 5 5500). Reproduz o estudo antigo nas técnicas em comum: 334.590 linhas, diferença máxima de Dice 5e-6.
+- Visual: só CLAHE atende aos três critérios. HE e alargamento sobem o contraste, mas a entropia cai; remoção de reflexo reduz a fração especular de 1,65% para 0,91%, mas não atende aos critérios; homomórfica sobe a entropia, sem ganho de contraste (p=0,37).
+- Ruído: média, mediana e passa-baixa reduzem o ruído. Em sal e pimenta 5%, a mediana vence (PSNR 39,1 × 25,9 da média; SSIM 0,96 × 0,44).
+- Segmentação, melhor método de cada técnica (sempre crescimento de região): sem PDI 0,467; CLAHE 0,614 (melhora); alargamento 0,484 (melhora, mas IoU igual e HD95 pior: menos falhas, contornos piores); HE 0,476 (neutra); média 0,438, mediana 0,442, passa-baixa 0,419, reflexo 0,463 e homomórfica 0,440 (pioram). O efeito da remoção de reflexo é de só -0,003: significativo, mas pequeno.
+- O efeito depende do método: CLAHE piora Otsu + morfologia (0,17 × 0,32), e homomórfica melhora Otsu + morfologia (0,41 × 0,32) e watershed (0,44 × 0,33). Ver `results/tables/pdi/segmentacao.csv`.
+- Custo por frame em 1 núcleo: sem PDI 3,3 ms; CLAHE 3,8 ms; passa-baixa 15,6 ms; homomórfica 17,7 ms. Diferenças abaixo de cerca de 0,5 ms estão dentro do ruído da medição (100 frames; a média aparece como mais barata que `raw`).
+- Correção: a GPU registrada era da placa inteira, não do estudo, que roda só na CPU. Ver `docs/DECISIONS.md`.
+- Achado: o painel LaringoMonitor (animações em loop) consome cerca de 1,35 núcleo e mantém a GPU em ~30-39% sem nenhum estudo rodando. Isso contamina os tempos dos treinos.
+- A linha `pdi-study` em `etapas.csv` engloba as quatro `pdi/*`: não somar.

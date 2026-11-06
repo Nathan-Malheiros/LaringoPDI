@@ -1,0 +1,63 @@
+{
+  "frames": 5870,
+  "videos": 587,
+  "tecnicas": 9,
+  "metodos": 6,
+  "melhor_no_treino_fold0": {
+    "method": "region_grow",
+    "preprocess": "clahe",
+    "params": {
+      "tol": 20
+    },
+    "train_dice": 0.6232134179104478,
+    "selected_on": "treino+val do fold 0 (só máscaras de glote)",
+    "git_sha": "e0da7c8"
+  },
+  "minutos": 71.6,
+  "hardware": {
+    "cpu": "AMD Ryzen 5 5500",
+    "cpu_threads": 12,
+    "ram_gb": 15.9,
+    "gpu": "NVIDIA GeForce RTX 3060",
+    "gpu_mem_gb": 12.0,
+    "torch": "2.14.1+cu130",
+    "cuda": "13.0",
+    "os": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.16"
+  },
+  "git_sha": "e0da7c8",
+  "conferencia_antigo": {
+    "linhas": 334590,
+    "dif_max_dice": 5.000000000032756e-06
+  },
+  "etapas": [
+    {
+      "etapa": "pdi/1_ruido",
+      "duracao_s": 77.95,
+      "cpu_nucleos_medio": 6.6,
+      "ram_processo_pico_gb": 1.79,
+      "gpu_usada_pelo_processo": "não"
+    },
+    {
+      "etapa": "pdi/2_tecnicas_e_segmentacao",
+      "duracao_s": 4190.27,
+      "cpu_nucleos_medio": 8.24,
+      "ram_processo_pico_gb": 2.29,
+      "gpu_usada_pelo_processo": "não"
+    },
+    {
+      "etapa": "pdi/3_ajuste_e_estatistica",
+      "duracao_s": 2.92,
+      "cpu_nucleos_medio": null,
+      "ram_processo_pico_gb": null,
+      "gpu_usada_pelo_processo": "não"
+    },
+    {
+      "etapa": "pdi/4_tempo_por_tecnica",
+      "duracao_s": 22.99,
+      "cpu_nucleos_medio": 1.0,
+      "ram_processo_pico_gb": 1.3,
+      "gpu_usada_pelo_processo": "não"
+    }
+  ]
+}

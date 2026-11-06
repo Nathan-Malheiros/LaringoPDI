@@ -228,6 +228,8 @@ def single_table(vis: pd.DataFrame, visv: pd.DataFrame, den: pd.DataFrame, summ:
 
 def _figure(cfg: dict, summ: pd.DataFrame, table: pd.DataFrame) -> None:
     """Heatmap de um só matiz (magnitude do Dice) e dispersão Dice × custo com rótulos diretos."""
+    from matplotlib.ticker import FixedLocator, FuncFormatter, NullLocator
+
     plt = _plt()
     techs, methods = list(table["tecnica"]), [m for m in METHODS if m in set(summ["method"])]
     M = summ.pivot(index="method", columns="preprocess", values="dice_mean").loc[methods, techs]
@@ -248,6 +250,9 @@ def _figure(cfg: dict, summ: pd.DataFrame, table: pd.DataFrame) -> None:
     for _, r in table.iterrows():
         b.annotate(r["nome"], (r["ms_total"], r["dice"]), xytext=(6, 4), textcoords="offset points", fontsize=8, color="#1B2A4A")
     b.set_xscale("log")
+    b.xaxis.set_major_locator(FixedLocator([3, 5, 10, 15, 20]))
+    b.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
+    b.xaxis.set_minor_locator(NullLocator())
     b.set_xlabel("Custo: técnica + segmentação (ms por frame, 1 núcleo da CPU, escala log)")
     b.set_ylabel("Dice no teste (melhor método de cada técnica)")
     b.grid(color="#C9CFDD", lw=0.5, alpha=0.6)
@@ -256,6 +261,12 @@ def _figure(cfg: dict, summ: pd.DataFrame, table: pd.DataFrame) -> None:
     fig.tight_layout()
     fig.savefig(C.path(cfg, "figures") / "pdi_segmentacao_custo.png")
     plt.close(fig)
+
+
+def _stage_summary(cfg: dict) -> list[dict]:
+    cols = ["etapa", "duracao_s", "cpu_nucleos_medio", "ram_processo_pico_gb", "gpu_usada_pelo_processo"]
+    s = latest_stages(cfg)[cols].query("etapa.str.startswith('pdi/')").astype(object)
+    return s.where(s.notna(), None).to_dict("records")
 
 
 def cmd_pdi_study(cfg: dict, args) -> dict:
@@ -311,8 +322,7 @@ def cmd_pdi_study(cfg: dict, args) -> dict:
         o = pd.read_csv(old, usecols=["path", "preprocess", "method", "param_id", "dice"])
         m = seg.merge(o, on=["path", "preprocess", "method", "param_id"], suffixes=("", "_old"))
         resumo["conferencia_antigo"] = {"linhas": len(m), "dif_max_dice": float((m["dice"] - m["dice_old"]).abs().max()) if len(m) else None}
-    resumo["etapas"] = latest_stages(cfg)[["etapa", "duracao_s", "cpu_nucleos_medio", "ram_processo_pico_gb", "gpu_util_pct_media"]] \
-        .query("etapa.str.startswith('pdi/')").to_dict("records")
+    resumo["etapas"] = _stage_summary(cfg)
     C.write_json(out / "resumo.json", resumo)
     cols = ["tecnica", "veredito_visual", "melhor_metodo", "dice", "veredito_seg", "ms_total"]
     return {"minutos": resumo["minutos"], "tabela": table[cols].round(3).to_dict("records")}
