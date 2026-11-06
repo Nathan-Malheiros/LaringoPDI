@@ -27,6 +27,17 @@ def test_cost_verdicts_direction_and_tie():
     assert v.loc["E_igual", "veredito_convergencia"] == "igual" and v.loc["E_igual", "veredito_custo"] == "igual"
 
 
+def test_mask_seed_ignores_letterbox_pad():
+    """O pad preto cruza a janela central, mas a semente tem de cair na glote, dentro da imagem."""
+    g = np.zeros((224, 224), np.uint8)
+    g[92:132] = 120                                  # imagem larga: faixa fina no meio, pad acima e abaixo
+    g[105:119, 105:119] = 20                         # glote
+    params = {"tol": 20}
+    assert not __import__("laringopdi.pdi.segmentation", fromlist=["segment"]).segment(g, "region_grow", **params).any()
+    m = M._segment_region(g, "region_grow", params)
+    assert m[112, 112] and not m[:92].any() and not m[132:].any() and m.mean() < .01
+
+
 def test_mlp_end_to_end(tmp_cfg):
     vids = {f"h{i}": "healthy" for i in range(5)}
     vids.update({f"s{i}": "Vocal fold nodules" for i in range(5)})

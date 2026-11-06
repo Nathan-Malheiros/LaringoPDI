@@ -60,11 +60,21 @@ def _feature_paths(cfg: dict, exp: str) -> tuple:
     return d / f"{exp}.csv.gz", d / f"{exp}.tempo.json"
 
 
-def _feature_frame(g: np.ndarray, method: str, params: dict) -> dict:
+def _segment_region(g: np.ndarray, method: str, params: dict) -> np.ndarray:
+    """Segmenta só a área da imagem, como no estudo de segmentação. O pad preto não pode receber a semente."""
     from laringopdi.pdi.segmentation import segment
 
+    m = np.zeros(g.shape, bool)
+    ys, xs = np.nonzero(_letterbox_region(g))
+    if ys.size:
+        y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+        m[y0:y1, x0:x1] = segment(g[y0:y1, x0:x1], method, **params).astype(bool)
+    return m
+
+
+def _feature_frame(g: np.ndarray, method: str, params: dict) -> dict:
     cv2.setNumThreads(1)
-    m = segment(g, method, **params).astype(bool)
+    m = _segment_region(g, method, params)
     return {**features18(g, m), "mask_empty": float(not m.any())}
 
 
