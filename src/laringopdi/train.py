@@ -6,6 +6,7 @@ com metrics.json, preds.csv e config.yaml. Jobs concluídos são pulados.
 O metrics.json guarda, além do teste por frame e por vídeo:
 - `history`: por época, perda e F1 no treino e na validação, taxa de aprendizado e tempo;
 - `cost`: tempo total, tempo até a melhor época, épocas até convergir e pico de memória;
+- `uso`: CPU, RAM, GPU e energia medidas durante o job (laringopdi.custo);
 - `hardware`: CPU, RAM e GPU em que o job rodou.
 """
 from __future__ import annotations
@@ -18,6 +19,7 @@ import yaml
 
 from laringopdi import config as C
 from laringopdi import data as D
+from laringopdi.custo import Medidor
 from laringopdi.evaluate import metrics_both_levels
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
@@ -131,6 +133,7 @@ def train_job(cfg: dict, exp: str, task: str, model_name: str, fold: int, seed: 
     if (rd / "metrics.json").exists() and not force:
         return {"skipped": True, "run": str(rd)}
     t0 = time.perf_counter()
+    uso = Medidor().start()                                             # CPU, RAM, GPU e energia durante o job
     set_seed(seed)
     tc = cfg["train"]
     epochs = epochs or tc["epochs"]
@@ -213,7 +216,7 @@ def train_job(cfg: dict, exp: str, task: str, model_name: str, fold: int, seed: 
             "gpu_peak_mb": float(torch.cuda.max_memory_allocated() / 2**20) if device.type == "cuda" else None}
     m = {**metrics_both_levels(preds), "val_frame": vm["frame"], "val_video": vm["video"],
          "epochs_run": len(hist), "best_val_video_f1": best, "seconds": cost["seconds_total"],
-         "device": str(device), "cost": cost, "hardware": C.hardware(), "history": hist}
+         "device": str(device), "cost": cost, "uso": uso.stop(), "hardware": C.hardware(), "history": hist}
     if tap:
         tap.finish(m["video"]["f1_macro"])
     if seed == 0:                                                       # pesos só da semente 0 (Grad-CAM e app)

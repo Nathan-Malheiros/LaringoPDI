@@ -28,7 +28,7 @@ def test_end_to_end(tmp_cfg):
             assert 0 <= r["test_video_f1"] <= 1
     m = json.loads((T.run_dir(tmp_cfg, "E03", "A", "resnet18", 0, 0) / "metrics.json").read_text(encoding="utf-8"))
     assert {"seconds_train", "seconds_to_best", "best_epoch", "seconds_per_epoch"} <= set(m["cost"])
-    assert m["hardware"]["cpu_threads"] > 0
+    assert m["hardware"]["cpu_threads"] > 0 and m["uso"]["duracao_s"] > 0
     assert {"train_loss", "train_video_f1", "val_loss", "val_video_f1", "sec_train"} <= set(m["history"][0])
     v = E.verdicts(tmp_cfg, "resnet18", tasks=("A",), exps=["E03"])
     assert len(v) == 1 and v["verdict"].iloc[0] in {"melhora", "neutra", "piora"}

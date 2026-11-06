@@ -16,3 +16,4 @@ grad-cam>=1.5
 streamlit>=1.32
 pytest>=8.0
 reportlab>=4.0
+psutil

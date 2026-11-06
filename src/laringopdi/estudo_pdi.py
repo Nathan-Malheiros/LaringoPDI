@@ -20,6 +20,7 @@ import pandas as pd
 
 from laringopdi import config as C
 from laringopdi import data as D
+from laringopdi.custo import latest_stages, medir
 from laringopdi.etapa1 import _plt, _wilcoxon, cmd_denoise_study
 from laringopdi.evaluate import _holm, seg_per_fold
 
@@ -263,18 +264,22 @@ def cmd_pdi_study(cfg: dict, args) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     print("[1/4] Redução de ruído: PSNR e SSIM", flush=True)
     denoise_args = type("A", (), {"force": True, "jobs": args.jobs})()
-    cmd_denoise_study(cfg, denoise_args)
+    with medir(cfg, "pdi/1_ruido", "Ruído sintético, filtros, PSNR e SSIM") as e:
+        r_ = cmd_denoise_study(cfg, denoise_args)
+        e.n_itens = r_["n_frames"]
     den = denoise_verdicts(pd.read_csv(C.path(cfg, "tables") / "denoise_frames.csv.gz"))
     den.round(5).to_csv(out / "ruido.csv", index=False)
 
     print("[2/4] Qualidade da imagem e segmentação em todos os frames", flush=True)
-    qual, seg = _run_frames(cfg, args.jobs)
     fr = D.load_frames(cfg)
+    with medir(cfg, "pdi/2_tecnicas_e_segmentacao", "Técnicas, qualidade e segmentação em todos os frames", n_itens=len(fr)):
+        qual, seg = _run_frames(cfg, args.jobs)
 
     print("[3/4] Parâmetros pelo treino e testes estatísticos", flush=True)
     from laringopdi.pdi.segmentation import PARAM_GRID
     grid = {m: PARAM_GRID[m] for m in cfg["segmentation"]["methods"]}
-    per_fold, chosen = seg_per_fold(seg, grid, D.load_splits(cfg), cfg["segmentation"]["tune_fold"], fr)
+    with medir(cfg, "pdi/3_ajuste_e_estatistica", "Parâmetros pelo treino e testes estatísticos"):
+        per_fold, chosen = seg_per_fold(seg, grid, D.load_splits(cfg), cfg["segmentation"]["tune_fold"], fr)
     per_fold.to_csv(out / "segmentacao_por_fold.csv", index=False)
     qv = qual.merge(fr[["path", "video_id"]], on="path").groupby(["technique", "video_id"])[list(QUALITY)].mean().reset_index()
     order = [t for t in cfg["segmentation"]["preprocess"]]
@@ -286,7 +291,8 @@ def cmd_pdi_study(cfg: dict, args) -> dict:
     segv = seg_verdicts(vd)
 
     print("[4/4] Custo por técnica e tabela única", flush=True)
-    tm = timing(cfg, per_fold)
+    with medir(cfg, "pdi/4_tempo_por_tecnica", "Tempo em 1 núcleo: 100 frames por técnica e método", n_itens=100):
+        tm = timing(cfg, per_fold)
     summ = per_fold.groupby(["method", "preprocess"]).agg(
         train_dice=("train_dice", "mean"), dice_mean=("dice", "mean"), dice_sd=("dice", "std"), iou_mean=("iou", "mean"),
         hd95_median=("hd95_median", "median"), fail_rate=("fail_rate", "mean")).reset_index()
@@ -305,6 +311,8 @@ def cmd_pdi_study(cfg: dict, args) -> dict:
         o = pd.read_csv(old, usecols=["path", "preprocess", "method", "param_id", "dice"])
         m = seg.merge(o, on=["path", "preprocess", "method", "param_id"], suffixes=("", "_old"))
         resumo["conferencia_antigo"] = {"linhas": len(m), "dif_max_dice": float((m["dice"] - m["dice_old"]).abs().max()) if len(m) else None}
+    resumo["etapas"] = latest_stages(cfg)[["etapa", "duracao_s", "cpu_nucleos_medio", "ram_processo_pico_gb", "gpu_util_pct_media"]] \
+        .query("etapa.str.startswith('pdi/')").to_dict("records")
     C.write_json(out / "resumo.json", resumo)
     cols = ["tecnica", "veredito_visual", "melhor_metodo", "dice", "veredito_seg", "ms_total"]
     return {"minutos": resumo["minutos"], "tabela": table[cols].round(3).to_dict("records")}

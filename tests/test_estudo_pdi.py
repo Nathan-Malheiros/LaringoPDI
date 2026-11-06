@@ -67,6 +67,9 @@ def test_pdi_study_end_to_end_and_resumes(tmp_cfg):
     assert t.loc[2, "veredito_visual"] == "ver ruído" and t["psnr_sal_pimenta5"].notna()[2]
     assert t["dice"].between(0, 1).all() and (t["ms_total"] > 0).all()
     assert (C.path(tmp_cfg, "figures") / "pdi_segmentacao_custo.png").exists()
+    etapas = pd.read_csv(C.path(tmp_cfg, "tables") / "custo" / "etapas.csv")
+    assert {"pdi/1_ruido", "pdi/2_tecnicas_e_segmentacao", "pdi/3_ajuste_e_estatistica", "pdi/4_tempo_por_tecnica"} <= set(etapas["etapa"])
+    assert (etapas["duracao_s"] > 0).all() and (etapas["status"] == "ok").all()
     r = C.path(tmp_cfg, "cache").parent / "pdi_study" / "q_0000.csv.gz"
     stamp = r.stat().st_mtime_ns
     cmd_pdi_study(tmp_cfg, args)

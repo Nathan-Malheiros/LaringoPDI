@@ -40,7 +40,12 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--force", action="store_true", help="sobrescreve saídas existentes (cuidado)")
     a = ap.parse_args(argv)
     cfg = C.load()
+    from laringopdi.custo import medir
+    with medir(cfg, a.command if a.command != "train" or a.all else f"train/{a.exp}/{a.task}/f{a.fold}s{a.seed}"):
+        _dispatch(a, cfg)
 
+
+def _dispatch(a, cfg: dict) -> None:
     if a.command == "index":
         from laringopdi.data import build_index
         s = build_index(cfg)
