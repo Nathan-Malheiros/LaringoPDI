@@ -9,7 +9,7 @@ import sys
 
 from laringopdi import config as C
 
-COMMANDS = ["index", "eda", "splits", "gallery", "seg-study", "cache", "train", "gradcam", "summary", "denoise-study", "pdi-study"]
+COMMANDS = ["index", "eda", "splits", "gallery", "seg-study", "cache", "train", "gradcam", "summary", "denoise-study", "pdi-study", "mlp-class", "mlp-seg"]
 
 
 def _exps(cfg: dict, arg: str | None) -> list[str]:
@@ -64,12 +64,21 @@ def _dispatch(a, cfg: dict) -> None:
         from laringopdi.evaluate import seg_study
         _print(seg_study(cfg, a.jobs, a.force))
     elif a.command == "cache":
-        from laringopdi.data import build_cache, quality_summary
-        out = [build_cache(cfg, e, a.jobs, a.force) for e in _exps(cfg, a.exp)]
+        from tqdm import tqdm
+
+        from laringopdi.custo import medir
+        from laringopdi.data import build_cache, cache_paths, load_frames, quality_summary
+        out = []
+        for e in tqdm(_exps(cfg, a.exp), desc="Caches por técnica", unit="técnica", file=sys.stdout):
+            if a.force or not cache_paths(cfg, e)["x"].exists():     # cache reaproveitado não apaga a medição anterior
+                with medir(cfg, f"cache/{e}", f"Técnica e gravação do cache de {cfg['experiments'][e]['pipeline']}", n_itens=len(load_frames(cfg))):
+                    out.append(build_cache(cfg, e, a.jobs, a.force))
+            else:
+                out.append(build_cache(cfg, e, a.jobs, a.force))
         quality_summary(cfg)
         _print(out)
     else:
-        mod = {"train": "train", "gradcam": "evaluate", "summary": "evaluate", "denoise-study": "etapa1", "pdi-study": "estudo_pdi"}[a.command]
+        mod = {"train": "train", "gradcam": "evaluate", "summary": "evaluate", "denoise-study": "etapa1", "pdi-study": "estudo_pdi", "mlp-class": "mlp", "mlp-seg": "mlp"}[a.command]
         import importlib
         try:
             fn = getattr(importlib.import_module(f"laringopdi.{mod}"), "cmd_" + a.command.replace("-", "_"), None)

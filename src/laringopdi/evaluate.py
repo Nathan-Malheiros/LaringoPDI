@@ -238,48 +238,118 @@ def bootstrap_delta_f1(y, pa, pb, n_boot: int, seed: int = 0) -> tuple[float, fl
     return float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))
 
 
-def verdicts(cfg: dict, model: str, tasks=("A", "B"), baseline: str = "E00", exps: list[str] | None = None) -> pd.DataFrame:
-    """Cada técnica × tarefa contra o baseline: ΔF1 (vídeo), Wilcoxon pareado (fold×semente) com Holm,
-    McNemar OOF com Holm e IC 95% bootstrap. Veredito: melhora/piora só se o McNemar corrigido for
-    < α **e** o IC excluir 0; senão, neutra."""
+def bootstrap_delta_sensitivity(y, pa, pb, n_boot: int, seed: int = 0) -> tuple[float, float]:
+    """IC 95% (percentil) da diferença de sensibilidade (b − a), reamostrando os vídeos alterados."""
+    pos = np.asarray(y) == 1
+    a, b = np.asarray(pa)[pos] == 1, np.asarray(pb)[pos] == 1
+    if not pos.any():
+        return 0.0, 0.0
+    rng = np.random.default_rng(seed)
+    d = [(b[i].mean() - a[i].mean()) for i in (rng.integers(0, len(a), len(a)) for _ in range(n_boot))]
+    return float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))
+
+
+def verdicts(cfg: dict, model: str, tasks=("A", "B"), baseline: str = "E00", exps: list[str] | None = None,
+             metric: str = "f1", baseline_model: str | None = None) -> pd.DataFrame:
+    """Cada técnica × tarefa contra a referência, em F1-macro ou sensibilidade por vídeo: diferença, Wilcoxon pareado
+    (fold×semente) com Holm, McNemar OOF com Holm e IC 95% por bootstrap. Na sensibilidade, o McNemar e o IC usam só os
+    vídeos alterados. `baseline_model` compara com outro modelo (ex.: MLP sobre pixels, sem PDI)."""
     from scipy.stats import wilcoxon
     from sklearn.metrics import f1_score
 
-    runs = collect_runs(cfg)
-    runs = runs[runs["model"] == model]
+    col = {"f1": "video_f1_macro", "sensitivity": "video_sensitivity"}[metric]
+    all_runs = collect_runs(cfg)
+    runs = all_runs[all_runs["model"] == model]
+    base_model = baseline_model or model
+    base_runs = all_runs[all_runs["model"] == base_model]
     exps = exps or [e for e in cfg["study"]["experiments"] if e != baseline]
     rows = []
     for t in tasks:
-        base = runs[(runs["exp"] == baseline) & (runs["task"] == t)].set_index(["fold", "seed"])["video_f1_macro"]
-        sa = run_seeds(cfg, baseline, t, model)
+        base = base_runs[(base_runs["exp"] == baseline) & (base_runs["task"] == t)].set_index(["fold", "seed"])[col]
+        sa = run_seeds(cfg, baseline, t, base_model)
         for e in exps:
-            cur = runs[(runs["exp"] == e) & (runs["task"] == t)].set_index(["fold", "seed"])["video_f1_macro"]
+            cur = runs[(runs["exp"] == e) & (runs["task"] == t)].set_index(["fold", "seed"])[col]
             pair = pd.concat([base, cur], axis=1, keys=["a", "b"]).dropna()
             seeds = sorted(sa & run_seeds(cfg, e, t, model))
             if pair.empty or not seeds:
                 continue
-            oa, ob = oof_video_preds(cfg, baseline, t, model, seeds), oof_video_preds(cfg, e, t, model, seeds)
+            oa, ob = oof_video_preds(cfg, baseline, t, base_model, seeds), oof_video_preds(cfg, e, t, model, seeds)
             m = oa.merge(ob, on=["video_id", "y"], suffixes=("_a", "_b"))
             y, pa, pb = m["y"].to_numpy(), m["pred_a"].to_numpy(), m["pred_b"].to_numpy()
             diff = pair["b"] - pair["a"]
             wp = float(wilcoxon(pair["b"], pair["a"]).pvalue) if (diff != 0).any() else 1.0
-            lo, hi = bootstrap_delta_f1(y, pa, pb, cfg["stats"]["n_boot"])
+            if metric == "f1":
+                lo, hi = bootstrap_delta_f1(y, pa, pb, cfg["stats"]["n_boot"])
+                oof = f1_score(y, pb, average="macro") - f1_score(y, pa, average="macro")
+                mc = mcnemar_p(pa == y, pb == y)
+            else:
+                lo, hi = bootstrap_delta_sensitivity(y, pa, pb, cfg["stats"]["n_boot"])
+                alt = y == 1
+                oof = float((pb[alt] == 1).mean() - (pa[alt] == 1).mean()) if alt.any() else 0.0
+                mc = mcnemar_p(pa[alt] == 1, pb[alt] == 1)
             rows.append({"model": model, "task": t, "exp": e, "pipeline": cfg["experiments"].get(e, {}).get("pipeline", e),
-                         "n_pairs": len(pair), "n_seeds": len(seeds), "f1_base": pair["a"].mean(), "f1_exp": pair["b"].mean(),
-                         "delta_f1": diff.mean(), "wilcoxon_p": wp,
-                         "oof_delta_f1": f1_score(y, pb, average="macro") - f1_score(y, pa, average="macro"),
-                         "ci_low": lo, "ci_high": hi, "mcnemar_p": mcnemar_p(pa == y, pb == y)})
+                         "n_pairs": len(pair), "n_seeds": len(seeds), f"{metric}_base": pair["a"].mean(), f"{metric}_exp": pair["b"].mean(),
+                         f"delta_{metric}": diff.mean(), "wilcoxon_p": wp, f"oof_delta_{metric}": oof,
+                         "ci_low": lo, "ci_high": hi, "mcnemar_p": mc})
     df = pd.DataFrame(rows)
     if df.empty:
         return df
-    for col in ("wilcoxon_p", "mcnemar_p"):
-        df[col + "_holm"] = df.groupby("task")[col].transform(lambda p: _holm(p.to_numpy()))
+    for c in ("wilcoxon_p", "mcnemar_p"):
+        df[c + "_holm"] = df.groupby("task")[c].transform(lambda p: _holm(p.to_numpy()))
     a = cfg["stats"]["alpha"]
     # Regra fixada em DECISIONS.md (2026-10-24): IC exclui 0 e (McNemar ou, com >= 10 pares, Wilcoxon) < α.
     test = (df["mcnemar_p_holm"] < a) | ((df["n_pairs"] >= 10) & (df["wilcoxon_p_holm"] < a))
     sig = test & ((df["ci_low"] > 0) | (df["ci_high"] < 0))
-    df["verdict"] = np.where(sig & (df["oof_delta_f1"] > 0), "melhora", np.where(sig, "piora", "neutra"))
+    df["verdict"] = np.where(sig & (df[f"oof_delta_{metric}"] > 0), "melhora", np.where(sig, "piora", "neutra"))
     return df
+
+
+def run_costs(cfg: dict, model: str, ms_by_exp: dict) -> pd.DataFrame:
+    """Uma linha por job: convergência, sobreajuste e custo total = PDI × frames de treino + treino até a melhor validação."""
+    import json as _json
+
+    rows = []
+    for p in C.path(cfg, "runs").glob(f"*/*/{model}/fold*_seed*/metrics.json"):
+        exp, task = p.parts[-5], p.parts[-4]
+        if exp not in ms_by_exp:
+            continue
+        fold, seed = p.parent.name.replace("fold", "").split("_seed")
+        m = _json.loads(p.read_text(encoding="utf-8"))
+        c, h = m["cost"], m["history"][m["cost"]["best_epoch"]]
+        tr, va = ("train_dice", "val_dice") if "val_dice" in h else ("train_video_f1", "val_video_f1")
+        rows.append({"exp": exp, "task": task, "fold": int(fold), "seed": int(seed), "epoca_melhor": c["best_epoch"] + 1, "epocas": c["epochs_run"],
+                     "s_ate_melhor": c["seconds_to_best"], "s_por_epoca": c["seconds_per_epoch"], "sobreajuste": h[tr] - h[va],
+                     "custo_pdi_s": ms_by_exp[exp] * c["n_train_frames"] / 1000,
+                     "custo_total_s": ms_by_exp[exp] * c["n_train_frames"] / 1000 + c["seconds_to_best"]})
+    return pd.DataFrame(rows)
+
+
+def cost_verdicts(costs: pd.DataFrame, exps: list[str], baseline: str = "E00", alpha: float = 0.05) -> pd.DataFrame:
+    """Técnica × referência, pareado por fold e semente, com Holm dentro de cada tarefa: convergência e custo total."""
+    from scipy.stats import wilcoxon
+
+    def pvalue(d):
+        return float(wilcoxon(d).pvalue) if (d != 0).any() else 1.0
+
+    rows = []
+    for t, g in costs.groupby("task"):
+        base = g[g["exp"] == baseline].set_index(["fold", "seed"])
+        cur_rows = []
+        for e in exps:
+            c = g[g["exp"] == e].set_index(["fold", "seed"])
+            idx = base.index.intersection(c.index)
+            if not len(idx):
+                continue
+            de, dc = c.loc[idx, "epoca_melhor"] - base.loc[idx, "epoca_melhor"], c.loc[idx, "custo_total_s"] - base.loc[idx, "custo_total_s"]
+            cur_rows.append({"exp": e, "task": t, "delta_epoca_melhor": de.mean(), "p_conv": pvalue(de), "delta_custo_s": dc.mean(), "p_custo": pvalue(dc)})
+        if not cur_rows:
+            continue
+        d = pd.DataFrame(cur_rows)
+        d["p_conv_holm"], d["p_custo_holm"] = _holm(d["p_conv"].to_numpy()), _holm(d["p_custo"].to_numpy())
+        d["veredito_convergencia"] = np.where(d["p_conv_holm"] < alpha, np.where(d["delta_epoca_melhor"] < 0, "converge antes", "converge depois"), "igual")
+        d["veredito_custo"] = np.where(d["p_custo_holm"] < alpha, np.where(d["delta_custo_s"] < 0, "mais barata", "mais cara"), "igual")
+        rows.append(d)
+    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
 
 
 def _holm(p: np.ndarray) -> np.ndarray:

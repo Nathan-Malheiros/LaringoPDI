@@ -55,8 +55,31 @@ train:
   seeds: [0, 1, 2]
 
 classic:
-  mlp18: {hidden_layer_sizes: [32, 16], activation: relu, solver: adam, early_stopping: true, max_iter: 2000}
   permutation_repeats: 10
+
+mlp:
+  class:   # CPU, 1 núcleo: entrada pequena; assim o tempo é comparável entre técnicas
+    hidden18: [32, 16]
+    hidden_pixels: [256, 64]
+    lr: 1.0e-3
+    weight_decay: 1.0e-4
+    batch_size: 32
+    epochs: 300
+    patience: 20
+    threads: 1
+  seg:     # GPU: a inferência passa por todos os pixels de todos os frames
+    patch: 15
+    hidden: [64, 32]
+    pixels_per_class: 200
+    batch_size: 4096
+    lr: 1.0e-3
+    weight_decay: 1.0e-4
+    epochs: 30
+    patience: 5
+    eval_frames: 100
+    frames_per_batch: 8
+    threshold: 0.5
+    seed: 0
 
 stats:
   alpha: 0.05
