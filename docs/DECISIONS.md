@@ -176,3 +176,5 @@ Registrado **antes** de gerar os números novos desta entrada. Supera a proibiç
 **Hardware.** Cada job registra CPU, RAM, GPU e versões. Tempos de PDI e MLP medidos na CPU; os da CNN, na GPU. Tempos de máquinas diferentes não são comparados.
 
 **Declaração de evidência já vista:** os resultados anteriores, com menos técnicas e sementes, indicavam classificação majoritariamente neutra e efeito forte do PDI na segmentação. As regras acima foram escritas conhecendo isso. As curvas, o custo e a MLP por técnica ainda não tinham sido vistos.
+
+**Complemento de 2026-11-06, antes de rodar a Fase B:** filtro `mean`, `median` ou `gauss_lpf` "reduz o ruído" quando PSNR e SSIM aumentam em relação a sem filtro (Wilcoxon por frame; Holm entre filtros em cada tipo de ruído). Na tabela única, o melhor método de cada técnica é escolhido pelo Dice no treino, e os números mostrados são do teste. O `segmentation_best.json` não é alterado por este estudo. Tempo medido em um único núcleo da CPU, na imagem em tamanho de trabalho. A segmentação clássica e as técnicas usam OpenCV/NumPy, que rodam na CPU; a GPU fica para as redes.

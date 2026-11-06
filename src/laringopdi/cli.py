@@ -9,7 +9,7 @@ import sys
 
 from laringopdi import config as C
 
-COMMANDS = ["index", "eda", "splits", "gallery", "seg-study", "cache", "train", "gradcam", "summary", "denoise-study"]
+COMMANDS = ["index", "eda", "splits", "gallery", "seg-study", "cache", "train", "gradcam", "summary", "denoise-study", "pdi-study"]
 
 
 def _exps(cfg: dict, arg: str | None) -> list[str]:
@@ -64,7 +64,7 @@ def main(argv: list[str] | None = None) -> None:
         quality_summary(cfg)
         _print(out)
     else:
-        mod = {"train": "train", "gradcam": "evaluate", "summary": "evaluate", "denoise-study": "etapa1"}[a.command]
+        mod = {"train": "train", "gradcam": "evaluate", "summary": "evaluate", "denoise-study": "etapa1", "pdi-study": "estudo_pdi"}[a.command]
         import importlib
         try:
             fn = getattr(importlib.import_module(f"laringopdi.{mod}"), "cmd_" + a.command.replace("-", "_"), None)
