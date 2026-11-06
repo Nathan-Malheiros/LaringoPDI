@@ -11,6 +11,7 @@ O metrics.json guarda, além do teste por frame e por vídeo:
 """
 from __future__ import annotations
 
+import sys
 import time
 
 import numpy as np
@@ -21,6 +22,7 @@ from laringopdi import config as C
 from laringopdi import data as D
 from laringopdi.custo import Medidor
 from laringopdi.evaluate import metrics_both_levels
+from laringopdi.pausa import esperar_se_pausado
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
@@ -243,8 +245,9 @@ def cmd_train(cfg: dict, args) -> dict:
     if args.seed_only is not None:
         jobs = [j for j in jobs if j["seed"] == args.seed_only]
     done = skipped = 0
-    bar = tqdm(jobs, desc="Treino da ResNet-18", unit="job")
+    bar = tqdm(jobs, desc="Treino da ResNet-18", unit="job", file=sys.stdout)
     for j in bar:
+        esperar_se_pausado(cfg)
         bar.set_postfix_str(f"{j['exp']} tarefa {j['task']} fold {j['fold']} semente {j['seed']}")
         r = train_job(cfg, j["exp"], j["task"], j["model"], j["fold"], j["seed"], args.epochs, args.force)
         skipped += bool(r.get("skipped"))

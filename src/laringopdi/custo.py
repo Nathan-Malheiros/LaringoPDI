@@ -20,6 +20,7 @@ from datetime import datetime
 import psutil
 
 from laringopdi import config as C
+from laringopdi import pausa
 
 INTERVAL_S = 3.0
 GPU_QUERY = "utilization.gpu,memory.used,power.draw"
@@ -90,10 +91,12 @@ class Medidor:
 
     def _loop(self) -> None:
         while not self._stop.wait(self.interval):
-            self._sample()
+            if not pausa.em_espera:
+                self._sample()
 
     def start(self) -> "Medidor":
         self.t0, self.started = time.perf_counter(), datetime.now()
+        self._paused0 = pausa.segundos_pausados
         self._disk0 = shutil.disk_usage(C.ROOT).used
         self._gpu0 = _gpu_sample()                      # a potência antes da etapa é o fundo descontado na energia líquida
         self._tree_sample()
@@ -105,14 +108,15 @@ class Medidor:
         self._stop.set()
         self._thread.join(timeout=self.interval + 6)
         self._sample()                                  # etapas curtas também ficam com ao menos uma amostra
-        dur = time.perf_counter() - self.t0
+        paused = pausa.segundos_pausados - self._paused0
+        dur = time.perf_counter() - self.t0 - paused             # a espera em pausa não é custo da etapa
         mean = lambda v: round(sum(v) / len(v), 2) if v else None
         peak = lambda v: round(max(v), 2) if v else None
         util, mem, power = zip(*self.gpu) if self.gpu else ((), (), ())
         p0 = self._gpu0[2] if self._gpu0 else None
         gross = sum(power) / len(power) * dur / 3600 if power else None
         return {"inicio": self.started.isoformat(timespec="seconds"), "fim": datetime.now().isoformat(timespec="seconds"),
-                "duracao_s": round(dur, 2), "cpu_nucleos_medio": mean(self.cpu), "cpu_nucleos_pico": peak(self.cpu),
+                "duracao_s": round(dur, 2), "pausado_s": round(paused, 1), "cpu_nucleos_medio": mean(self.cpu), "cpu_nucleos_pico": peak(self.cpu),
                 "cpu_sistema_pct_medio": mean(self.cpu_sys), "ram_processo_pico_gb": peak(self.rss),
                 "ram_sistema_pico_gb": peak(self.ram), "gpu_usada_pelo_processo": "sim" if self.used_gpu else "não",
                 "gpu_sistema_util_pct_media": mean(util), "gpu_sistema_util_pct_pico": peak(util),
@@ -152,6 +156,8 @@ def medir(cfg: dict, etapa: str, descricao: str = "", n_itens: int | None = None
     finally:
         r = m.stop()
         n = info.n_itens
+        if r["pausado_s"]:
+            descricao = f"{descricao} (pausa de {r['pausado_s']:.0f} s descontada)".strip()
         _record(cfg, {**r, "etapa": etapa, "descricao": descricao, "status": status, "n_itens": n,
                       "ms_por_item": round(r["duracao_s"] * 1000 / n, 3) if n else None, "git_sha": C.git_sha()})
 

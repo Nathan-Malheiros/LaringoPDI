@@ -25,6 +25,7 @@ from laringopdi import config as C
 from laringopdi import data as D
 from laringopdi.custo import Medidor, medir
 from laringopdi.evaluate import _holm, compute_metrics, cost_verdicts, metrics_both_levels, run_costs, verdicts
+from laringopdi.pausa import esperar_se_pausado
 from laringopdi.features import FAMILIES_18, _letterbox_region, _unpack, features18, video_features18
 from laringopdi.train import _conf, _preds_df, _save, _weighted_loss, frame_labels, run_dir, set_seed
 
@@ -363,10 +364,13 @@ def cmd_mlp_class(cfg: dict, args) -> dict:
     for e in tqdm(_study(cfg), desc="Técnicas", unit="técnica", file=sys.stdout):
         build_features(cfg, e, args.jobs, args.force)
     jobs = class_jobs(cfg)
+    if (out / "classificacao.csv").exists() and not args.force and all((run_dir(cfg, j["exp"], j["task"], j["model"], j["fold"], j["seed"]) / "metrics.json").exists() for j in jobs):
+        return {"jobs": len(jobs), "situacao": "já concluído"}
     print(f"[2/3] Treino: {len(jobs)} jobs na CPU", flush=True)
     with medir(cfg, "mlp/treino_classificacao", "Todas as MLPs de classificação", n_itens=len(jobs)):
         bar = tqdm(jobs, desc="Treino das MLPs", unit="job", file=sys.stdout)
         for j in bar:
+            esperar_se_pausado(cfg)
             bar.set_postfix_str(f"{j['model']} {j['exp']} tarefa {j['task']} fold {j['fold']} semente {j['seed']}")
             class_job(cfg, j["exp"], j["task"], j["model"], j["fold"], j["seed"], args.force)
     print("[3/3] Vereditos e tabelas", flush=True)
@@ -605,9 +609,12 @@ def cmd_mlp_seg(cfg: dict, args) -> dict:
     print("GPU:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "não encontrada; rodando na CPU", flush=True)
     seed = cfg["mlp"]["seg"]["seed"]
     jobs = [(e, k) for e in _study(cfg) for k in cfg["study"]["folds"]]
+    if (out / "segmentacao.csv").exists() and not args.force and all((run_dir(cfg, e, "seg", "mlp_seg", k, seed) / "metrics.json").exists() for e, k in jobs):
+        return {"jobs": len(jobs), "situacao": "já concluído"}
     with medir(cfg, "mlp/treino_segmentacao", "Todas as MLPs de segmentação, com inferência nos testes", n_itens=len(jobs)):
         bar = tqdm(jobs, desc="MLP por pixel", unit="job", file=sys.stdout)
         for e, k in bar:
+            esperar_se_pausado(cfg)
             bar.set_postfix_str(f"{_tech(cfg, e)} fold {k}")
             seg_job(cfg, e, k, seed, args.force)
     with medir(cfg, "mlp/estatistica_segmentacao", "Vereditos e comparação com os métodos clássicos"):
