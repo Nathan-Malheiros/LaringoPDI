@@ -1,9 +1,10 @@
-"""LaringoPDI — protótipo da Etapa 2, na ordem da apresentação: frame → realce → filtragem e Fourier →
-segmentação da glote passo a passo → classificação (PDI + MLP × CNN) → resultados do estudo.
+"""LaringoPDI — protótipo, na ordem da apresentação: frame → realce → filtragem e Fourier →
+segmentação da glote (clássica e MLP) → classificação (PDI + MLP × CNN) → resultados do estudo.
 Rodar: `streamlit run app/streamlit_app.py`."""
 from __future__ import annotations
 
 import json
+import sys
 
 import cv2
 import matplotlib
@@ -17,8 +18,7 @@ from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
 from laringopdi import config as C
 from laringopdi.etapa1 import noise_image
-from laringopdi.features import features18
-from laringopdi.pdi import letterbox, run_pipeline
+from laringopdi.pdi import run_pipeline
 from laringopdi.pdi.enhance import gauss_lpf_transfer
 from laringopdi.pdi.quality import image_quality
 from laringopdi.pdi.registry import DEFAULTS, TECHNIQUES, to_work_size
@@ -27,7 +27,10 @@ from laringopdi.pdi.texture import auto_canny, sobel_mag
 
 AVISO = "Ferramenta de apoio acadêmico. Não substitui avaliação médica."
 INK, DIM, CY, OR, GR = "#14213D", "#5B6785", "#0E9FB5", "#E07B2E", "#2E9E6A"
-ENTRADAS = {"E00": "frame original", "E03": "CLAHE", "E02": "equalização global", "E06": "mediana", "E01": "remoção de reflexo", "E04": "homomórfica"}
+ENTRADAS = {"E00": "sem PDI", "E15": "alargamento", "E02": "equalização global", "E03": "CLAHE", "E16": "média", "E06": "mediana",
+            "E17": "passa-baixa (Fourier)", "E01": "remoção de reflexo", "E04": "homomórfica"}
+NOMES = {"raw": "sem PDI", "stretch": "alargamento", "he": "equalização", "clahe": "CLAHE", "mean": "média", "median": "mediana",
+         "gauss_lpf": "passa-baixa", "spec": "remoção de reflexo", "homo": "homomórfica"}
 
 st.set_page_config(page_title="LaringoPDI", page_icon="🔬", layout="wide")
 st.markdown("""
@@ -64,7 +67,8 @@ with st.sidebar:
     st.markdown("### Classificação")
     task = st.radio("Tarefa", ["A", "B"], format_func=lambda t: {"A": "A · saudável × alterado", "B": "B · saudável × lesão estrutural"}[t])
     disp = [e for e in ENTRADAS if has_weights(e)] or ["E00"]
-    exp = st.selectbox("Entrada da CNN (ResNet-18)", disp, index=disp.index("E03") if "E03" in disp else 0, format_func=lambda e: ENTRADAS[e])
+    exp = st.selectbox("Técnica de PDI na entrada dos modelos", disp, index=disp.index("E03") if "E03" in disp else 0, format_func=lambda e: ENTRADAS[e])
+    st.caption("Vale para a MLP de segmentação, a MLP de classificação e a ResNet-18. Os modelos são os do fold 0.")
 
 
 def _decode(b: bytes, flag):
@@ -92,9 +96,16 @@ else:
 
 gray = _decode(img_b, cv2.IMREAD_GRAYSCALE)
 base = to_work_size(gray, WORK)
-gt = None
+gt = gt_full = None
 if mask_b is not None:
-    gt = cv2.resize((_decode(mask_b, cv2.IMREAD_GRAYSCALE) > 127).astype(np.uint8), base.shape[::-1], interpolation=cv2.INTER_NEAREST).astype(bool)
+    gt_full = _decode(mask_b, cv2.IMREAD_GRAYSCALE) > 127
+    gt = cv2.resize(gt_full.astype(np.uint8), base.shape[::-1], interpolation=cv2.INTER_NEAREST).astype(bool)
+
+
+@st.cache_resource(show_spinner=False)
+def mlp_model(exp_: str, task_: str, kind: str):
+    from laringopdi.mlp import load_mlp
+    return load_mlp(cfg, exp_, task_, kind)
 
 
 def tech(name: str, g: np.ndarray = base, **params) -> np.ndarray:
@@ -226,6 +237,28 @@ with tabs[2]:
     st.caption("Verde: máscara de referência (especialista). Laranja: segmentação obtida." if gt is not None
                else "Laranja: segmentação obtida. Envie a máscara de referência para calcular Dice e IoU.")
 
+    st.markdown(f"#### MLP de segmentação: cada pixel decidido pela vizinhança 15×15 ({ENTRADAS[exp]})")
+    mseg = mlp_model(exp, "seg", "mlp_seg")
+    if mseg is None:
+        st.info(f"Sem pesos da MLP de segmentação para {ENTRADAS[exp]}.")
+    else:
+        g224, ctx224 = run_pipeline(gray, cfg["experiments"][exp]["pipeline"], None, SIZE, WORK, gt_mask=gt_full)
+        g224 = np.ascontiguousarray(g224[..., 0])
+        from laringopdi.mlp import segment_frame_mlp
+        from laringopdi.pdi.segmentation import best_config as _bc
+        from laringopdi.mlp import _segment_region
+        _b = _bc()
+        pares = [("MLP de pixels", segment_frame_mlp(cfg, mseg, g224)), ("crescimento de região na mesma imagem", _segment_region(g224, _b["method"], _b["params"]))]
+        gt224 = ctx224.get("gt_mask_lb")
+        c = st.columns(2)
+        for c_, (lab, mk) in zip(c, pares):
+            c_.image(outline(g224, ([(gt224, (46, 158, 106))] if gt224 is not None else []) + [(mk, (224, 123, 46))]), width="stretch")
+            step(c_, lab)
+            if gt224 is not None:
+                c_.metric("Dice", f"{dice(mk, gt224):.3f}")
+        st.caption("No estudo, a melhor MLP de segmentação foi com a homomórfica (Dice 0,532); o melhor resultado geral continua sendo o "
+                   "crescimento de região com CLAHE (0,614).")
+
     st.markdown("#### Bordas: abordagem complementar")
     blur = cv2.GaussianBlur(base, (5, 5), 0)
     c = st.columns(3)
@@ -235,24 +268,6 @@ with tabs[2]:
 
 
 # ---------------------------------------------------------------------------------------- ④ classificação
-@st.cache_resource(show_spinner=False)
-def load_c6(task_: str):
-    import joblib
-    p_ = RUNS / "C6" / task_ / "mlp18" / "fold0_seed0" / "model.joblib"
-    return joblib.load(p_) if p_.exists() else None
-
-
-@st.cache_data(show_spinner=False)
-def f18_vector(img_bytes: bytes) -> dict:
-    """As 18 características sobre o frame e a máscara clássica, como no treino da MLP."""
-    g_ = _decode(img_bytes, cv2.IMREAD_GRAYSCALE)
-    o_, _ = run_pipeline(g_, "raw", None, SIZE, WORK)
-    bc = best_config()
-    m_ = apply_best(to_work_size(g_, WORK), bc["method"], bc["params"], bc.get("preprocess", "raw"))
-    mask_lb = letterbox(m_.astype(np.uint8), SIZE, cv2.INTER_NEAREST)[0].astype(bool)
-    return features18(np.ascontiguousarray(o_[..., 0]), mask_lb)
-
-
 F18_PT = {"shape_area_rel": "área relativa", "shape_perimeter_rel": "perímetro", "shape_eccentricity": "excentricidade",
           "shape_solidity": "solidez", "shape_aspect": "razão de aspecto", "shape_symmetry": "simetria", "int_mean": "média",
           "int_std": "desvio", "int_entropy": "entropia", "int_skew": "assimetria", "int_kurtosis": "curtose",
@@ -266,13 +281,14 @@ with tabs[3]:
     pt = {"healthy": "saudável", "disorder": "alterado", "structural": "lesão estrutural"}
     esquerda, direita = st.columns(2)
     with esquerda:
-        st.markdown("#### Braço 1: PDI clássico + MLP (18 → 32 → 16 → 2)")
-        c6 = load_c6(task)
+        st.markdown(f"#### Braço 1: {ENTRADAS[exp]} + 18 características + MLP (18 → 32 → 16 → 2)")
+        c6 = mlp_model(exp, task, "mlp18")
         if c6 is None:
-            st.warning(f"Modelo da MLP para a Tarefa {task} não encontrado. Rode `python -m laringopdi mlp18-study` ou use o pacote de entrega com pesos.")
+            st.warning(f"Modelo da MLP para {ENTRADAS[exp]} na Tarefa {task} não encontrado. Rode `python -m laringopdi mlp-class` ou use o pacote com pesos.")
         else:
-            vec = f18_vector(img_b)
-            p6 = c6["model"].predict_proba(c6["scaler"].transform(pd.DataFrame([vec])[c6["columns"]].to_numpy()))[0]
+            from laringopdi.mlp import classify_frame18
+            o_, _ = run_pipeline(gray, cfg["experiments"][exp]["pipeline"], None, SIZE, WORK)
+            p6, vec = classify_frame18(cfg, c6, np.ascontiguousarray(o_[..., 0]))
             for n, pv in sorted(zip(names, p6), key=lambda t: -t[1]):
                 st.markdown(f"**{pt.get(n, n)}**: {pv:.1%}")
                 st.progress(float(pv))
@@ -307,49 +323,62 @@ with tabs[3]:
 
 # ---------------------------------------------------------------------------------------- ⑤ resultados
 with tabs[4]:
-    st.caption("Números do estudo inteiro (5 rodadas por vídeo), lidos das tabelas geradas pelo código. Não dependem do frame escolhido.")
-    hp = TABLES / "hypotheses_etapa1.json"
+    st.caption("Números do estudo inteiro (587 vídeos, 5 folds; classificação por vídeo), lidos das tabelas geradas pelo código. Não dependem do frame escolhido.")
+    st.info("**Em uma frase:** o PDI muda muito a segmentação (CLAHE + crescimento de região: Dice 0,614 contra 0,467) e quase nada a classificação "
+            "(62 de 64 vereditos neutros). A MLP simples empatou com a ResNet-18 em F1, a uma fração do custo.")
+    sys.path.insert(0, str(C.ROOT))
+    hp = TABLES / "sintese" / "hipoteses.json"
     if hp.exists():
+        from tools.documento_resultados import R as _R
         st.markdown("#### Hipóteses da Etapa 1")
         hyp = json.loads(hp.read_text(encoding="utf-8"))
-        st.dataframe(pd.DataFrame([{"ID": k, "hipótese": r["statement"], "veredito": r["verdict"]} for k, r in hyp.items()]).set_index("ID"), width="stretch")
-        for k, r in hyp.items():
-            with st.expander(f"{k}: o que encontramos"):
-                st.markdown(r["plain"])
-        st.caption("Regras e detalhes técnicos: docs/hipoteses_etapa1.md.")
-    else:
-        st.warning("Tabela de hipóteses ausente: rode `python -m laringopdi etapa1-report`.")
+        st.dataframe(pd.DataFrame([{"ID": k, "hipótese": txt, "veredito": hyp[k]["veredito"], "evidência": ev.replace("&lt;", "<")} for k, txt, ev in _R["hipoteses"]]).set_index("ID"),
+                     width="stretch")
 
-    st.markdown("#### Segmentação: Dice médio por método e realce")
-    s1, s2 = table("segmentation_etapa1_summary.csv"), table("segmentation_adaptive_morph_summary.csv")
-    if s1 is not None:
-        d_ = pd.concat([s1, s2]) if s2 is not None else s1
-        nomes = {"otsu": "Otsu", "adaptive": "adaptativa", "otsu_morph": "Otsu + morfologia", "adaptive_morph": "adaptativa + morfologia",
-                 "region_grow": "crescimento de região", "watershed": "watershed"}
-        w = d_[d_["preprocess"].isin(["raw", "stretch", "he", "clahe"])].pivot(index="method", columns="preprocess", values="dice_mean")[["raw", "stretch", "he", "clahe"]]
-        w = w.loc[[m for m in nomes if m in w.index]].rename(index=nomes, columns={"raw": "sem realce", "stretch": "alargamento", "he": "equalização", "clahe": "CLAHE"})
+    pt_ = table("sintese/por_tecnica.csv")
+    if pt_ is not None:
+        st.markdown("#### Veredito de cada técnica, em cada etapa (contra a imagem sem PDI)")
+        cols_ = {"nome": "técnica", "visual": "imagem", "seg_classica": "segmentação clássica", "seg_mlp": "segmentação MLP", "mlp_A_v_sens": "MLP A (sens.)",
+                 "mlp_B_v_sens": "MLP B (sens.)", "cnn_A_v_sens": "CNN A (sens.)", "cnn_B_v_sens": "CNN B (sens.)", "cnn_A_v_f1": "CNN A (F1)", "mlp_B_v_f1": "MLP B (F1)"}
+        st.dataframe(pt_[list(cols_)].rename(columns=cols_).set_index("técnica"), width="stretch")
+        st.caption("Melhora ou piora só com IC 95% fora do zero e teste corrigido por Holm abaixo de 0,05. Neutra não prova efeito zero.")
+
+    sg = table("pdi/segmentacao.csv")
+    if sg is not None:
+        st.markdown("#### Segmentação clássica: Dice médio no teste, por método e técnica")
+        metodos = {"otsu": "Otsu", "adaptive": "adaptativa", "otsu_morph": "Otsu + morfologia", "adaptive_morph": "adaptativa + morfologia",
+                   "region_grow": "crescimento de região", "watershed": "watershed"}
+        w = sg.pivot(index="method", columns="preprocess", values="dice_mean")
+        w = w.loc[[m for m in metodos if m in w.index], [t for t in NOMES if t in w.columns]].rename(index=metodos, columns=NOMES)
         st.dataframe(w.style.format("{:.3f}").background_gradient(cmap="Blues", vmin=0, vmax=0.7), width="stretch")
 
-    st.markdown("#### Classificação: sensibilidade em primeiro lugar")
-    ca = table("classif_aula.csv")
-    if ca is not None:
-        ca = ca.assign(sistema=np.where(ca["exp"] == "C6", "PDI + MLP", "ResNet-18 · " + ca["pipeline"]))
-        st.dataframe(ca[["task", "sistema", "sensitivity", "specificity", "f1", "auc"]].rename(columns={"task": "tarefa", "sensitivity": "sensibilidade", "specificity": "especificidade", "f1": "F1", "auc": "AUC"})
-                     .set_index(["tarefa", "sistema"]).style.format("{:.3f}"), width="stretch")
-        st.caption("Média das 5 rodadas, por vídeo, semente 0.")
-    v_ = table("verdicts_aula_resnet18.csv")
-    if v_ is not None:
-        st.markdown("#### O PDI na entrada muda a ResNet-18? (contra o frame original)")
-        st.dataframe(v_[["task", "pipeline", "oof_delta_f1", "ci_low", "ci_high", "verdict"]].rename(columns={"task": "tarefa", "pipeline": "técnica", "oof_delta_f1": "ΔF1", "ci_low": "IC 95% inf.", "ci_high": "IC 95% sup.", "verdict": "veredito"})
-                     .set_index(["tarefa", "técnica"]).style.format({"ΔF1": "{:+.3f}", "IC 95% inf.": "{:+.3f}", "IC 95% sup.": "{:+.3f}"}), width="stretch")
-    dn = table("denoise_summary.csv")
-    if dn is not None:
-        st.markdown("#### Filtragem: PSNR médio (dB) em 300 frames")
-        x = dn[dn["filter"].isin(["none", "mean3", "mean7", "mean15", "median3", "median5", "lpf15", "lpf40"])].pivot(index="filter", columns="noise", values="psnr_mean")
-        x = x.loc[["none", "mean3", "mean7", "mean15", "median3", "median5", "lpf15", "lpf40"], ["gauss_s10", "gauss_s20", "sp_5", "sp_10"]]
-        x = x.rename(index={"none": "sem filtro", "mean3": "média 3", "mean7": "média 7", "mean15": "média 15", "median3": "mediana 3", "median5": "mediana 5", "lpf15": "passa-baixa σ15", "lpf40": "passa-baixa σ40"},
-                     columns={"gauss_s10": "gaussiano σ10", "gauss_s20": "gaussiano σ20", "sp_5": "sal e pimenta 5%", "sp_10": "sal e pimenta 10%"})
-        st.dataframe(x.style.format("{:.1f}"), width="stretch")
+    cn, ml = table("cnn/classificacao.csv"), table("mlp/classificacao.csv")
+    if cn is not None and ml is not None:
+        st.markdown("#### Classificação: sensibilidade em primeiro lugar")
+        cl = pd.concat([cn.assign(sistema="ResNet-18"), ml.assign(sistema=np.where(ml["modelo"] == "mlp18", "MLP (18 características)", "MLP (pixels, sem PDI)"))])
+        cl["técnica"] = cl["tecnica"].map(NOMES).fillna(cl["tecnica"])
+        st.dataframe(cl[["tarefa", "sistema", "técnica", "sensibilidade", "especificidade", "f1", "auc", "veredito_sensibilidade", "custo_total_s"]]
+                     .rename(columns={"f1": "F1", "auc": "AUC", "veredito_sensibilidade": "veredito (sens.)", "custo_total_s": "custo por treino (s)"})
+                     .set_index(["tarefa", "sistema", "técnica"]).style.format({"sensibilidade": "{:.3f}", "especificidade": "{:.3f}", "F1": "{:.3f}", "AUC": "{:.3f}",
+                                                                                "custo por treino (s)": "{:.0f}"}), width="stretch")
+        st.caption("Média de 5 folds × 3 sementes, por vídeo. Custo: PDI nos frames de treino + treino até a melhor validação.")
+
+    sb = table("sintese/sem_bordas.csv")
+    st.markdown("#### Cuidado: o formato do vídeo")
+    st.warning("A proporção da imagem (que muda com o hospital e o equipamento) sozinha separa as classes com AUC 0,66 na Tarefa A e 0,76 na B. "
+               "Parte do que os modelos aprendem pode ser o equipamento, e não a voz.")
+    if sb is not None:
+        st.dataframe(sb[["modelo", "tarefa", "f1_com_bordas", "f1_sem_bordas", "sensibilidade_com_bordas", "sensibilidade_sem_bordas", "auc_com_bordas", "auc_sem_bordas",
+                         "veredito_f1", "veredito_sensibilidade"]].set_index(["modelo", "tarefa"]).style.format("{:.3f}", subset=pd.IndexSlice[:, [c for c in sb.columns if c.endswith("bordas")]]),
+                     width="stretch")
+        st.caption("Controle: a mesma imagem sem PDI, recortada no quadrado central, sem bordas pretas nem proporção do vídeo.")
+
+    cf = table("custo/por_fase.csv")
+    if cf is not None:
+        st.markdown("#### Tempo e custo de cada fase (AMD Ryzen 5 5500, 15,9 GB, RTX 3060 12 GB)")
+        st.dataframe(cf[["fase", "duracao_h", "cpu_nucleos_medio", "ram_processo_pico_gb", "gpu_usada", "gpu_energia_wh"]]
+                     .rename(columns={"duracao_h": "horas", "cpu_nucleos_medio": "núcleos de CPU", "ram_processo_pico_gb": "RAM pico (GB)", "gpu_usada": "GPU",
+                                      "gpu_energia_wh": "energia da GPU (Wh)"}).set_index("fase").style.format(precision=2), width="stretch")
 
 st.divider()
 st.caption(f"LaringoPDI · UNIFOR · Processamento Digital de Imagens · {AVISO}")

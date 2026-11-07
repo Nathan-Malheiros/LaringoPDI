@@ -1,7 +1,0 @@
-exp,task,family,drop_mean,drop_sd_folds,n_folds
-C6,A,f18shape,0.0268,0.0176,5
-C6,A,f18int,0.0268,0.0189,5
-C6,A,f18tex,0.0358,0.032,5
-C6,B,f18shape,0.017,0.0143,5
-C6,B,f18int,0.0372,0.0548,5
-C6,B,f18tex,0.0606,0.0386,5

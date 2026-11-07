@@ -5,7 +5,7 @@ import torch
 
 from laringopdi.evaluate import compute_metrics, metrics_both_levels
 from laringopdi.features import shape_features
-from laringopdi.train import balance, study_jobs
+from laringopdi.train import study_jobs
 from tests.conftest import synth_glottis
 
 
@@ -22,12 +22,6 @@ def test_video_level_averages_frames():
                        "p0": [.6, .2, .9, .7], "p1": [.4, .8, .1, .3]})
     m = metrics_both_levels(df)
     assert m["video"]["n"] == 2 and m["video"]["bal_acc"] == 1.0 and m["frame"]["n"] == 4
-
-
-def test_balance_oversamples_minority():
-    y = np.array([0] * 8 + [1] * 2)
-    b = balance(np.arange(10), y, 0)
-    assert np.bincount(y[b]).tolist() == [8, 8]
 
 
 def test_augmentation_is_not_corrupted_by_autocast():

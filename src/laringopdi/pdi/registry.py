@@ -98,6 +98,20 @@ def raw(img: np.ndarray, ctx: dict, size: int = 224) -> np.ndarray:
     return np.repeat(out[..., None], 3, axis=2) if out.ndim == 2 else out
 
 
+@register("crop_square")
+def crop_square(img: np.ndarray, ctx: dict) -> np.ndarray:
+    """O que faz: recorta o maior quadrado central do frame; depois do resize, a imagem não tem bordas pretas.
+    Por que importa: é um controle, não uma técnica do estudo. Elimina a proporção do vídeo, que muda com o
+    hospital e o equipamento e sozinha já separa as classes (docs/DECISIONS.md, 2026-11-07).
+    Parâmetros padrão: nenhum.
+    Referência: verificação de fator de confusão; a glote fica no centro do frame do BAGLS."""
+    h, w = img.shape[:2]
+    s = min(h, w)
+    y0, x0 = (h - s) // 2, (w - s) // 2
+    crop_ctx(ctx, (h, w), x0, y0, s, s)
+    return img[y0:y0 + s, x0:x0 + s]
+
+
 def run_pipeline(img: np.ndarray, pipeline: str, params: dict | None = None, size: int = 224,
                  work_size: int | None = 512, gt_mask: np.ndarray | None = None) -> tuple[np.ndarray, dict]:
     """Executa o pipeline e devolve (imagem size×size×C uint8 com C ≥ 3, ctx)."""

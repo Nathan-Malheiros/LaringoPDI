@@ -1,9 +1,12 @@
-# Estado do projeto — 2026-11-06
+# Estado do projeto — 2026-11-07
 
-**Em reestruturação**, para voltar ao fluxo apresentado na Etapa 1: PDI isolado → segmentação → MLP → CNN → síntese de resultado × custo. Regras em `docs/DECISIONS.md` (2026-11-06); fases na Seção 7 do `docs/ESPECIFICACAO.md`.
+**Estudo concluído.** Fases A a D prontas; Fase E com documento explicativo, app e apostila atualizados.
 
-**Concluído:** Fase A, reestruturação.
+- **Documento do grupo:** `docs/Documento_explicativo_LaringoPDI.pdf` (versão com frames em `entrega/`, fora do git).
+- **Apresentação:** `entrega/LaringoPDI_Apostila.pdf` e `docs/ROTEIRO_DEMO.md`.
+- **Protótipo:** `tools/abrir_app.bat`, com as 9 técnicas, as duas MLPs e a ResNet-18 do estudo.
+- **Controle do formato do vídeo:** `tools/teste_sem_bordas.py` → `results/tables/sintese/sem_bordas.csv`.
 
-**Atenção:** as tabelas, o relatório e a apostila atuais ainda são da versão anterior e serão gerados de novo. Os treinos antigos com ResNet-18 e MLP só permanecem porque o protótipo os usa até os novos ficarem prontos.
+**Falta (fora do código):** relatório final em ABNT (Tales) e as revisões da equipe (seção 16 do documento).
 
-**Próximo:** Fase B, tabela única do PDI (visual, Dice e custo).
+Documentos e tabelas da versão anterior estão em `Projeto em desuso LaringoPDI/pos_estudo_2026-11-07` (`MANIFESTO.json`).

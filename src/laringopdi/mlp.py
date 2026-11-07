@@ -403,6 +403,41 @@ def cmd_mlp_class(cfg: dict, args) -> dict:
     return {"jobs": len(jobs), "tabela": table[cols].round(3).to_dict("records")}
 
 
+# ----------------------------------------------------------------------------- uso no protótipo (um frame, fold 0)
+def load_mlp(cfg: dict, exp: str, task: str, model_name: str, fold: int = 0) -> dict | None:
+    """Pesos salvos (semente 0) como rede pronta para inferência na CPU; None se não houver."""
+    import torch
+
+    p = run_dir(cfg, exp, task, model_name, fold, 0) / "model.pt"
+    if not p.exists():
+        return None
+    ck = torch.load(p, map_location="cpu", weights_only=False)
+    net = _net(ck["sizes"])
+    net.load_state_dict(ck["state"])
+    return {**ck, "net": net.eval()}
+
+
+def classify_frame18(cfg: dict, m: dict, g: np.ndarray) -> tuple[np.ndarray, dict]:
+    """Probabilidades da MLP de 18 características para um frame 224 já com a técnica (como no treino, sem média por vídeo)."""
+    import torch
+
+    from laringopdi.pdi.segmentation import best_config
+
+    best = best_config()
+    vec = features18(g, _segment_region(g, best["method"], best["params"]))
+    x = (np.array([vec[c] for c in m["columns"]], np.float32) - m["mean"]) / m["std"]
+    with torch.no_grad():
+        return torch.softmax(m["net"](torch.from_numpy(x[None].astype(np.float32))), 1)[0].numpy(), vec
+
+
+def segment_frame_mlp(cfg: dict, m: dict, g: np.ndarray) -> np.ndarray:
+    """Máscara da MLP de pixels para um frame 224 já com a técnica, com o mesmo limiar e componente central do estudo."""
+    import torch
+
+    d = {"X": g[None, :, :, None]}
+    return _predict_masks(m["net"], d, np.array([0]), m["mean"], m["std"], torch.device("cpu"), cfg["mlp"]["seg"])[0]
+
+
 # ----------------------------------------------------------------------------- segmentação pixel a pixel
 def _load_seg(cfg: dict, exp: str) -> dict:
     X, paths, meta = D.load_cache(cfg, exp)

@@ -253,11 +253,3 @@ def cmd_train(cfg: dict, args) -> dict:
         skipped += bool(r.get("skipped"))
         done += not r.get("skipped")
     return {"jobs": len(jobs), "treinados": done, "pulados": skipped}
-
-
-# ----------------------------------------------------------------------------- utilitários da MLP
-def balance(idx: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
-    """Sobreamostragem aleatória até equilibrar as classes (o MLP do sklearn não aceita pesos de classe)."""
-    rng = np.random.default_rng(seed)
-    n = np.bincount(y).max()
-    return np.concatenate([rng.choice(idx[y == c], n, replace=True) for c in np.unique(y)])

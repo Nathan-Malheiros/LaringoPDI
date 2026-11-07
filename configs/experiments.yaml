@@ -12,6 +12,8 @@ experiments:
   E15: {pipeline: stretch,   desc: alargamento de contraste}
   E16: {pipeline: mean,      desc: filtro da média}
   E17: {pipeline: gauss_lpf, desc: passa-baixa gaussiano (Fourier)}
+  # Controle fora do estudo: sem bordas pretas nem proporção do vídeo (fator de confusão, DECISIONS 2026-11-07).
+  E18: {pipeline: crop_square, desc: sem PDI, quadrado central sem bordas (controle)}
 
 # Estudo principal: cada técnica contra a referência E00, nas mesmas condições.
 study:

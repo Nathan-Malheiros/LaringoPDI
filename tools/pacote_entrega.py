@@ -16,10 +16,11 @@ ROOT = Path(__file__).resolve().parents[1]
 MAX_WEIGHTS_MB = 200
 CODE_PREFIXES = ("src/", "configs/", "tests/", "app/", "tools/", "notebooks/", ".streamlit/")
 ROOT_FILES = ("README.md", "pyproject.toml", "requirements.txt", ".gitignore")
-WEIGHTS = [f"results/runs/{e}/{t}/resnet18/fold0_seed0/model.pt" for e in ("E00", "E03") for t in ("A", "B")] + \
-          [f"results/runs/C6/{t}/mlp18/fold0_seed0/model.joblib" for t in ("A", "B")]
+WEIGHTS = [f"results/runs/{e}/{t}/{m}/fold0_seed0/model.pt" for e in ("E00", "E03") for t in ("A", "B") for m in ("resnet18", "mlp18")] + \
+          [f"results/runs/{e}/seg/mlp_seg/fold0_seed0/model.pt" for e in ("E00", "E03")]
 FORBIDDEN = ("data/raw/", "data/processed/", "results/runs/", "logs/", ".venv/", "docs/figures/", "entrega/")
-INTERNAL_DOCS = ("docs/ETAPA2_PLANO.md", "docs/PROMPT_INTERNO_ETAPA2.md", "docs/PROXIMOS_PASSOS.md", "docs/hipoteses.md")
+INTERNAL_DOCS = ("docs/PROMPT_INTERNO_ETAPA2.md",)
+DOC_PDF = "docs/Documento_explicativo_LaringoPDI.pdf"
 
 
 def tracked() -> list[str]:
@@ -35,7 +36,7 @@ def select_files(files: list[str]) -> list[str]:
             continue
         p = Path(f)
         if (f.startswith(CODE_PREFIXES) or f in ROOT_FILES
-                or (p.parent.as_posix() == "docs" and p.suffix == ".md") or f == "docs/relatorio_etapa2.pdf"
+                or (p.parent.as_posix() == "docs" and p.suffix == ".md") or f == DOC_PDF
                 or (p.parent.as_posix() == "results/tables" and p.suffix in (".csv", ".json", ".tex"))
                 or (p.parent.as_posix() == "data/splits" and p.suffix == ".json")):
             keep.append(f)
@@ -44,7 +45,7 @@ def select_files(files: list[str]) -> list[str]:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--with-weights", action="store_true", help="inclui só os pesos usados pelo app (ResNet-18 E00 e E03 e MLP C6, fold 0)")
+    ap.add_argument("--with-weights", action="store_true", help="inclui só os pesos sem PDI e com CLAHE usados pelo app (ResNet-18 e MLPs, fold 0)")
     a = ap.parse_args()
     files = select_files(tracked())
     if a.with_weights:
