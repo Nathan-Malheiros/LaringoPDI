@@ -9,13 +9,13 @@ R = {
 - <b>Na segmentação, o PDI faz muita diferença.</b> O melhor resultado foi crescimento de região com CLAHE: Dice de 0,614 contra 0,467 sem PDI, com falha caindo de 20% para 2%, por menos de 0,5 ms a mais por frame.
 - <b>O melhor PDI depende do algoritmo.</b> O CLAHE, campeão no método clássico, não mudou nada na MLP de segmentação, em que a melhor foi a homomórfica (Dice de 0,532 contra 0,449). Melhorar a imagem aos nossos olhos também não garantiu ganho para o modelo.
 - <b>Na classificação, o PDI quase não mudou o resultado.</b> Dos 64 vereditos de F1 e sensibilidade, 62 foram neutros, 1 foi melhora (alargamento, CNN, Tarefa A, só em F1) e 1 foi piora (alargamento, MLP, Tarefa B, só em F1). Nenhuma técnica fez o treino convergir significativamente mais cedo.
-- <b>A MLP simples empatou com a CNN em F1, por uma fração do custo.</b> Na Tarefa B, sem PDI, a MLP teve F1 de 0,758 contra 0,783, sem diferença clara, e sensibilidade maior (0,705 contra 0,577). O treino da CNN consumiu 8,6 h de GPU; o estudo inteiro da MLP de classificação, cerca de 17 minutos.
+- <b>A MLP simples empatou com a CNN em F1, por uma fração do custo.</b> Na Tarefa B, sem PDI, a MLP teve F1 de 0,758 contra 0,783, sem diferença clara, e sensibilidade maior (0,705 contra 0,577). Mas essa vantagem vinha em boa parte do formato do vídeo: sem as bordas pretas, a sensibilidade da MLP caiu para 0,499, e a da CNN ficou em 0,492. O treino da CNN consumiu 8,6 h de GPU; o estudo inteiro da MLP de classificação, cerca de 17 minutos.
 
 ## O que recomendamos
 
 Para segmentar a glote com método clássico, use <b>CLAHE com crescimento de região</b>. Para classificar distúrbios a partir de frames isolados, os dados não justificam incluir PDI na entrada só pelo ganho esperado.
 
-<b>Cuidado importante:</b> a classificação pode estar aprendendo em parte o formato do vídeo. Esse formato sozinho já separa as classes com AUC de 0,76 na Tarefa B (seção 15). Por isso, as notas absolutas não devem ser lidas como capacidade clínica. As comparações entre técnicas continuam válidas como comparações, porque esse fator é o mesmo em todas.
+<b>Cuidado importante:</b> o formato do vídeo, que muda com o hospital e o equipamento, sozinho já separa as classes com AUC de 0,76 na Tarefa B. No teste de controle, sem as bordas pretas, <b>a MLP piorou bastante na Tarefa B, e a CNN praticamente não mudou</b> (seção 15). Portanto, as notas da MLP dependem em parte do equipamento, e as notas absolutas não devem ser lidas como capacidade clínica. As comparações entre técnicas continuam válidas como comparações, porque esse fator é o mesmo em todas.
 """,
     "r_mlp_2": """
 <b>O que isso significa:</b> nenhuma técnica mudou a sensibilidade da MLP nas duas tarefas. Em F1, só o alargamento piorou, na Tarefa B (0,729 contra 0,758). A convergência foi igual em todas. Quase todas as técnicas encarecem um pouco o treino, e as mais caras foram passa-baixa e homomórfica, de 2,2 a 2,4 vezes o custo sem PDI.
@@ -63,7 +63,7 @@ A tabela reúne os vereditos, e o quadro seguinte traduz cada linha em uma recom
         ["H1", "CLAHE > equalização global", "No crescimento de região, 0,614 contra 0,476 (p &lt; 0,001), e menos saturação (0,015 contra 0,182). Mas o CLAHE vence em só 2 dos 6 métodos, e a equalização em 4."],
         ["H2", "Mediana > média em sal e pimenta", "Filtros 3×3: PSNR de 41,4 contra 25,9 a 5% de ruído, e 39,2 contra 22,5 a 10%. SSIM de 0,97 contra 0,44 e 0,97 contra 0,27."],
         ["H3", "Limiar adaptativo > Otsu", "Dice de 0,253 contra 0,023 sem PDI (587 vídeos, p &lt; 0,001). Os dois ficam bem abaixo do crescimento de região."],
-        ["H4", "MLP ≈ CNN na Tarefa B", "F1 de 0,758 contra 0,783, com IC 95% de −0,069 a +0,059. A MLP ainda teve sensibilidade maior (0,705 contra 0,577; IC de +0,074 a +0,315). Ver a ressalva sobre o formato do vídeo."],
+        ["H4", "MLP ≈ CNN na Tarefa B", "F1 de 0,758 contra 0,783, com IC 95% de −0,069 a +0,059. A sensibilidade maior da MLP (0,705 contra 0,577) não se sustentou sem as bordas pretas (0,499 contra 0,492). O empate em F1 vale; a vantagem da MLP, não."],
         ["H5", "PDI aumenta a atenção da CNN na glote", "Na regra registrada, 1 de 16 combinações aumenta e 8 diminuem. Na análise exploratória corrigida pela área, 4 aumentam e 1 diminui."],
         ["H6", "Forma é a família mais importante", "A textura lidera (queda de 0,089 na A e 0,184 na B). A forma ficou por último (0,017 e −0,018)."],
     ],
@@ -72,7 +72,16 @@ A tabela reúne os vereditos, e o quadro seguinte traduz cada linha em uma recom
 
 O BAGLS reúne vários hospitais e equipamentos, e a parte útil da imagem varia entre eles. Verificamos que <b>essa proporção sozinha, sem olhar a laringe, separa as classes com AUC de 0,657 na Tarefa A e 0,763 na Tarefa B</b>. Além disso, características de textura se correlacionam com ela (energia GLCM, ρ = −0,62; Sobel, ρ = 0,54), e a rede também vê as bordas pretas.
 
-Na prática, parte do que os modelos aprenderam pode ser "de que equipamento veio o vídeo", e não "como está a voz". Isso pode explicar a liderança da textura e a boa nota da MLP na Tarefa B. Não medimos quanto da nota vem disso; o próximo passo seria testar sem as bordas ou separar os dados por hospital. A verificação foi feita depois dos resultados e não estava prevista.
+Na prática, parte do que os modelos aprenderam pode ser "de que equipamento veio o vídeo", e não "como está a voz".
+
+<b>Teste de controle.</b> Para medir isso, repetimos a imagem sem PDI recortando o maior quadrado central de cada frame. Assim, a imagem fica sem bordas pretas e sem a proporção do vídeo. Os modelos, as sementes e os folds foram os mesmos do estudo. O recorte mantém em média 98% da glote; em 7,5% dos frames, perde mais de 10% dela.
+
+- <b>MLP:</b> na Tarefa B, piorou com significância: F1 de 0,758 para 0,668 e sensibilidade de 0,705 para 0,499. Na Tarefa A, a sensibilidade subiu um pouco (0,506 para 0,533) e a especificidade caiu (0,790 para 0,687).
+- <b>ResNet-18:</b> a AUC quase não mudou (0,725 para 0,715 na A; 0,801 para 0,809 na B), e todos os vereditos foram neutros.
+
+<b>O que isso significa:</b> a MLP dependia em parte do formato do vídeo, provavelmente pelas características de textura, calculadas sobre a imagem com as bordas. A vantagem dela em sensibilidade na Tarefa B não se sustenta sem as bordas: 0,499 contra 0,492 da CNN. A CNN, ao contrário, parece usar o conteúdo da laringe. O recorte também tira um pouco da imagem, então a queda da MLP não vem só do formato, mas a estabilidade da CNN mostra que a informação útil continua lá. O controle foi feito depois dos resultados e não estava previsto.
+
+<b>De onde vem o problema:</b> os metadados do BAGLS trazem a câmera de cada vídeo. A câmera Wolf tem 79 dos 587 vídeos, mas 65% deles têm alteração, e 17 são de lesão estrutural (de 54 no total). Nas câmeras KayPentax, a proporção de alterados é de 30%. Câmera e diagnóstico andam juntos nos dados, e cada câmera produz um formato de imagem. Um próximo estudo deveria equilibrar as classes por câmera ou avaliar cada câmera separadamente.
 
 ## Erros encontrados e corrigidos antes destes números
 
@@ -94,17 +103,17 @@ Na prática, parte do que os modelos aprenderam pode ser "de que equipamento vei
 ## O que ainda falta
 
 - <b>Tales:</b> relatório final em ABNT, a partir deste documento.
-- <b>Protótipo e apostila:</b> ainda não foram atualizados com estes resultados.
 - <b>Marcos Vinicius:</b> revisar as técnicas e a Figura 1 da versão com imagens.
-- <b>Pedro Nobre:</b> revisar os resultados da MLP e testar o app quando for atualizado.
+- <b>Pedro Nobre:</b> revisar os resultados da MLP e testar o app (<font face="A-I">tools/abrir_app.bat</font>), que já está atualizado.
 - <b>Marcos Mendes e Tales:</b> revisar as figuras de segmentação; Marcos Mendes, também a literatura.
-- <b>Decisão do grupo:</b> vale fazer o teste sem as bordas pretas antes da entrega? Ele mediria o peso do formato do vídeo.
+- <b>Todos:</b> ler a apostila da apresentação (<font face="A-I">entrega/LaringoPDI_Apostila.pdf</font>) e ensaiar com cronômetro.
 
 ## Onde está cada coisa
 
 - <b>Código:</b> <font face="A-I">src/laringopdi/</font>. Tudo roda por <font face="A-I">python -m laringopdi &lt;comando&gt;</font>.
 - <b>Refazer o estudo:</b> <font face="A-I">iniciar_estudo.bat</font>, que pula o que já terminou.
-- <b>Tabelas:</b> <font face="A-I">results/tables/</font>, nas pastas <font face="A-I">pdi, mlp, cnn, sintese</font> e <font face="A-I">custo</font>.
+- <b>Tabelas:</b> <font face="A-I">results/tables/</font>, nas pastas <font face="A-I">pdi, mlp, cnn, sintese</font> e <font face="A-I">custo</font>. O controle sem bordas fica em <font face="A-I">sintese/sem_bordas.csv</font>.
+- <b>Protótipo e apresentação:</b> <font face="A-I">tools/abrir_app.bat</font>, a apostila em <font face="A-I">entrega/</font> e o roteiro em <font face="A-I">docs/ROTEIRO_DEMO.md</font>.
 - <b>Figuras:</b> <font face="A-I">docs/figures/</font>.
 - <b>Decisões e histórico:</b> <font face="A-I">docs/DECISIONS.md</font>, <font face="A-I">docs/LOG.md</font> e <font face="A-I">docs/MUDANCAS_ETAPA1.md</font>.
 - <b>Só no PC do Nathan:</b> pesos e resultados de cada treino, além da versão deste documento com imagens, porque imagens de pacientes não vão para o repositório.

@@ -220,3 +220,10 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - Hipóteses: H1 parcial, H2 confirmada, H3 confirmada, H4 confirmada, H5 parcial, H6 refutada. Formato do vídeo é possível fator de confusão (AUC 0,76 na Tarefa B).
 - Documento em `docs/Documento_explicativo_LaringoPDI.pdf`; a versão com frames fica em `entrega/`, fora do git. Tabelas em `results/tables/{cnn,sintese,custo}`.
 - Falta: relatório ABNT, apostila e protótipo.
+
+## 2026-11-07: Fase E e controle sem bordas
+
+- Controle E18 (30 MLPs + 30 ResNet-18, 57 min, 122 Wh): a MLP depende em parte do formato do vídeo; a CNN não. A câmera Wolf concentra vídeos alterados.
+- App atualizado (9 técnicas, MLP de segmentação, MLPs novas, aba de resultados); testado em todas as abas com `AppTest`.
+- Apostila nova em `entrega/LaringoPDI_Apostila.pdf`; README, STATUS e roteiro da demonstração reescritos; 40 arquivos antigos arquivados; `balance()` removida.
+- Falta: relatório ABNT (Tales) e revisões da equipe.

@@ -1,6 +1,6 @@
 fase,etapas_medidas,duracao_h,cpu_nucleos_medio,ram_processo_pico_gb,gpu_usada,gpu_mem_pico_mb,gpu_potencia_media_w,gpu_energia_wh,disco_delta_gb
 PDI e segmentação clássica,1,1.194,8.15,2.3,não,,,,0.063
-Caches das técnicas,9,0.075,4.353,3.04,não,,,,2.472
+Caches das técnicas,10,0.093,4.008,3.04,não,,,,3.296
 MLP de classificação,1,0.285,1.65,3.04,não,,,,0.002
 MLP de segmentação,1,0.461,1.33,4.63,sim,3341.0,65.54,30.24,1.498
 CNN: 270 treinos,1,8.609,5.74,4.29,sim,3512.0,124.91,1075.348,3.88

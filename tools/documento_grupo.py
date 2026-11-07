@@ -393,6 +393,17 @@ def build():
     story.append(tab_hypotheses())
     story.append(Spacer(1, 8))
     section("15. Limites e correções", T["limites"])
+    sb_p = TAB / "sintese" / "sem_bordas.csv"
+    if sb_p.exists():
+        sb = pd.read_csv(sb_p)
+        rows = [["Modelo", "Tarefa", "F1 com → sem bordas", "Sens. com → sem", "AUC com → sem", "Veredito F1", "Veredito sens."]]
+        for _, r in sb.iterrows():
+            rows.append(["MLP" if r["modelo"] == "mlp18" else "ResNet-18", r["tarefa"], f"{num(r['f1_com_bordas'])} → {num(r['f1_sem_bordas'])}",
+                         f"{num(r['sensibilidade_com_bordas'])} → {num(r['sensibilidade_sem_bordas'])}", f"{num(r['auc_com_bordas'])} → {num(r['auc_sem_bordas'])}",
+                         r["veredito_f1"], r["veredito_sensibilidade"]])
+        story.append(table(rows, [1.3, .8, 1.8, 1.8, 1.8, 1.2, 1.2], tint=True))
+        story.append(P("Tabela 14. Controle do formato do vídeo: imagem sem PDI com e sem as bordas pretas, 5 folds × 3 sementes. "
+                       "Aqui, \"piora\" significa que o modelo perdeu desempenho ao perder o formato.", "cap"))
     section("16. O que ainda falta e onde está cada coisa", T["faltando"])
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

@@ -202,3 +202,10 @@ Registrado **antes** de gerar os números novos desta entrada. Supera a proibiç
 - **Adaptações das regras:** H1 passa de 5 para 6 métodos (metade ou mais) e H5 de 24 para 16 combinações, porque o estudo mudou. O veredito da H2 compara as médias de `pdi/ruido.csv`.
 - **Fator de confusão (verificação não prevista, depois dos resultados):** a fração útil da imagem separa as classes com AUC 0,657 (A) e 0,763 (B). Correlaciona com a textura (energia GLCM, rho −0,62). `results/tables/sintese/confusao_formato.json`. As notas absolutas da classificação não devem ser lidas como capacidade clínica. Um teste sem as bordas fica para decisão do grupo.
 - **Fase de custo:** GPU abaixo de 10% de uso conta como não usada (só o contexto do PyTorch estava aberto na MLP de classificação).
+
+## 2026-11-07: controle do formato do vídeo (E18) e fechamento da Fase E
+
+- **Controle autorizado pelo Nathan:** E18 = imagem sem PDI recortada no maior quadrado central (`crop_square`), sem bordas nem proporção do vídeo. Fora do estudo principal (`study.experiments` não muda). Mesmo protocolo: MLP 18 e ResNet-18, 5 folds × 3 sementes, contra E00, sem Holm (uma comparação por tarefa). O recorte mantém em média 97,7% da glote (200 frames; 7,5% perdem mais de 10%).
+- **Resultado:** MLP piora na Tarefa B (F1 0,758 → 0,668; sensibilidade 0,705 → 0,499); ResNet-18 estável (AUC 0,725 → 0,715 na A; 0,801 → 0,809 na B; vereditos neutros). A vantagem de sensibilidade da MLP na H4 não se sustenta sem as bordas. `results/tables/sintese/sem_bordas.csv`.
+- **Origem:** os metadados trazem a câmera. Wolf: 79 vídeos, 65% alterados, 17 dos 54 estruturais; KayPentax: cerca de 30% alterados. Próximo estudo: equilibrar ou separar por câmera.
+- **Fase E:** app com as 9 técnicas e as duas MLPs; apostila nova (`tools/apostila.py`); documentos, ferramentas e tabelas da versão anterior arquivados em `Projeto em desuso LaringoPDI/pos_estudo_2026-11-07`.

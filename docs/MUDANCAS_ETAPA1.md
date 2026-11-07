@@ -39,3 +39,4 @@ Ficam no repositório, fora do protótipo e da apresentação: uma segunda CNN t
 | MLP de segmentação | Acrescentada: classifica cada pixel a partir da vizinhança 15×15 | Pedido de levar a MLP também à segmentação, com e sem PDI |
 | Treino local | Tudo na RTX 3060 do Nathan, sem nuvem | Ter hardware, tempo e custo medidos nas mesmas condições |
 | Critérios de convergência e custo | Cada técnica recebe veredito também nessas medidas | Convergir antes é um resultado válido, mesmo com custo maior em outro ponto |
+| Controle do formato do vídeo | Imagem sem PDI sem as bordas (E18), fora do estudo principal | Verificar um fator de confusão encontrado nos resultados: câmera e diagnóstico andam juntos no BAGLS |

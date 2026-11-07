@@ -368,10 +368,11 @@ with tabs[4]:
     st.warning("A proporção da imagem (que muda com o hospital e o equipamento) sozinha separa as classes com AUC 0,66 na Tarefa A e 0,76 na B. "
                "Parte do que os modelos aprendem pode ser o equipamento, e não a voz.")
     if sb is not None:
-        st.dataframe(sb[["modelo", "tarefa", "f1_com_bordas", "f1_sem_bordas", "sensibilidade_com_bordas", "sensibilidade_sem_bordas", "auc_com_bordas", "auc_sem_bordas",
-                         "veredito_f1", "veredito_sensibilidade"]].set_index(["modelo", "tarefa"]).style.format("{:.3f}", subset=pd.IndexSlice[:, [c for c in sb.columns if c.endswith("bordas")]]),
+        num_cols = ["f1_com_bordas", "f1_sem_bordas", "sensibilidade_com_bordas", "sensibilidade_sem_bordas", "auc_com_bordas", "auc_sem_bordas"]
+        st.dataframe(sb[["modelo", "tarefa", *num_cols, "veredito_f1", "veredito_sensibilidade"]].set_index(["modelo", "tarefa"]).style.format("{:.3f}", subset=num_cols),
                      width="stretch")
-        st.caption("Controle: a mesma imagem sem PDI, recortada no quadrado central, sem bordas pretas nem proporção do vídeo.")
+        st.caption("Controle: a mesma imagem sem PDI, recortada no quadrado central, sem bordas pretas nem proporção do vídeo. A MLP piora na Tarefa B; "
+                   "a ResNet-18 quase não muda. Uma das câmeras do BAGLS tem 65% de vídeos alterados; as outras, 30%.")
 
     cf = table("custo/por_fase.csv")
     if cf is not None:

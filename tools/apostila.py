@@ -87,9 +87,9 @@ def build() -> None:
     if sb is not None:
         cb, mb = sb.loc[("resnet18", "B")], sb.loc[("mlp18", "B")]
         ca = sb.loc[("resnet18", "A")]
-        txt_sb = (f"No controle sem bordas, a ResNet-18 foi de AUC {n(ca['auc_com_bordas'])} para {n(ca['auc_sem_bordas'])} na Tarefa A e de "
-                  f"{n(cb['auc_com_bordas'])} para {n(cb['auc_sem_bordas'])} na B; a MLP, de {n(mb['auc_com_bordas'])} para {n(mb['auc_sem_bordas'])} na B. "
-                  f"Veredito de F1 da CNN: {ca['veredito_f1']} (A) e {cb['veredito_f1']} (B).")
+        txt_sb = (f"Para medir isso, recortamos as bordas pretas e treinamos de novo. A MLP piorou na Tarefa B: a sensibilidade caiu de {n(mb['sensibilidade_com_bordas'], 2)} "
+                  f"para {n(mb['sensibilidade_sem_bordas'], 2)}. A CNN quase não mudou: AUC de {n(cb['auc_com_bordas'], 2)} para {n(cb['auc_sem_bordas'], 2)} na B e de "
+                  f"{n(ca['auc_com_bordas'], 2)} para {n(ca['auc_sem_bordas'], 2)} na A. A causa está nos dados: uma das câmeras tem 65% de vídeos alterados, as outras, 30%.")
     else:
         txt_sb = "O controle sem bordas ainda não terminou: não citem números dele."
 
@@ -153,7 +153,8 @@ def build() -> None:
     P("<b>Faça:</b> aba 4, com CLAHE na barra lateral. Mostre as 18 medidas, a saída da MLP e o Grad-CAM. Troque para \"sem PDI\" e mostre que pouco muda.")
     Fala(f"No braço 1, estas são as 18 medidas de forma, intensidade e textura, que entram numa MLP. No braço 2, a ResNet-18 decide sozinha, e o Grad-CAM mostra onde ela olhou. "
          f"A sensibilidade é a nossa métrica prioritária. Na Tarefa B, sem PDI, a MLP encontrou mais casos: {n(h4['sens_mlp'], 2)} contra {n(h4['sens_cnn'], 2)}, e o F1 ficou "
-         f"empatado, {n(h4['f1_mlp'])} contra {n(h4['f1_cnn'])}. A CNN custou 8,6 horas de GPU; o estudo inteiro da MLP de classificação, uns 17 minutos.")
+         f"empatado, {n(h4['f1_mlp'])} contra {n(h4['f1_cnn'])}. Mas, como o Tales vai mostrar, essa vantagem da MLP vinha em parte do formato do vídeo. "
+         "A CNN custou 8,6 horas de GPU; o estudo inteiro da MLP de classificação, uns 17 minutos.")
     P("Bloco 7. Nathan: resultados (1 min 30 s)", "h2")
     P("<b>Faça:</b> aba 5. Mostre a frase-resumo, a tabela por técnica e a das hipóteses.")
     Fala(f"Na classificação, o PDI quase não mudou nada: {d['neutros']} de {d['vereditos']} vereditos neutros, uma melhora e uma piora, as duas do alargamento e só em F1. "
@@ -176,7 +177,8 @@ def build() -> None:
     T_([["Pergunta", "Resposta", "Quem"],
         ["Por que o PDI não ajudou a classificação?", "Não sabemos ao certo. A rede pré-treinada lida bem com a imagem crua, e boa parte da decisão parece vir da textura e do formato do vídeo, que o PDI pouco muda. Medimos o efeito, não a causa.", "Nathan"],
         ["O CLAHE é melhor que a equalização (H1)?", f"Depende do método. No crescimento de região, {n(hyp['H1']['dice_region_grow_clahe'])} × {n(hyp['H1']['dice_region_grow_he'])}; mas o CLAHE vence em {hyp['H1']['metodos_clahe_melhor']} de {hyp['H1']['metodos']} métodos e a equalização em {hyp['H1']['metodos_he_melhor']}. Por isso, parcial.", "M. Mendes"],
-        ["A MLP empata com a CNN?", f"Em F1, sim: o intervalo da diferença vai de {n(h4['ic_f1'][0])} a {n(h4['ic_f1'][1])} e contém o zero. Em sensibilidade na B, a MLP foi maior. Mas o formato do vídeo pode estar ajudando as duas.", "Pedro"],
+        ["A MLP empata com a CNN?", f"Em F1, sim: o intervalo da diferença vai de {n(h4['ic_f1'][0])} a {n(h4['ic_f1'][1])} e contém o zero. A sensibilidade maior da MLP na B não se sustentou sem as bordas pretas: as duas ficaram perto de 0,50.", "Pedro"],
+        ["O que é esse teste sem bordas?", "Recortamos o quadrado central de cada frame, para tirar as bordas e a proporção do vídeo, que dependem da câmera, e treinamos de novo com o mesmo protocolo. A CNN se manteve, e a MLP caiu na Tarefa B.", "Nathan"],
         ["Por que a sensibilidade é baixa na Tarefa A?", f"A Tarefa A inclui distúrbios funcionais, que aparecem no movimento, e usamos imagens paradas. Já esperávamos: a sensibilidade da CNN ficou entre {n(cnn.xs('A')['sensibilidade'].min(), 2)} e {n(cnn.xs('A')['sensibilidade'].max(), 2)}.", "Nathan"],
         ["E a homomórfica, que teve os maiores valores?", f"Na Tarefa A, sensibilidade {n(cnn.loc[('A', 'homo'), 'sensibilidade'], 2)} contra {n(cnn.loc[('A', 'raw'), 'sensibilidade'], 2)}, mas os testes corrigidos não confirmam. Vale testar de novo; não é resultado comprovado.", "Nathan"],
         ["O que significa a atenção do Grad-CAM?", f"É a parte do mapa dentro da glote. Dividida pela área, dá {n(a_r['razao_att_area'], 2)} sem PDI: a rede olha a glote um pouco mais que o acaso, mas a maior parte da atenção fica fora. Com CLAHE, {n(a_c['razao_att_area'], 2)}.", "Pedro"],

@@ -1,0 +1,5 @@
+modelo,tarefa,f1_com_bordas,f1_sem_bordas,sensibilidade_com_bordas,sensibilidade_sem_bordas,especificidade_com_bordas,especificidade_sem_bordas,auc_com_bordas,auc_sem_bordas,delta_f1,ic_f1_inf,ic_f1_sup,p_wilcoxon_f1,p_mcnemar_f1,veredito_f1,delta_sensibilidade,ic_sensibilidade_inf,ic_sensibilidade_sup,p_wilcoxon_sensibilidade,p_mcnemar_sensibilidade,veredito_sensibilidade
+mlp18,A,0.65104,0.60602,0.50635,0.53333,0.78972,0.68706,0.70267,0.67399,-0.04502,-0.05628,0.02712,0.06372,0.14166,neutra,0.02698,0.0094,0.14286,0.32982,0.03648,melhora
+mlp18,B,0.75813,0.66773,0.70485,0.49939,0.90368,0.88503,0.84121,0.76333,-0.09041,-0.14164,-0.03336,0.00123,0.05408,piora,-0.20545,-0.33333,-0.12963,0.00228,0.00049,piora
+resnet18,A,0.64279,0.65672,0.50476,0.50635,0.78268,0.8028,0.72528,0.71522,0.01393,-0.02352,0.05491,0.4212,0.32914,neutra,0.00159,-0.06667,0.0619,0.92487,1.0,neutra
+resnet18,B,0.78295,0.74235,0.57697,0.49152,0.95933,0.95658,0.80133,0.80941,-0.0406,-0.07868,0.01538,0.01025,0.38331,neutra,-0.08545,-0.13009,0.01852,0.0633,0.375,neutra
