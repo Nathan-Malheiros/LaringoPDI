@@ -34,19 +34,25 @@ def attention_table(cfg: dict) -> pd.DataFrame:
     rows = []
     for t, g in df.groupby("task"):
         v = g.groupby(["exp", "video_id"])["att_glottis"].mean().unstack("exp")
+        # A área da glote é uma fração dos pixels válidos, que mudam com a técnica. A razão corrige essa diferença.
+        ratio = v / g.groupby(["exp", "video_id"])["area_glottis"].mean().unstack("exp")
         area = g.groupby("exp")["area_glottis"].mean()
         vazio = g.groupby("exp")["att_glottis"].apply(lambda s: float(s.isna().mean()))
         part = []
         for e in [e for e in _study(cfg) if e in v.columns]:
-            x = v[["E00", e]].dropna()
-            d = x[e] - x["E00"]
-            part.append({"task": t, "exp": e, "tecnica": _tech(cfg, e), "att_glote": v[e].mean(), "area_glote": area[e], "razao_att_area": v[e].mean() / area[e],
-                         "frames_sem_energia": vazio[e], "delta_att": d.mean(), "p": 1.0 if e == "E00" or not (d != 0).any() else float(wilcoxon(d).pvalue)})
+            row = {"task": t, "exp": e, "tecnica": _tech(cfg, e), "att_glote": v[e].mean(), "area_glote": area[e], "razao_att_area": v[e].mean() / area[e], "frames_sem_energia": vazio[e],
+                   "delta_att": 0.0, "p": 1.0, "delta_razao": 0.0, "p_razao": 1.0}
+            if e != "E00":
+                for tb, dk, pk in ((v, "delta_att", "p"), (ratio, "delta_razao", "p_razao")):
+                    d = (tb[e] - tb["E00"]).replace([np.inf, -np.inf], np.nan).dropna()
+                    row[dk], row[pk] = d.mean(), float(wilcoxon(d).pvalue) if (d != 0).any() else 1.0
+            part.append(row)
         a = pd.DataFrame(part)
         o = a["exp"] != "E00"
-        a.loc[o, "p_holm"] = _holm(a.loc[o, "p"].to_numpy())
-        a["veredito_atencao"] = "referência"
-        a.loc[o, "veredito_atencao"] = np.where(a.loc[o, "p_holm"] < cfg["stats"]["alpha"], np.where(a.loc[o, "delta_att"] > 0, "aumenta", "diminui"), "neutra")
+        for pk, dk, out, up, down in (("p", "delta_att", "veredito_atencao", "aumenta", "diminui"), ("p_razao", "delta_razao", "veredito_razao", "aumenta", "diminui")):
+            a.loc[o, pk + "_holm"] = _holm(a.loc[o, pk].to_numpy())
+            a[out] = "referência"
+            a.loc[o, out] = np.where(a.loc[o, pk + "_holm"] < cfg["stats"]["alpha"], np.where(a.loc[o, dk] > 0, up, down), "neutra")
         rows.append(a)
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
 
@@ -186,7 +192,7 @@ def _h4(cfg: dict) -> dict:
         return {"veredito": "sem dados"}
     a, b = r.iloc[0], s.iloc[0]
     return {"veredito": "refutada" if a["ci_high"] < 0 else "confirmada", "f1_cnn": a["f1_base"], "f1_mlp": a["f1_exp"], "delta_f1": a["delta_f1"], "ic_f1": [a["ci_low"], a["ci_high"]],
-            "sens_cnn": b["sensitivity_base"], "sens_mlp": b["sensitivity_exp"], "ic_sens": [b["ci_low"], b["ci_high"]]}
+            "sens_cnn": b["sensitivity_base"], "sens_mlp": b["sensitivity_exp"], "ic_sens": [b["ci_low"], b["ci_high"]], "p_mcnemar_sens": b["mcnemar_p"], "p_wilcoxon_sens": b["wilcoxon_p"]}
 
 
 def _h5(cfg: dict) -> dict:
@@ -196,7 +202,8 @@ def _h5(cfg: dict) -> dict:
     o = a[a["exp"] != "E00"]
     up, down = int((o["veredito_atencao"] == "aumenta").sum()), int((o["veredito_atencao"] == "diminui").sum())
     v = "confirmada" if up * 2 >= len(o) and not down else ("parcialmente confirmada" if up else ("refutada" if down else "inconclusiva"))
-    return {"veredito": v, "aumentam": up, "diminuem": down, "combinacoes": len(o), "quais_aumentam": (o[o["veredito_atencao"] == "aumenta"]["tecnica"] + " " + o[o["veredito_atencao"] == "aumenta"]["task"]).tolist(),
+    return {"veredito": v, "aumentam": up, "diminuem": down, "combinacoes": len(o), "razao_aumentam": (o[o["veredito_razao"] == "aumenta"]["tecnica"] + " " + o[o["veredito_razao"] == "aumenta"]["task"]).tolist(),
+            "razao_diminuem": (o[o["veredito_razao"] == "diminui"]["tecnica"] + " " + o[o["veredito_razao"] == "diminui"]["task"]).tolist(), "quais_aumentam": (o[o["veredito_atencao"] == "aumenta"]["tecnica"] + " " + o[o["veredito_atencao"] == "aumenta"]["task"]).tolist(),
             "quais_diminuem": (o[o["veredito_atencao"] == "diminui"]["tecnica"] + " " + o[o["veredito_atencao"] == "diminui"]["task"]).tolist()}
 
 
@@ -233,7 +240,7 @@ def _technique_table(cfg: dict) -> pd.DataFrame:
             if not att.empty:
                 a = att[(att["task"] == task) & (att["tecnica"] == t)]
                 if len(a):
-                    r[f"atencao_{task}"] = a.iloc[0]["veredito_atencao"]
+                    r[f"atencao_{task}"], r[f"razao_{task}"] = a.iloc[0]["veredito_atencao"], a.iloc[0]["veredito_razao"]
         rows.append(r)
     return pd.DataFrame(rows)
 
@@ -249,10 +256,12 @@ def _phase_costs(cfg: dict) -> pd.DataFrame:
         g = s[s["etapa"].map(f)]
         if g.empty:
             continue
+        # Abaixo de 10% de uso, a GPU só tem o contexto do PyTorch aberto: o treino dessas MLPs é na CPU.
+        gpu = ((g["gpu_usada_pelo_processo"] == "sim") & (g["gpu_sistema_util_pct_media"] >= 10)).any()
         rows.append({"fase": name, "etapas_medidas": len(g), "duracao_h": g["duracao_s"].sum() / 3600, "cpu_nucleos_medio": g["cpu_nucleos_medio"].mean(), "ram_processo_pico_gb": g["ram_processo_pico_gb"].max(),
-                     "gpu_usada": "sim" if (g["gpu_usada_pelo_processo"] == "sim").any() else "não", "gpu_mem_pico_mb": g["gpu_sistema_mem_pico_mb"].max() if (g["gpu_usada_pelo_processo"] == "sim").any() else np.nan,
-                     "gpu_potencia_media_w": g["gpu_sistema_potencia_w_media"].mean() if (g["gpu_usada_pelo_processo"] == "sim").any() else np.nan,
-                     "gpu_energia_wh": g["gpu_sistema_energia_wh"].sum() if (g["gpu_usada_pelo_processo"] == "sim").any() else np.nan, "disco_delta_gb": g["disco_delta_gb"].sum()})
+                     "gpu_usada": "sim" if gpu else "não", "gpu_mem_pico_mb": g["gpu_sistema_mem_pico_mb"].max() if gpu else np.nan,
+                     "gpu_potencia_media_w": g["gpu_sistema_potencia_w_media"].mean() if gpu else np.nan,
+                     "gpu_energia_wh": g["gpu_sistema_energia_wh"].sum() if gpu else np.nan, "disco_delta_gb": g["disco_delta_gb"].sum()})
     return pd.DataFrame(rows)
 
 

@@ -143,3 +143,7 @@ O <b>Grad-CAM</b> gera um mapa de quais regiões mais pesaram na decisão da red
     "limites": PENDENTE,
     "faltando": PENDENTE,
 }
+
+from tools.documento_resultados import R  # noqa: E402
+
+T.update(R)

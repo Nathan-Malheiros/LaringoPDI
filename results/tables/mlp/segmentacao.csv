@@ -1,0 +1,10 @@
+tecnica,dice,dice_por_frame,iou,hd95_mediana,taxa_falha,delta_dice_vs_raw,p_holm,veredito_seg,epoca_melhor,epocas,s_ate_melhor,s_por_epoca,sobreajuste,custo_total_s,ms_tecnica,ms_inferencia_gpu,veredito_convergencia,veredito_custo,metodo_classico,dice_classico,delta_vs_classico,p_holm_vs_classico,veredito_vs_classico
+raw,0.44875,0.44875,0.35972,5.88611,0.0063,0.0,,referência,10.2,15.2,5.84239,0.5513,-0.03367,5.84239,0.0,3.53023,referência,referência,region_grow,0.46663,-0.01788,0.78761,empate
+stretch,0.48105,0.48105,0.38626,4.4091,0.00767,0.0323,0.0024,melhora,10.8,15.8,4.9723,0.46058,-0.01862,12.98348,1.99085,4.11103,igual,igual,region_grow,0.48396,-0.00291,1.0,empate
+he,0.49955,0.49955,0.39948,4.0,0.01465,0.0508,0.0,melhora,7.8,12.8,3.68042,0.46173,-0.02694,4.15827,0.11875,4.3222,igual,igual,region_grow,0.47633,0.02321,0.34068,empate
+clahe,0.45057,0.45057,0.36048,5.83095,0.00647,0.00182,1.0,neutra,9.0,14.0,4.25006,0.46763,-0.02532,6.11418,0.46325,4.34287,igual,igual,region_grow,0.61439,-0.16382,0.0,clássico melhor
+mean,0.45648,0.45648,0.36649,5.59456,0.00681,0.00773,1.0,neutra,11.6,16.6,5.70651,0.48684,-0.02752,6.1077,0.0997,5.44556,igual,igual,region_grow,0.43845,0.01802,0.86695,empate
+median,0.44976,0.44976,0.36073,6.07449,0.00511,0.00101,1.0,neutra,13.6,18.6,7.35938,0.54322,-0.03881,8.61648,0.3124,12.59869,igual,igual,region_grow,0.44191,0.00785,1.0,empate
+gauss_lpf,0.45838,0.45838,0.36784,5.64008,0.00528,0.00963,0.48812,neutra,15.6,20.6,8.33089,0.53155,-0.02041,57.35508,12.18295,4.79261,igual,igual,region_grow,0.41903,0.03935,0.03823,MLP melhor
+spec,0.4568,0.4568,0.36351,5.26637,0.00664,0.00805,1.0,neutra,7.8,12.8,4.06685,0.5136,-0.00347,17.73477,3.3966,4.52263,igual,igual,region_grow,0.46316,-0.00636,1.0,empate
+homo,0.53182,0.53182,0.43136,3.03246,0.02589,0.08307,0.0,melhora,16.6,21.6,8.59161,0.51535,-0.03725,66.84806,14.47725,4.60522,igual,igual,region_grow,0.44009,0.09173,0.0,MLP melhor

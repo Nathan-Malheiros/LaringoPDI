@@ -193,3 +193,12 @@ Registrado **antes** de gerar os números novos desta entrada. Supera a proibiç
 - **Custo:** na classificação, o PDI por frame inclui técnica, máscara e 18 características em 1 núcleo; na segmentação, só a técnica. Custo total como definido acima. Os tempos de CPU e de GPU não são somados como se fossem o mesmo recurso sem indicação: a tabela mostra as parcelas.
 - **H6:** queda da acurácia balanceada ao permutar cada família, repetida 10 vezes, em `raw` (5 folds, semente 0), pela regra de P6.
 - **Caches:** as 9 técnicas são regravadas agora, com medição; o conteúdo é conferido contra os caches antigos de E00 e E03.
+
+## 2026-11-06: correções e verificações ao fim do estudo
+
+- **Máscara da MLP de classificação (erro corrigido):** `build_features` segmentava a imagem 224 com o pad, e a semente do crescimento de região caía nele. Máscaras vazias: 66% a 87%. Agora a segmentação usa só a área da imagem (`mlp._segment_region`), com vazias de 0% a 25%. Todas as MLPs de classificação foram treinadas de novo, depois da CNN, para não distorcer os tempos. CNN e MLP de segmentação não usam essa máscara.
+- **Tempo das características (erro corrigido):** a primeira chamada contava a carga das bibliotecas e inflava `raw`. `mlp.measure_feature_time` aquece antes de medir; tempos remedidos e vereditos de custo refeitos.
+- **H5:** a regra registrada usa `att_glottis`, que depende da área válida, e esta muda com a técnica. Mantida como veredito; a razão atenção/área foi acrescentada como análise exploratória, definida depois de ver os resultados.
+- **Adaptações das regras:** H1 passa de 5 para 6 métodos (metade ou mais) e H5 de 24 para 16 combinações, porque o estudo mudou. O veredito da H2 compara as médias de `pdi/ruido.csv`.
+- **Fator de confusão (verificação não prevista, depois dos resultados):** a fração útil da imagem separa as classes com AUC 0,657 (A) e 0,763 (B). Correlaciona com a textura (energia GLCM, rho −0,62). `results/tables/sintese/confusao_formato.json`. As notas absolutas da classificação não devem ser lidas como capacidade clínica. Um teste sem as bordas fica para decisão do grupo.
+- **Fase de custo:** GPU abaixo de 10% de uso conta como não usada (só o contexto do PyTorch estava aberto na MLP de classificação).

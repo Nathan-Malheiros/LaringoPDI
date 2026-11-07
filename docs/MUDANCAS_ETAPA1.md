@@ -31,3 +31,11 @@ Ficam no repositório, fora do protótipo e da apresentação: uma segunda CNN t
 | Técnicas na ResNet-18 | Remoção de reflexo, equalização, CLAHE e mediana têm 1 semente; a homomórfica tem 3 | Declarado no relatório. A "melhora" da remoção de reflexo na Tarefa A depende da família de comparações (p corrigido 0,033 com 5 técnicas; 0,053 com 8) |
 
 **Nomes das hipóteses:** H1–H6 são as da apresentação da Etapa 1. O arquivo `docs/hipoteses.md` traz outro conjunto, de uso interno no desenho do experimento, com a mesma numeração; a nota sobre isso está em `DECISIONS.md` (2026-11-04).
+
+## Acréscimos da reestruturação final
+
+| Item | O que mudou | Justificativa |
+|---|---|---|
+| MLP de segmentação | Acrescentada: classifica cada pixel a partir da vizinhança 15×15 | Pedido de levar a MLP também à segmentação, com e sem PDI |
+| Treino local | Tudo na RTX 3060 do Nathan, sem nuvem | Ter hardware, tempo e custo medidos nas mesmas condições |
+| Critérios de convergência e custo | Cada técnica recebe veredito também nessas medidas | Convergir antes é um resultado válido, mesmo com custo maior em outro ponto |

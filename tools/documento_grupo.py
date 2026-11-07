@@ -38,8 +38,8 @@ INK, DIM, LINE, BLUE = colors.HexColor("#1b2a4a"), colors.HexColor("#56627f"), c
 GOOD, BAD, NEUT, HEAD = colors.HexColor("#d9f0e0"), colors.HexColor("#f9dcd5"), colors.HexColor("#f1f3f8"), colors.HexColor("#e6ecf8")
 S = {
     "body": ParagraphStyle("body", fontName="A", fontSize=10, leading=14.5, textColor=INK, spaceAfter=7, alignment=TA_LEFT),
-    "h1": ParagraphStyle("h1", fontName="A-B", fontSize=16, leading=20, textColor=INK, spaceBefore=8, spaceAfter=9),
-    "h2": ParagraphStyle("h2", fontName="A-B", fontSize=11.5, leading=15, textColor=INK, spaceBefore=9, spaceAfter=4),
+    "h1": ParagraphStyle("h1", fontName="A-B", fontSize=16, leading=20, textColor=INK, spaceBefore=8, spaceAfter=9, keepWithNext=1),
+    "h2": ParagraphStyle("h2", fontName="A-B", fontSize=11.5, leading=15, textColor=INK, spaceBefore=9, spaceAfter=4, keepWithNext=1),
     "title": ParagraphStyle("title", fontName="A-B", fontSize=25, leading=30, textColor=INK, spaceAfter=10),
     "sub": ParagraphStyle("sub", fontName="A", fontSize=12, leading=17, textColor=DIM, spaceAfter=18),
     "cap": ParagraphStyle("cap", fontName="A", fontSize=8.5, leading=11.5, textColor=DIM, spaceBefore=3, spaceAfter=10),
@@ -181,11 +181,11 @@ def tab_attention():
     if not p.exists():
         return P("<i>Tabela de atenção ausente.</i>")
     d = pd.read_csv(p)
-    rows = [["Técnica", "Atenção A", "Razão A", "Veredito A", "Atenção B", "Razão B", "Veredito B"]]
+    rows = [["Técnica", "Atenção A", "Veredito registrado A", "Razão A", "Veredito da razão A", "Atenção B", "Veredito registrado B", "Razão B", "Veredito da razão B"]]
     for e, g in d.groupby("exp", sort=False):
         a, b = g[g["task"] == "A"].iloc[0], g[g["task"] == "B"].iloc[0]
-        rows.append([NAMES[a["tecnica"]], num(a["att_glote"], 4), num(a["razao_att_area"], 2), a["veredito_atencao"], num(b["att_glote"], 4), num(b["razao_att_area"], 2), b["veredito_atencao"]])
-    return table(rows, [2.5, 1, 1, 1.3, 1, 1, 1.3], tint=True)
+        rows.append([NAMES[a["tecnica"]], num(a["att_glote"], 4), a["veredito_atencao"], num(a["razao_att_area"], 2), a["veredito_razao"], num(b["att_glote"], 4), b["veredito_atencao"], num(b["razao_att_area"], 2), b["veredito_razao"]])
+    return table(rows, [2.2, 1, 1.3, .8, 1.3, 1, 1.3, .8, 1.3], tint=True)
 
 
 def tab_family():
@@ -218,7 +218,7 @@ def tab_synthesis():
     d = pd.read_csv(TAB / "sintese" / "por_tecnica.csv")
     rows = [["Técnica", "Imagem", "Seg. clássica", "Seg. MLP", "MLP A sens.", "MLP B sens.", "CNN A sens.", "CNN B sens.", "Atenção A", "Atenção B"]]
     for _, r in d.iterrows():
-        rows.append([r["nome"], r["visual"], r["seg_classica"], r["seg_mlp"], r["mlp_A_v_sens"], r["mlp_B_v_sens"], r["cnn_A_v_sens"], r["cnn_B_v_sens"], r.get("atencao_A", "–"), r.get("atencao_B", "–")])
+        rows.append([r["nome"], r["visual"], r["seg_classica"], r["seg_mlp"], r["mlp_A_v_sens"], r["mlp_B_v_sens"], r["cnn_A_v_sens"], r["cnn_B_v_sens"], r.get("razao_A", "–"), r.get("razao_B", "–")])
     return table(rows, [2, 1.25, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1], tint=True)
 
 
@@ -396,6 +396,7 @@ def build():
     section("16. O que ainda falta e onde está cada coisa", T["faltando"])
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    assert not any("Pendente:" in str(v) for v in T.values()), "há texto pendente"
     Doc(OUT).multiBuild(story)
     print(OUT, round(OUT.stat().st_size / 1e6, 2), "MB")
 

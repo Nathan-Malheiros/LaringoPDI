@@ -212,3 +212,11 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - Correção: a GPU registrada era da placa inteira, não do estudo, que roda só na CPU. Ver `docs/DECISIONS.md`.
 - Achado: o painel LaringoMonitor (animações em loop) consome cerca de 1,35 núcleo e mantém a GPU em ~30-39% sem nenhum estudo rodando. Isso contamina os tempos dos treinos.
 - A linha `pdi-study` em `etapas.csv` engloba as quatro `pdi/*`: não somar.
+
+## 2026-11-06: Fases C e D concluídas, síntese e documento do grupo
+
+- MLP de classificação (refeita com a máscara corrigida), MLP de segmentação e CNN (270 treinos, 8,6 h, 1,08 kWh na GPU), além do Grad-CAM (14 min). 101 testes passando.
+- Classificação: 62 de 64 vereditos neutros; convergência igual em todas as técnicas. Segmentação: CLAHE + crescimento de região segue como a melhor (Dice 0,614).
+- Hipóteses: H1 parcial, H2 confirmada, H3 confirmada, H4 confirmada, H5 parcial, H6 refutada. Formato do vídeo é possível fator de confusão (AUC 0,76 na Tarefa B).
+- Documento em `docs/Documento_explicativo_LaringoPDI.pdf`; a versão com frames fica em `entrega/`, fora do git. Tabelas em `results/tables/{cnn,sintese,custo}`.
+- Falta: relatório ABNT, apostila e protótipo.

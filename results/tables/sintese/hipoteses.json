@@ -1,0 +1,144 @@
+{
+  "H1": {
+    "veredito": "parcialmente confirmada",
+    "dice_region_grow_clahe": 0.6143857836456559,
+    "dice_region_grow_he": 0.47633477853492334,
+    "p_holm_region_grow": 5.264989188695794e-39,
+    "metodos_clahe_melhor": 2,
+    "metodos": 6,
+    "metodos_he_melhor": 4,
+    "saturacao_he": 0.18199,
+    "saturacao_clahe": 0.01527
+  },
+  "H2": {
+    "veredito": "confirmada",
+    "por_densidade": [
+      {
+        "ruido": "sp_10",
+        "psnr_mediana": 39.16034,
+        "psnr_media": 22.51116,
+        "ssim_mediana": 0.96541,
+        "ssim_media": 0.26989
+      },
+      {
+        "ruido": "sp_5",
+        "psnr_mediana": 41.44398,
+        "psnr_media": 25.88633,
+        "ssim_mediana": 0.9687,
+        "ssim_media": 0.44471
+      }
+    ],
+    "nota": "Comparação das médias da tabela de ruído; cada filtro passou pelo teste pareado contra a imagem ruidosa."
+  },
+  "H3": {
+    "veredito": "confirmada",
+    "dice_adaptativo": 0.25309396422487224,
+    "dice_otsu": 0.02275757580919932,
+    "delta": 0.23033638841567292,
+    "p": 3.9368653520372703e-97,
+    "n_videos": 587
+  },
+  "H4": {
+    "veredito": "confirmada",
+    "f1_cnn": 0.7829468678223855,
+    "f1_mlp": 0.7581308389294448,
+    "delta_f1": -0.02481602889294059,
+    "ic_f1": [
+      -0.06933777179638898,
+      0.05908544587141658
+    ],
+    "sens_cnn": 0.576969696969697,
+    "sens_mlp": 0.7048484848484851,
+    "ic_sens": [
+      0.07407407407407407,
+      0.3148148148148148
+    ],
+    "p_mcnemar_sens": 0.012939453125,
+    "p_wilcoxon_sens": 0.011616044899262472
+  },
+  "H5": {
+    "veredito": "parcialmente confirmada",
+    "aumentam": 1,
+    "diminuem": 8,
+    "combinacoes": 16,
+    "razao_aumentam": [
+      "clahe A",
+      "homo A",
+      "clahe B",
+      "mean B"
+    ],
+    "razao_diminuem": [
+      "he B"
+    ],
+    "quais_aumentam": [
+      "mean B"
+    ],
+    "quais_diminuem": [
+      "stretch A",
+      "he A",
+      "clahe A",
+      "stretch B",
+      "he B",
+      "clahe B",
+      "spec B",
+      "homo B"
+    ]
+  },
+  "H6": {
+    "veredito": "refutada",
+    "familia_mais_importante": {
+      "A": "tex",
+      "B": "tex"
+    },
+    "queda": [
+      {
+        "tarefa": "A",
+        "familia": "shape",
+        "queda_media": 0.0168,
+        "dp_folds": 0.0365
+      },
+      {
+        "tarefa": "A",
+        "familia": "int",
+        "queda_media": 0.0232,
+        "dp_folds": 0.0139
+      },
+      {
+        "tarefa": "A",
+        "familia": "tex",
+        "queda_media": 0.0891,
+        "dp_folds": 0.0238
+      },
+      {
+        "tarefa": "B",
+        "familia": "shape",
+        "queda_media": -0.0182,
+        "dp_folds": 0.0355
+      },
+      {
+        "tarefa": "B",
+        "familia": "int",
+        "queda_media": 0.0344,
+        "dp_folds": 0.0223
+      },
+      {
+        "tarefa": "B",
+        "familia": "tex",
+        "queda_media": 0.1837,
+        "dp_folds": 0.0492
+      }
+    ]
+  },
+  "hardware": {
+    "cpu": "AMD Ryzen 5 5500",
+    "cpu_threads": 12,
+    "ram_gb": 15.9,
+    "gpu": "NVIDIA GeForce RTX 3060",
+    "gpu_mem_gb": 12.0,
+    "torch": "2.14.1+cu130",
+    "cuda": "13.0",
+    "os": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.16"
+  },
+  "git_sha": "b328ca2"
+}

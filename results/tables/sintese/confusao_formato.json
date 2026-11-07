@@ -1,0 +1,20 @@
+{
+  "formatos_distintos": 21,
+  "util_quartis": [
+    0.18,
+    0.5,
+    0.5,
+    0.5,
+    1.0
+  ],
+  "auc_formato_A": 0.657,
+  "auc_formato_B": 0.763,
+  "spearman_formato_textura": {
+    "f18tex_canny_density": -0.012,
+    "f18tex_sobel_mean": 0.537,
+    "f18tex_glcm_contrast": -0.009,
+    "f18tex_glcm_homogeneity": -0.509,
+    "f18tex_glcm_energy": -0.622,
+    "f18tex_lbp_entropy": -0.202
+  }
+}

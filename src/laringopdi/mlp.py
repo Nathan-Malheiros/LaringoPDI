@@ -100,14 +100,26 @@ def build_features(cfg: dict, exp: str, n_jobs: int, force: bool = False) -> pd.
     df.insert(0, "video_id", [str(v) for v in meta["video_ids"]])
     df.insert(0, "path", paths)
     df.to_csv(out, index=False)
-    # Tempo em 1 núcleo, nas mesmas condições das técnicas (estudo do PDI).
-    idx = np.random.default_rng(0).choice(n, min(100, n), replace=False)
+    measure_feature_time(cfg, exp)
+    return df
+
+
+def measure_feature_time(cfg: dict, exp: str) -> float:
+    """Tempo em 1 núcleo, nas mesmas condições das técnicas. O aquecimento evita contar a carga das bibliotecas."""
+    from laringopdi.pdi.segmentation import best_config
+
+    best = best_config()
+    X, paths, _ = D.load_cache(cfg, exp)
+    idx = np.random.default_rng(0).choice(len(paths), min(100, len(paths)), replace=False)
     frames = [np.array(X[i, :, :, 0]) for i in idx]
+    for g in frames[:5]:
+        _feature_frame(g, best["method"], best["params"])
     t0 = time.perf_counter()
     for g in frames:
         _feature_frame(g, best["method"], best["params"])
-    C.write_json(tempo, {"ms_por_frame": (time.perf_counter() - t0) * 1000 / len(frames), "n": len(frames), "hardware": C.hardware()})
-    return df
+    ms = (time.perf_counter() - t0) * 1000 / len(frames)
+    C.write_json(_feature_paths(cfg, exp)[1], {"ms_por_frame": ms, "n": len(frames), "hardware": C.hardware()})
+    return ms
 
 
 def _feature_ms(cfg: dict, exp: str) -> float:
