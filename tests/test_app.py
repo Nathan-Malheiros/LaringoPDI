@@ -16,7 +16,8 @@ def _has_bagls():
 
 
 def _text(at) -> str:
-    return " ".join(m.value for m in at.markdown)
+    parts = [*at.markdown, *at.title, *at.subheader, *at.caption, *at.info, *at.success, *at.warning]
+    return " ".join(str(m.value) for m in parts)
 
 
 def test_app_without_dataset_explains_instead_of_crashing():
@@ -37,7 +38,7 @@ def test_app_all_steps_render():
         seen_metrics |= {m.label for m in at.metric}
         text += _text(at)
     assert {"PSNR", "SSIM", "Dice", "IoU"} <= seen_metrics
-    for needle in ("Realce", "limiar adaptativo", "MLP com 18 características", "Hipóteses da Etapa 1", "sensibilidade em primeiro lugar", "formato do vídeo"):
+    for needle in ("Realce", "limiar adaptativo", "18 características + MLP", "Hipóteses da Etapa 1", "sensibilidade em primeiro lugar", "formato do vídeo"):
         assert needle in text
     for gone in ("Enviar arquivo", "SimpleCNN", "HOG"):
         assert gone not in text

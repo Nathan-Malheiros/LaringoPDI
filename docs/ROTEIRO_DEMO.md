@@ -2,7 +2,7 @@
 
 **Antes de começar:** abra o app pelo atalho (`tools\abrir_app.bat`) e passe uma vez por todas as cenas, porque a primeira carga de cada modelo é lenta. As falas completas e os números estão em `entrega/LaringoPDI_Apostila.pdf`.
 
-**Como usar:** a barra lateral tem o **Roteiro da apresentação**. Cada cena ajusta sozinha o frame, a técnica, a tarefa e o passo. Basta clicar na cena e falar. Depois, tudo pode ser mudado à mão em **Ajustes**.
+**Como usar:** a barra lateral tem as **Cenas da apresentação**. Cada cena ajusta sozinha o frame, a técnica, a tarefa e o passo. Basta clicar na cena e falar. Depois, tudo pode ser mudado à mão em **Entrada** e **Classificação**.
 
 Todos os frames são de vídeos do **teste do fold 0**: nenhum modelo do app os viu no treino.
 

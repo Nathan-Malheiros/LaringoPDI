@@ -1,69 +1,10 @@
-[server]
-enableStaticServing = true
+[theme]
+base = "light"
+primaryColor = "#1A47E0"
+font = "sans serif"
 
 [runner]
 magicEnabled = false
 
 [browser]
 gatherUsageStats = false
-
-[theme]
-base = "light"
-primaryColor = "#A9532C"
-backgroundColor = "#F7F5F0"
-secondaryBackgroundColor = "#EEEAE2"
-textColor = "#1F252B"
-borderColor = "#DDD7CC"
-linkColor = "#A9532C"
-baseRadius = "6px"
-showWidgetBorder = true
-font = "IBM Plex Sans"
-headingFont = "Source Serif 4"
-codeFont = "IBM Plex Mono"
-
-[theme.sidebar]
-backgroundColor = "#EFEBE3"
-secondaryBackgroundColor = "#E5E0D6"
-
-# Fontes locais (OFL), para o app funcionar sem internet na sala.
-[[theme.fontFaces]]
-family = "IBM Plex Sans"
-url = "app/static/fonts/latin-ibm-plex-sans-400.woff2"
-weight = 400
-style = "normal"
-
-[[theme.fontFaces]]
-family = "IBM Plex Sans"
-url = "app/static/fonts/latin-ibm-plex-sans-500.woff2"
-weight = 500
-style = "normal"
-
-[[theme.fontFaces]]
-family = "IBM Plex Sans"
-url = "app/static/fonts/latin-ibm-plex-sans-600.woff2"
-weight = 600
-style = "normal"
-
-[[theme.fontFaces]]
-family = "Source Serif 4"
-url = "app/static/fonts/latin-source-serif-4-500.woff2"
-weight = 500
-style = "normal"
-
-[[theme.fontFaces]]
-family = "Source Serif 4"
-url = "app/static/fonts/latin-source-serif-4-600.woff2"
-weight = 600
-style = "normal"
-
-[[theme.fontFaces]]
-family = "IBM Plex Mono"
-url = "app/static/fonts/latin-ibm-plex-mono-400.woff2"
-weight = 400
-style = "normal"
-
-[[theme.fontFaces]]
-family = "IBM Plex Mono"
-url = "app/static/fonts/latin-ibm-plex-mono-500.woff2"
-weight = 500
-style = "normal"

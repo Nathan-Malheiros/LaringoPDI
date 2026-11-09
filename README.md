@@ -19,7 +19,7 @@ py -3.11 -m venv .venv
 .venv\Scripts\python -m streamlit run app\streamlit_app.py      # ou: tools\abrir_app.bat
 ```
 
-Os passos seguem a apresentação: realce, filtragem e Fourier, segmentação (clássica e MLP), classificação (MLP × CNN) e resultados do estudo. A barra lateral traz o **roteiro da apresentação**: cada cena ajusta frame, técnica, tarefa e passo. O app só usa frames de vídeos do teste do fold 0, que nenhum modelo do app viu no treino; o BAGLS precisa estar na máquina.
+Os passos seguem a apresentação: realce, filtragem e Fourier, segmentação (clássica e MLP), classificação (MLP × CNN) e resultados do estudo. A barra lateral traz as **cenas da apresentação**: cada cena ajusta frame, técnica, tarefa e passo. O app só usa frames de vídeos do teste do fold 0, que nenhum modelo do app viu no treino; o BAGLS precisa estar na máquina.
 
 - **Pesos:** `results/runs/<exp>/<A|B>/{resnet18,mlp18}/fold0_seed0/model.pt` e `results/runs/<exp>/seg/mlp_seg/fold0_seed0/model.pt`.
 - **Apresentação:** apostila em `entrega/LaringoPDI_Apostila.pdf` (gerada por `tools/apostila.py`) e roteiro da demonstração em `docs/ROTEIRO_DEMO.md`.
