@@ -38,7 +38,7 @@ def main() -> None:
             for _ in range(4):        # enquanto o servidor aquece, a captura sai quase em branco
                 shot.unlink(missing_ok=True)
                 subprocess.run([browser, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--window-size=1500,1500", f"--screenshot={shot}",
-                                "--virtual-time-budget=60000", f"http://localhost:{PORT}/?aba={i}&frame=1881"], check=False, timeout=180,
+                                "--virtual-time-budget=60000", f"http://localhost:{PORT}/?aba={i}&frame=12188"], check=False, timeout=180,
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 if shot.exists() and shot.stat().st_size > MIN_BYTES:
                     break

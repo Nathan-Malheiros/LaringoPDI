@@ -60,9 +60,9 @@ def numbers() -> dict:
     sb = pd.read_csv(sb_p).set_index(["modelo", "tarefa"]) if sb_p.exists() else None
     imp = pd.read_csv(TAB / "mlp" / "importancia_familias.csv").set_index(["tarefa", "familia"])["queda_media"]
     cfg = C.load()
-    raw = C.path(cfg, "raw") / "test"
-    g = to_work_size(D.imread(raw / "1881.png", gray=True), cfg["data"]["work_size"])
-    gt = cv2.resize((D.imread(raw / "1881_seg.png", gray=True) > 127).astype("uint8"), g.shape[::-1], interpolation=cv2.INTER_NEAREST).astype(bool)
+    raw = C.path(cfg, "raw") / "training"
+    g = to_work_size(D.imread(raw / "12188.png", gray=True), cfg["data"]["work_size"])
+    gt = cv2.resize((D.imread(raw / "12188_seg.png", gray=True) > 127).astype("uint8"), g.shape[::-1], interpolation=cv2.INTER_NEAREST).astype(bool)
     bc = best_config()
     ex = {p: dice(apply_best(g, bc["method"], bc["params"], p), gt) for p in ("raw", "clahe")}
     v = pd.concat([cnn.reset_index()[["veredito_f1", "veredito_sensibilidade"]], m18.reset_index()[["veredito_f1", "veredito_sensibilidade"]]]).melt()["value"]
@@ -135,14 +135,14 @@ def build() -> None:
          "uma MLP que segmenta pixel a pixel; uma MLP com 18 medidas da glote; a ResNet-18; e a síntese de resultado contra custo. Cada técnica recebeu veredito de melhora, neutra "
          "ou piora contra a imagem original, com testes estatísticos corrigidos. Tudo em Python, com OpenCV, scikit-learn, PyTorch e Streamlit, numa RTX 3060.")
     P("Bloco 4. Marcos Mendes: realce e filtragem (2 min 30 s)", "h2")
-    P("<b>Faça:</b> abra o app no frame 1881, aba 1; depois a aba 2, com sal e pimenta a 5%, e mova o σ de Fourier.")
+    P("<b>Faça:</b> no app, clique na cena 1 da barra lateral; depois, na cena 2, e mova o σ de Fourier.")
     Fala(f"Este frame é escuro. O alargamento estica o histograma, a equalização global dá o maior contraste e o CLAHE trabalha por blocos. No conjunto, o CLAHE foi a única "
          f"técnica a melhorar a imagem pelos três critérios: mais contraste, entropia de {n(pdi.loc['raw', 'entropia'], 2)} para {n(pdi.loc['clahe', 'entropia'], 2)} bits e saturação "
          f"de {pc(pdi.loc['raw', 'saturacao'])} para {pc(pdi.loc['clahe', 'saturacao'])}. A equalização aumenta o contraste mas perde informação.")
     Fala(f"Na filtragem, a mediana venceu a média em sal e pimenta: {n(pdi.loc['median', 'psnr_sal_pimenta5'], 1)} dB contra {n(pdi.loc['mean', 'psnr_sal_pimenta5'], 1)}. "
          "Em Fourier, um σ pequeno corta mais frequência e borra mais a borda das pregas.")
     P("Bloco 5. Pedro: segmentação (2 min)", "h2")
-    P("<b>Faça:</b> aba 3. Passo a passo, comparação dos métodos e, embaixo, a MLP de segmentação.")
+    P("<b>Faça:</b> cenas 3, 4 e 5. Na cena 4, desligue e ligue a chave do CLAHE para mostrar a diferença.")
     Fala(f"Aqui está o passo a passo prometido: limiar adaptativo, abertura, fechamento e componente central. No conjunto, o melhor foi crescimento de região com CLAHE: Dice "
          f"{rg} contra {rg0} sem PDI, e a falha caiu de {pc(pdi.loc['raw', 'taxa_falha'])} para {pc(pdi.loc['clahe', 'taxa_falha'])}, por menos de meio milissegundo a mais. "
          f"Neste frame, o Dice vai de {n(ex['raw'], 2)} para {n(ex['clahe'], 2)}. Mas o efeito depende do método: com a adaptativa e morfologia, o CLAHE derrubou o Dice de "
@@ -150,13 +150,13 @@ def build() -> None:
     Fala(f"Embaixo está a MLP de segmentação, que decide cada pixel olhando a vizinhança. Para ela, o CLAHE não mudou nada ({n(ms.loc['clahe', 'dice'])}); a melhor foi a homomórfica, "
          f"{n(ms.loc['homo', 'dice'])} contra {n(ms.loc['raw', 'dice'])}. Ela não superou o melhor clássico. A lição: o melhor PDI depende do algoritmo seguinte.")
     P("Bloco 6. Pedro: PDI + MLP × CNN (2 min)", "h2")
-    P("<b>Faça:</b> aba 4, com CLAHE na barra lateral. Mostre as 18 medidas, a saída da MLP e o Grad-CAM. Troque para \"sem PDI\" e mostre que pouco muda.")
+    P("<b>Faça:</b> cenas 6 e 7. Mostre as 18 medidas, as duas saídas e o Grad-CAM; na cena 7, mostre que, sem PDI, pouco muda.")
     Fala(f"No braço 1, estas são as 18 medidas de forma, intensidade e textura, que entram numa MLP. No braço 2, a ResNet-18 decide sozinha, e o Grad-CAM mostra onde ela olhou. "
          f"A sensibilidade é a nossa métrica prioritária. Na Tarefa B, sem PDI, a MLP encontrou mais casos: {n(h4['sens_mlp'], 2)} contra {n(h4['sens_cnn'], 2)}, e o F1 ficou "
          f"empatado, {n(h4['f1_mlp'])} contra {n(h4['f1_cnn'])}. Mas, como o Tales vai mostrar, essa vantagem da MLP vinha em parte do formato do vídeo. "
          "A CNN custou 8,6 horas de GPU; o estudo inteiro da MLP de classificação, uns 17 minutos.")
     P("Bloco 7. Nathan: resultados (1 min 30 s)", "h2")
-    P("<b>Faça:</b> aba 5. Mostre a frase-resumo, a tabela por técnica e a das hipóteses.")
+    P("<b>Faça:</b> cena 8. Mostre a frase-resumo, as hipóteses e o aviso do formato do vídeo.")
     Fala(f"Na classificação, o PDI quase não mudou nada: {d['neutros']} de {d['vereditos']} vereditos neutros, uma melhora e uma piora, as duas do alargamento e só em F1. "
          f"Nenhuma técnica fez o treino convergir mais cedo. As mais caras, passa-baixa e homomórfica, não trouxeram ganho. Hipóteses: H1 {h('H1')}, H2 {h('H2')}, H3 {h('H3')}, "
          f"H4 {h('H4')}, H5 {h('H5')} e H6 {h('H6')}: a textura pesou mais que a forma. Recomendação: CLAHE para segmentar com método clássico; para classificar frames isolados, "
@@ -187,7 +187,7 @@ def build() -> None:
         ["O que é McNemar? E Holm?", "McNemar compara os erros de dois modelos nos mesmos vídeos. Holm corrige o p quando há muitas comparações, para não contar sorte como resultado.", "Nathan"],
         ["Quanto custa?", f"CLAHE {n(pdi.loc['clahe', 'ms_tecnica'], 2)} ms por frame; homomórfica {n(pdi.loc['homo', 'ms_tecnica'], 1)} ms. A CNN levou {n(fase.loc['CNN: 270 treinos', 'duracao_h'], 1)} h e {n(fase.loc['CNN: 270 treinos', 'gpu_energia_wh'] / 1000, 2)} kWh na GPU; o estudo inteiro, {n(fase['duracao_h'].sum(), 1)} h.", "Nathan"],
         ["Isso é PDI ou IA?", "PDI. O objeto de estudo é o efeito de cada técnica; os modelos são o instrumento de medida, sempre iguais.", "Nathan"],
-        ["Funciona em imagem de outra origem?", "O app aceita upload, mas tudo foi calibrado no BAGLS, e o resultado pode ser pior.", "Pedro"],
+        ["Os frames do app foram usados no treino?", "Não. O app só mostra vídeos do teste do fold 0, que os modelos do app nunca viram.", "Pedro"],
         ["É diagnóstico?", AVISO, "Qualquer um"]], [.27, .59, .14])
     P("<b>Se não souber a resposta:</b> \"Não medimos isso, professora.\" Nunca invente um número.")
 
@@ -196,7 +196,7 @@ def build() -> None:
     P("Todos devem saber os números em negrito.")
     T_([["Número", "O que é"], ["<b>17,7%</b>", "afastamento de professores por distúrbio de voz"], ["<b>59.250 / 640</b>", "frames / vídeos do BAGLS"],
         ["<b>5.870 / 587</b>", "frames e vídeos usados"], ["9", "versões da imagem: 8 técnicas + original"],
-        [f"<b>{rg} × {rg0}</b>", "Dice: crescimento de região com CLAHE × sem PDI (melhor do estudo)"], [f"{n(ex['raw'], 2)} → {n(ex['clahe'], 2)}", "Dice do frame 1881, sem PDI → CLAHE (exemplo de 1 imagem)"],
+        [f"<b>{rg} × {rg0}</b>", "Dice: crescimento de região com CLAHE × sem PDI (melhor do estudo)"], [f"{n(ex['raw'], 2)} → {n(ex['clahe'], 2)}", "Dice do frame da cena 4, sem PDI → CLAHE (exemplo de 1 imagem)"],
         [f"{n(ms.loc['homo', 'dice'])} × {n(ms.loc['raw', 'dice'])}", "Dice da MLP de segmentação: homomórfica × sem PDI"],
         [f"<b>{d['neutros']} de {d['vereditos']}</b>", "vereditos neutros na classificação"],
         [f"<b>{n(h4['f1_mlp'])} × {n(h4['f1_cnn'])}</b>", "F1 na Tarefa B, sem PDI: MLP × ResNet-18"], [f"<b>{n(h4['sens_mlp'], 2)} × {n(h4['sens_cnn'], 2)}</b>", "sensibilidade na Tarefa B: MLP × ResNet-18"],
@@ -208,7 +208,7 @@ def build() -> None:
     P("6. Checklist antes de apresentar", "h1")
     B(["Todos leram esta apostila e o documento explicativo.", "Um ensaio completo com cronômetro; o limite é de 15 minutos.",
        "Marcos Mendes pediu autorização e ensaiou o depoimento, ou o bloco saiu do roteiro.",
-       "O app foi aberto antes (<i>tools/abrir_app.bat</i>), porque a primeira carga é lenta. Frame 1881 selecionado, CLAHE na barra lateral.",
+       "O app foi aberto antes (<i>tools/abrir_app.bat</i>), porque a primeira carga é lenta. Passem uma vez por todas as cenas, para carregar os modelos.",
        "O código e o material foram enviados ao AVA no prazo: atraso custa 40% da nota.", "O aviso está visível: " + AVISO])
 
     def page(c, doc):
