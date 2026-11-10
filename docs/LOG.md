@@ -227,3 +227,8 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - App atualizado (9 técnicas, MLP de segmentação, MLPs novas, aba de resultados); testado em todas as abas com `AppTest`.
 - Apostila nova em `entrega/LaringoPDI_Apostila.pdf`; README, STATUS e roteiro da demonstração reescritos; 40 arquivos antigos arquivados; `balance()` removida.
 - Falta: relatório ABNT (Tales) e revisões da equipe.
+
+## 2026-11-10 · Protótipo: redesenho e instalador
+- Crítica de UX (23/40; problemas: excesso de informação, duas navegações, jargão).
+- App reescrito: modos Roteiro/Explorar/Galeria; "O que observar" em cada cena; ajuda em cada métrica; deltas contra a referência; vencedor destacado (média × mediana, métodos de segmentação); segmentação com slider de etapas; curva PSNR × σ; rótulo do especialista e concordância entre os dois braços na classificação; detalhes recolhidos em expanders.
+- Amostras embutidas (123 frames do teste do fold 0) e instalador Inno Setup com PyTorch de CPU. Testes do app reescritos (5 passam).

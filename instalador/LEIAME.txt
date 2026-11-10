@@ -1,0 +1,23 @@
+LaringoPDI: protótipo do estudo
+================================
+
+Projeto extensionista de Processamento Digital de Imagens (UNIFOR, Prof.ª Lyndainês Santos).
+Mostra como técnicas de PDI mudam a segmentação da glote e a classificação de distúrbios da voz
+em frames de videoendoscopia laríngea.
+
+COMO ABRIR
+  Use o atalho "LaringoPDI" no menu Iniciar ou na Área de Trabalho. Uma janela preta abre e,
+  alguns segundos depois, o app aparece no navegador. Para encerrar, feche a janela preta.
+
+O QUE VEM JUNTO
+  - Python e bibliotecas próprios (não mexe em nenhum Python já instalado; não precisa de internet).
+  - Os modelos treinados do fold 0 (ResNet-18 e MLPs) para as 9 técnicas de PDI.
+  - As tabelas de resultados do estudo completo.
+  - 123 frames de amostra do BAGLS, todos de vídeos do teste do fold 0, que nenhum modelo viu no treino.
+
+IMAGENS
+  BAGLS: Gómez et al., "BAGLS, a multihospital Benchmark for Automatic Glottis Segmentation",
+  Scientific Data 7, 186 (2020). Licença CC BY-NC-SA 4.0: uso não comercial, com atribuição.
+
+AVISO
+  Ferramenta de apoio acadêmico. Não substitui avaliação médica.

@@ -209,3 +209,9 @@ Registrado **antes** de gerar os números novos desta entrada. Supera a proibiç
 - **Resultado:** MLP piora na Tarefa B (F1 0,758 → 0,668; sensibilidade 0,705 → 0,499); ResNet-18 estável (AUC 0,725 → 0,715 na A; 0,801 → 0,809 na B; vereditos neutros). A vantagem de sensibilidade da MLP na H4 não se sustenta sem as bordas. `results/tables/sintese/sem_bordas.csv`.
 - **Origem:** os metadados trazem a câmera. Wolf: 79 vídeos, 65% alterados, 17 dos 54 estruturais; KayPentax: cerca de 30% alterados. Próximo estudo: equilibrar ou separar por câmera.
 - **Fase E:** app com as 9 técnicas e as duas MLPs; apostila nova (`tools/apostila.py`); documentos, ferramentas e tabelas da versão anterior arquivados em `Projeto em desuso LaringoPDI/pos_estudo_2026-11-07`.
+
+## 2026-11-10 · App: roteiro, galeria, amostras embutidas e instalador
+- **Pedido do Nathan:** app mais fácil e autoexplicativo, com galeria de imagens, rodando sem o BAGLS e instalável como o CadÁgil. O protótipo é a demonstração dos resultados da pesquisa.
+- **Navegação:** três modos (Roteiro guiado com Anterior/Próxima e "Restaurar a cena"; Explorar; Galeria). Cenas em `app/roteiro.py`. Visual padrão do Streamlit e tabelas do passo 5 mantidos, como pedido.
+- **Amostras:** `tools/gerar_amostras.py` copia para `app/amostras/` um frame por vídeo do teste do fold 0 (o do meio da amostra fixa) mais os frames das cenas, com a máscara do especialista: 123 frames, 118 vídeos, 7,4 MB. Fora do Git (BAGLS, CC BY-NC-SA); atribuição no LEIAME.
+- **Instalador:** Inno Setup por usuário (sem administrador), com Python 3.11 próprio, PyTorch **de CPU** (roda em PC sem GPU), modelos do fold 0 das 9 técnicas e as tabelas. `instalador/montar_instalador.bat` monta `build/pacote`, testa o app isolado (sem .venv e sem BAGLS) e gera `build/instalador/`. Não é deploy na web: é a entrega do protótipo para a equipe e a banca.

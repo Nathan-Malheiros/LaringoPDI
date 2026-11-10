@@ -36,3 +36,7 @@ results/tables/attention_aula_frames.csv.gz
 docs/figures/seg_passos_exemplo.png
 # Etapa 1: apresentação e PDFs com frames do BAGLS
 docs/ETAPA1/
+
+# Instalador do app: pacote montado e amostras do BAGLS (geradas por tools/gerar_amostras.py)
+build/
+app/amostras/
