@@ -9,7 +9,7 @@ CENAS = [
     {"titulo": "Média × mediana no ruído", "nota": "Sal e pimenta a 5%: a mediana limpa os pontos; a média só os espalha.",
      "passo": 1, "frame": "training/12068.png", "filtro_vista": "ruido", "ruido_tipo": "sal e pimenta", "ruido_dens": 5, "k_media": 3, "k_mediana": 3},
     {"titulo": "Segmentação passo a passo", "nota": "Arraste a etapa: limiar adaptativo, abertura, fechamento e, no fim, só a glote.",
-     "passo": 2, "frame": "training/3672.png", "seg_clahe": False, "seg_vista": "passos", "seg_etapa": "entrada"},
+     "passo": 2, "frame": "training/27990.png", "seg_clahe": False, "seg_vista": "passos", "seg_etapa": "entrada"},
     {"titulo": "O CLAHE salva a segmentação", "nota": "Frame escuro: com o CLAHE, o crescimento de região vai de Dice 0,00 a 0,95.",
      "passo": 2, "frame": "training/12188.png", "seg_clahe": True, "seg_vista": "metodos", "exp": "E03"},
     {"titulo": "Quando o CLAHE atrapalha", "nota": "Frame claro: com o CLAHE, o Dice cai de 0,81 para 0,12. Realce não é ganho garantido.",

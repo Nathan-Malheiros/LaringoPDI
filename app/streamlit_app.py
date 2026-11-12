@@ -164,6 +164,8 @@ if "iniciado" not in ss:                                     # primeira carga: c
     for k, v in PADRAO.items():
         ss[k] = v
     aplicar_cena(0)
+    if "cena" in st.query_params:                            # capturas: ?cena=N abre o roteiro naquela cena
+        aplicar_cena(int(st.query_params["cena"]))
     if "aba" in st.query_params:
         ss["modo"], ss["passo"] = "explorar", int(st.query_params["aba"]) % len(PASSOS)
     if st.query_params.get("modo") in MODOS:

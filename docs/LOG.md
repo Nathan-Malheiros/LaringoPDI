@@ -232,3 +232,8 @@ Resumos curtos (≤ 10 linhas) ao fim de cada fase. Detalhes em `DECISIONS.md` e
 - Crítica de UX (23/40; problemas: excesso de informação, duas navegações, jargão).
 - App reescrito: modos Roteiro/Explorar/Galeria; "O que observar" em cada cena; ajuda em cada métrica; deltas contra a referência; vencedor destacado (média × mediana, métodos de segmentação); segmentação com slider de etapas; curva PSNR × σ; rótulo do especialista e concordância entre os dois braços na classificação; detalhes recolhidos em expanders.
 - Amostras embutidas (123 frames do teste do fold 0) e instalador Inno Setup com PyTorch de CPU. Testes do app reescritos (5 passam).
+
+## 2026-11-12 · Apresentação final e ensaio narrado
+- App: a cena 3 ("Segmentação passo a passo") usava o frame `training/3672`, em que a adaptativa + morfologia dá Dice 0,00; agora usa `training/27990` (Dice 0,93). Novo parâmetro `?cena=N` para abrir o roteiro numa cena (capturas e gravações).
+- Apresentação final (fora do Git, na área de trabalho): deck ajustado e exportado como HTML único offline (React, fontes, imagens e um vídeo de 30 s do app embutidos), com selos "Item X de 9" dos requisitos do enunciado.
+- Ensaio narrado de 11 min 12 s para a equipe (vozes sintéticas por integrante, legendas e cronômetro); scripts em `D:\DocumentosHD\Unifor\PDI\video_ensaio`.

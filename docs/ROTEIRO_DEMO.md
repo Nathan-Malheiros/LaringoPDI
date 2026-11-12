@@ -10,7 +10,7 @@ Todos os frames são de vídeos do **teste do fold 0**: nenhum modelo do app os 
 |---|---|---|---|
 | 1. Realce num frame escuro | Marcos Mendes | `training/12188`, os quatro realces com histograma | O CLAHE foi a única técnica que melhorou a imagem pelos três critérios |
 | 2. Média × mediana no ruído | Marcos Mendes | Sal e pimenta a 5%; mova o σ de Fourier | A mediana descarta os extremos; σ menor corta mais frequência e borra mais |
-| 3. Segmentação passo a passo | Pedro | `training/3672`, com reflexo | Limiar adaptativo, abertura, fechamento e componente central |
+| 3. Segmentação passo a passo | Pedro | `training/27990`, com reflexo (Dice 0,93 no componente central) | Limiar adaptativo, abertura, fechamento e componente central |
 | 4. O CLAHE salva a segmentação | Pedro | `training/12188` com CLAHE; desligue a chave para comparar | O crescimento de região vai de Dice 0,00 a 0,95; no estudo, 0,467 → 0,614 |
 | 5. Quando o CLAHE atrapalha | Pedro | `training/11116`, frame claro | O Dice cai de 0,81 para 0,12: o efeito depende da imagem e do método |
 | 6. Lesão estrutural: MLP × CNN | Pedro | `training/7957`, Tarefa B, CLAHE, Grad-CAM | A MLP recebe 18 medidas; a CNN aprende sozinha, e o Grad-CAM mostra onde olhou |
